@@ -1,9 +1,26 @@
 %{
     
+#include <stdlib.h>
+#include <util.h>
+#include <stdio.h>
+#include <string.h>
+#define YY_DECL int alpha_yylex(void *yylval)
 
+#define CURRENT_LINE (YY_CURRENT_BUFFER->yylineno)
+
+typedef struct {
+    char * type;
+    char *value;
+    int occurence;
+    int line;
+}alpha_token_t;
 
 %}
 
+%option noyywrap
+%option yylineno
+
+KEYWORD IF+THEN+ELSE+WHILE+FOR+FUNCTION+RETURN+BREAK+CONTINUE+AND+NOT+OR+LOCAL+TRUE+FALSE+NIL
 IF "if"
 THEN "then"
 ELSE "else"
