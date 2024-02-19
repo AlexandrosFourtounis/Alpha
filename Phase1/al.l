@@ -41,10 +41,31 @@ void insert_token(char *regex, char *value, int line,char *type) {
 
 void print_tokens() {
     alpha_token_t *current = token_list;
+    printf("-------------------		Lexical Analysis		-------------------\n\n");
     while (current != NULL) {
         printf("%d:      #%d     \"%s\"    %s       %s      <-- %s\n",current->line,current->occurence, current->value, current->regex, current->value, current->type);
         current = current->next;
     }
+}
+
+void print_tokens_to_file(char *filename) {
+    FILE *fp;
+
+    if (!(fp = fopen(filename, "w+"))) {
+        fprintf(stderr, "Cannot open file %s for writing\n", filename);
+        return;
+    }
+
+    fprintf(fp, "\n-------------------    Lexical Analysis    -------------------\n\n");
+
+    alpha_token_t *current = token_list;
+    while (current != NULL) {
+        fprintf(fp, "%d:      #%d     \"%s\"    %s       %s      <-- %s\n", current->line, current->occurence, current->value, current->regex, current->value, current->type);
+        current = current->next;
+    }
+
+    fclose(fp);
+    printf("Output saved to file \"%s\"\n", filename);
 }
 
 %}
@@ -262,22 +283,28 @@ COMMENT "\/\/".*
 %%
 /*
 "/*"    BEGIN(MULTI_COMMENT);
-<MULTI_COMMENT>[^*
+<MULTI_COMMENT>
 <MULTI_COMMENT>
 <MULTI_COMMENT>BEGIN(INITIAL);
 */
 int main(int argc, char **argv) {
 
-    if(argc > 1){
-        if(!(yyin = fopen(argv[1], "r"))){
-           fprintf(stderr, "Cannot open file %s\n", argv[1]);
+    if (argc > 1) {
+        if (!(yyin = fopen(argv[1], "r"))) {
+            fprintf(stderr, "Cannot open file %s\n", argv[1]);
             return 1;
         }
-    }
-    else{
+    } else {
         yyin = stdin;
     }
+
     alpha_yylex(NULL);
-print_tokens();
+
+    if (argc > 2) {
+        print_tokens_to_file(argv[2]);
+    } else {
+        print_tokens();
+    }
+
     return 0;
 }
