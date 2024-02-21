@@ -594,15 +594,36 @@ void insert_token(char *regex, char *value, int line,char *type) {
 
 void print_tokens() {
     alpha_token_t *current = token_list;
+    printf("-------------------		Lexical Analysis		-------------------\n\n");
     while (current != NULL) {
         printf("%d:      #%d     \"%s\"    %s       %s      <-- %s\n",current->line,current->occurence, current->value, current->regex, current->value, current->type);
         current = current->next;
     }
 }
 
-#line 604 "al.c"
+void print_tokens_to_file(char *filename) {
+    FILE *fp;
 
-#line 606 "al.c"
+    if (!(fp = fopen(filename, "w+"))) {
+        fprintf(stderr, "Cannot open file %s for writing\n", filename);
+        return;
+    }
+
+    fprintf(fp, "\n-------------------    Lexical Analysis    -------------------\n\n");
+
+    alpha_token_t *current = token_list;
+    while (current != NULL) {
+        fprintf(fp, "%d:      #%d     \"%s\"    %s       %s      <-- %s\n", current->line, current->occurence, current->value, current->regex, current->value, current->type);
+        current = current->next;
+    }
+
+    fclose(fp);
+    printf("Output saved to file \"%s\"\n", filename);
+}
+
+#line 625 "al.c"
+
+#line 627 "al.c"
 
 #define INITIAL 0
 #define MULTI_COMMENT 1
@@ -821,9 +842,9 @@ YY_DECL
 		}
 
 	{
-#line 114 "al.l"
+#line 135 "al.l"
 
-#line 827 "al.c"
+#line 848 "al.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -892,329 +913,373 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 115 "al.l"
+#line 136 "al.l"
 {
     insert_token("KEYWORD", "if", yylineno,"enumerated");
 }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 118 "al.l"
+#line 139 "al.l"
 {
     insert_token("KEYWORD", "then", yylineno,"enumerated");
 }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 121 "al.l"
+#line 142 "al.l"
 {
     insert_token("KEYWORD", "else", yylineno,"enumerated");
 }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 124 "al.l"
+#line 145 "al.l"
 {
     insert_token("KEYWORD", "while", yylineno,"enumerated");
 }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 127 "al.l"
+#line 148 "al.l"
 {
     insert_token("KEYWORD", "for", yylineno,"enumerated");
 }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 130 "al.l"
+#line 151 "al.l"
 {
     insert_token("KEYWORD", "function", yylineno,"enumerated");
 }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 133 "al.l"
+#line 154 "al.l"
 {
     insert_token("KEYWORD", "return", yylineno,"enumerated");
 }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 136 "al.l"
+#line 157 "al.l"
 {
     insert_token("KEYWORD", "break", yylineno,"enumerated");
 }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 139 "al.l"
+#line 160 "al.l"
 {
     insert_token("KEYWORD", "continue", yylineno,"enumerated");
 }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 142 "al.l"
+#line 163 "al.l"
 {
     insert_token("KEYWORD", "and", yylineno,"enumerated");
 }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 145 "al.l"
+#line 166 "al.l"
 {
     insert_token("KEYWORD", "not", yylineno,"enumerated");
 }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 148 "al.l"
+#line 169 "al.l"
 {
     insert_token("KEYWORD", "or", yylineno,"enumerated");
 }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 151 "al.l"
+#line 172 "al.l"
 {
     insert_token("KEYWORD", "local", yylineno,"enumerated");
 }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 154 "al.l"
+#line 175 "al.l"
 {
     insert_token("KEYWORD", "true", yylineno,"enumerated");
 }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 157 "al.l"
+#line 178 "al.l"
 {
     insert_token("KEYWORD", "false", yylineno,"enumerated");
 }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 160 "al.l"
+#line 181 "al.l"
 {
     insert_token("KEYWORD", "nil", yylineno,"enumerated");
 }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 164 "al.l"
+#line 185 "al.l"
 {
     insert_token("OPERATOR ASSIGNMENT", "=", yylineno,"enumerated");
 }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 167 "al.l"
+#line 188 "al.l"
 {
     insert_token("OPERATOR PLUS", "+", yylineno,"enumerated");
 }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 170 "al.l"
+#line 191 "al.l"
 {
     insert_token("OPERATOR MINUS", "-", yylineno,"enumerated");
 }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 173 "al.l"
+#line 194 "al.l"
 {
     insert_token("OPERATOR TIMES", "*", yylineno,"enumerated");
 }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 176 "al.l"
+#line 197 "al.l"
 {
     insert_token("OPERATOR DIVIDE", "/", yylineno,"enumerated");
 }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 179 "al.l"
+#line 200 "al.l"
 {
     insert_token("OPERATOR MODULO", "%", yylineno,"enumerated");
 }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 182 "al.l"
+#line 203 "al.l"
 {
     insert_token("OPERATOR GREATER", ">", yylineno,"enumerated");
 }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 185 "al.l"
+#line 206 "al.l"
 {
     insert_token("OPERATOR LESS", "<", yylineno,"enumerated");
 }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 188 "al.l"
+#line 209 "al.l"
 {
     insert_token("OPERATOR EQUALS", "==", yylineno,"enumerated");
 }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 191 "al.l"
+#line 212 "al.l"
 {
     insert_token("OPERATOR NOT EQUAL", "!=", yylineno,"enumerated");
 }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 194 "al.l"
+#line 215 "al.l"
 {
     insert_token("OPERATOR GREATER EQUAL", ">=", yylineno,"enumerated");
 }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 197 "al.l"
+#line 218 "al.l"
 {
     insert_token("OPERATOR LESS EQUAL", "<=", yylineno,"enumerated");
 }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 200 "al.l"
+#line 221 "al.l"
 {
     insert_token("OPERATOR PLUS_PLUS", "++", yylineno,"enumerated");
 }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 203 "al.l"
+#line 224 "al.l"
 {
     insert_token("OPERATOR MINUS_MINUS", "--", yylineno,"enumerated");
 }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 207 "al.l"
+#line 228 "al.l"
 {
     insert_token("INTCONST", yytext, yylineno,"int");
 }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 210 "al.l"
+#line 231 "al.l"
 {
     insert_token("REALCONST", yytext, yylineno,"float");
 }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 213 "al.l"
+#line 234 "al.l"
 {
-    insert_token("STRING", yytext, yylineno,"char*");
+    char * str = strdup(yytext);
+    int i = 0;
+    int j = 0;
+
+    while(str[i]){
+        if(str[i] == '\\'){
+            if(str[i+1] == 'n'){
+                str[j] = '\n';
+                i += 2;
+            }else if(str[i+1] == 't'){
+                str[j] = '\t';
+                i += 2;
+            }else if(str[i+1] == 'r'){
+                str[j] = '\r';
+                i += 2;
+            }else if(str[i+1] == 'v'){
+                str[j] = '\v';
+                i += 2;
+            }
+             else {
+                
+                str[j] = str[i];
+                i++;
+                printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
+                printf("\x1b[1m"  "Invalid escape sequence : \\%c  at line: %d\n" "\x1b[0m",str[i],yylineno);
+            }
+        }
+        else{
+            str[j] = str[i];
+            i++;
+        }
+        j++;
+    }
+    
+    if(str[j] != '"'){
+        printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
+        printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m",yylineno);
+        exit(1) ;
+    }
+    
+    printf("\n\n\n str[i] : %c  str[i-1] : %c   str[j] : %c  str[j-1] : %c    \n\n\n",str[i],str[i-1],str[j],str[j-1]);
+    str[j] = '\0';
+
+    insert_token("STRING", str, yylineno,"char*");
+    free(str);
 }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 216 "al.l"
+#line 281 "al.l"
 {
     insert_token("IDENT", yytext, yylineno,"char*");
 }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 219 "al.l"
+#line 284 "al.l"
 {
     insert_token("PUNCTUATION LEFT_BRACE", "{", yylineno,"enumerated");
 }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 222 "al.l"
+#line 287 "al.l"
 {
     insert_token("PUNCTUATION RIGHT_BRACE", "}", yylineno,"enumerated");
 }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 225 "al.l"
+#line 290 "al.l"
 {
     insert_token("PUNCTUATION LEFT_BRACKET", "[", yylineno,"enumerated");
 }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 228 "al.l"
+#line 293 "al.l"
 {
     insert_token("PUNCTUATION RIGHT_BRACKET", "]", yylineno,"enumerated");
 }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 231 "al.l"
+#line 296 "al.l"
 {
     insert_token("PUNCTUATION LEFT_PARENTHESIS", "(", yylineno,"enumerated");
 }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 234 "al.l"
+#line 299 "al.l"
 {
     insert_token("PUNCTUATION RIGHT_PARENTHESIS", ")", yylineno,"enumerated");
 }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 237 "al.l"
+#line 302 "al.l"
 {
     insert_token("PUNCTUATION COMMA", ",", yylineno,"enumerated");
 }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 240 "al.l"
+#line 305 "al.l"
 {
     insert_token("PUNCTUATION SEMICOLON", ";", yylineno,"enumerated");
 }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 243 "al.l"
+#line 308 "al.l"
 {
     insert_token("PUNCTUATION COLON", ":", yylineno,"enumerated");
 }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 246 "al.l"
+#line 311 "al.l"
 {
     insert_token("PUNCTUATION DOUBLE_COLON", "::", yylineno,"enumerated");
 }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 249 "al.l"
+#line 314 "al.l"
 {
     insert_token("PUNCTUATION DOT", ".", yylineno,"enumerated");
 }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 252 "al.l"
+#line 317 "al.l"
 {
     insert_token("PUNCTUATION DOUBLE_DOT", "..", yylineno,"enumerated");
 }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 255 "al.l"
+#line 320 "al.l"
 {
     insert_token("COMMENT LINE_COMMENT", "", yylineno,"char*");
 }
@@ -1222,16 +1287,16 @@ YY_RULE_SETUP
 case 48:
 /* rule 48 can match eol */
 YY_RULE_SETUP
-#line 258 "al.l"
+#line 323 "al.l"
 {
 }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 262 "al.l"
+#line 327 "al.l"
 ECHO;
 	YY_BREAK
-#line 1235 "al.c"
+#line 1300 "al.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(MULTI_COMMENT):
 case YY_STATE_EOF(INCLUDE):
@@ -2250,27 +2315,33 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 262 "al.l"
+#line 327 "al.l"
 
 /*
 "/*"    BEGIN(MULTI_COMMENT);
-<MULTI_COMMENT>[^*
+<MULTI_COMMENT>
 <MULTI_COMMENT>
 <MULTI_COMMENT>BEGIN(INITIAL);
 */
 int main(int argc, char **argv) {
 
-    if(argc > 1){
-        if(!(yyin = fopen(argv[1], "r"))){
-           fprintf(stderr, "Cannot open file %s\n", argv[1]);
+    if (argc > 1) {
+        if (!(yyin = fopen(argv[1], "r"))) {
+            fprintf(stderr, "Cannot open file %s\n", argv[1]);
             return 1;
         }
-    }
-    else{
+    } else {
         yyin = stdin;
     }
+
     alpha_yylex(NULL);
-print_tokens();
+
+    if (argc > 2) {
+        print_tokens_to_file(argv[2]);
+    } else {
+        print_tokens();
+    }
+
     return 0;
 }
 
