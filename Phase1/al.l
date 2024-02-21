@@ -232,7 +232,51 @@ COMMENT "\/\/".*
     insert_token("REALCONST", yytext, yylineno,"float");
 }
 {STRING} {
-    insert_token("STRING", yytext, yylineno,"char*");
+    char * str = strdup(yytext);
+    int i = 0;
+    int j = 0;
+
+    while(str[i]){
+        if(str[i] == '\\'){
+            if(str[i+1] == 'n'){
+                str[j] = '\n';
+                i += 2;
+            }else if(str[i+1] == 't'){
+                str[j] = '\t';
+                i += 2;
+            }else if(str[i+1] == 'r'){
+                str[j] = '\r';
+                i += 2;
+            }else if(str[i+1] == 'v'){
+                str[j] = '\v';
+                i += 2;
+            }
+             else {
+                
+                str[j] = str[i];
+                i++;
+                printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
+                printf("\x1b[1m"  "Invalid escape sequence : \\%c  at line: %d\n" "\x1b[0m",str[i],yylineno);
+            }
+        }
+        else{
+            str[j] = str[i];
+            i++;
+        }
+        j++;
+    }
+    
+    if(str[j-1] != '"'){
+        printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
+        printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m",yylineno);
+        exit(1) ;
+    }
+    
+    printf("\n\n\n str[i] : %c  str[i-1] : %c   str[j] : %c  str[j-1] : %c    \n\n\n",str[i],str[i-1],str[j],str[j-1]);
+    str[j] = '\0';
+
+    insert_token("STRING", str, yylineno,"char*");
+    free(str);
 }
 {IDENTIFIER} {
     insert_token("IDENT", yytext, yylineno,"char*");
