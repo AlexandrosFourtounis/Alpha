@@ -111,7 +111,7 @@ DECREMENT "--"
 
 INTEGER (0[xX][0-9A-Fa-f]+)|([0-9]+)
 REAL [0-9]*\.[0-9](e|E)?[0-9]*
-STRING \"[^\n"]*\"
+STRING \"[^"]*\"
 IDENTIFIER [a-zA-Z][a-zA-Z_0-9]*
 
 LEFTBRACE "\{"
@@ -132,6 +132,29 @@ DOT "\."
 DOUBLEDOT "\.\."
 COMMENT "\/\/".*
 
+
+%x MULTI_COMMENT INCLUDE
+%x STR
+
+%%
+\"      { BEGIN(STR); }
+<STR>.  {
+    if (yytext[0] == '\\') {
+        // handle escape sequences
+    } else if (yytext[0] == '\"') {
+        // end of string, insert token and switch back to INITIAL state
+        BEGIN(INITIAL);
+    } else {
+        // handle normal characters
+    }
+}
+<STR><<EOF>> {
+    // handle end of file inside a string
+    printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
+    printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m", yylineno);
+    exit(1);
+}
+
 %x MULTI_COMMENT
 
 %%
@@ -143,6 +166,7 @@ COMMENT "\/\/".*
     char print_lines[20];
     sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
     insert_token("MULTI-LINE COMMENT", print_lines, yylineno, "enumerated"); BEGIN(INITIAL); }
+
 
 
 {IF} {
@@ -276,14 +300,20 @@ COMMENT "\/\/".*
             i++;
         }
         j++;
+                // Check if the string ends without a closing quote
+        if(str[i] == '\0' && str[j-1] != '"'){
+            printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
+            printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m",yylineno);
+            exit(1);
+        }
     }
-    
+    /*
     if(str[j-1] != '"'){
         printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
         printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m",yylineno);
         exit(1) ;
     }
-    
+    */
     printf("\n\n\n str[i] : %c  str[i-1] : %c   str[j] : %c  str[j-1] : %c    \n\n\n",str[i],str[i-1],str[j],str[j-1]);
     str[j] = '\0';
 
@@ -334,6 +364,7 @@ COMMENT "\/\/".*
 }
 {ESCAPE} {
 }
+
 
 
 %%
