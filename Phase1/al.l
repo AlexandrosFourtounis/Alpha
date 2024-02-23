@@ -144,7 +144,7 @@ COMMENT "\/\/".*
     sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
     insert_token("MULTI-LINE COMMENT", print_lines, yylineno, "enumerated"); BEGIN(INITIAL); }
 
-    
+
 {IF} {
     insert_token("KEYWORD", "if", yylineno,"enumerated");
 }
@@ -337,12 +337,7 @@ COMMENT "\/\/".*
 
 
 %%
-/*
-"/*"    BEGIN(MULTI_COMMENT);
-<MULTI_COMMENT>
-<MULTI_COMMENT>
-<MULTI_COMMENT>BEGIN(INITIAL);
-*/
+
 int main(int argc, char **argv) {
 
     if (argc > 1) {
