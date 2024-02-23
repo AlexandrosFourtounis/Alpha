@@ -1,5 +1,44 @@
-/*AAA
+"geia sas kalwshrthate sthn\n
+1h fash tou \tproject
+twn compilers"
 
+"undefined character: \f"
 
-AAA*/
-   
+/* csd4845 
+csd5032 
+csd5020*/
+
+//Dokimastiko file
+
+A = 5;
+
+if(A == 5){
+   printf("Savvidis");
+}
+else printf("Katevainhs");
+
+int main() {
+    float pi = 3.14159;
+    double euler = 2.71828;
+    
+    if (pi > euler) {
+        printf("Pi is greater than Euler.\n");
+    } else {
+        printf("Euler is greater than Pi.\n");
+    }
+
+    for (int i = 0; i < 5; ++i) {
+        switch (i) {
+            case 0:
+                printf("Zero\n");
+                break;
+            case 1:
+                printf("One\n");
+                break;
+            default:
+                printf("Other\n");
+        }
+    }
+
+    return 0;
+} 
