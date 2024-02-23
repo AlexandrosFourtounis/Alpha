@@ -133,10 +133,33 @@ DOUBLEDOT "\.\."
 COMMENT "\/\/".*
 
 
-%x MULTI_COMMENT INCLUDE
+%x MULTI_COMMENT NESTED_COMMENT
 %x STR
 
 %%
+
+"/*"   {
+    line_start_comment = yylineno; 
+    BEGIN(NESTED_COMMENT);}
+
+<MULTI_COMMENT>[^*]*        { }
+<MULTI_COMMENT>"*"+[^*/]*   { }
+<MULTI_COMMENT>"*/"         { 
+    char print_lines[20];
+    sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
+    insert_token("MULTI-LINE COMMENT", print_lines, yylineno, "enumerated"); BEGIN(INITIAL); }
+
+<NESTED_COMMENT>[^*]*        { }
+<NESTED_COMMENT>"*"+[^*/]*   { }
+<NESTED_COMMENT>"*/"         { 
+    char print_lines[20];   
+    sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
+    insert_token("MULTI-LINE COMMENT", print_lines, yylineno, "enumerated"); BEGIN(MULTI_COMMENT); }
+<NESTED_COMMENT>"/*"         { 
+    fprintf(stderr, "Error: Nested multi-line comment found at line %d\n", yylineno);
+    BEGIN(MULTI_COMMENT);}
+
+
 \"      { BEGIN(STR); }
 <STR>.  {
     if (yytext[0] == '\\') {
