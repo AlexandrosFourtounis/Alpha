@@ -6,6 +6,8 @@
 #define YY_DECL int alpha_yylex(void *yylval)
 
 int tokens = 0;
+int line_start_comment = 0;
+
 typedef struct {
     char * regex;
     char *value;
@@ -130,9 +132,19 @@ DOT "\."
 DOUBLEDOT "\.\."
 COMMENT "\/\/".*
 
-%x MULTI_COMMENT INCLUDE
+%x MULTI_COMMENT
 
 %%
+
+"/*"   { BEGIN(MULTI_COMMENT); line_start_comment = yylineno; }
+<MULTI_COMMENT>[^*]*        { }
+<MULTI_COMMENT>"*"+[^*/]*   { }
+<MULTI_COMMENT>"*/"         { 
+    char print_lines[20];
+    sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
+    insert_token("MULTI-LINE COMMENT", print_lines, yylineno, "enumerated"); BEGIN(INITIAL); }
+
+    
 {IF} {
     insert_token("KEYWORD", "if", yylineno,"enumerated");
 }
