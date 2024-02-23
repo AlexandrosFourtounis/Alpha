@@ -159,6 +159,13 @@ COMMENT "\/\/".*
     fprintf(stderr, "Error: Nested multi-line comment found at line %d\n", yylineno);
     BEGIN(MULTI_COMMENT);}
 
+<NESTED_COMMENT><<EOF>> {
+    // handle end of comment inside a string
+    printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
+    printf("\x1b[1m"  "Comment not closed at line: %d\n" "\x1b[0m", yylineno);
+    exit(1);
+}
+
 
 \"      { BEGIN(STR); }
 <STR>.  {
@@ -177,19 +184,6 @@ COMMENT "\/\/".*
     printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m", yylineno);
     exit(1);
 }
-
-%x MULTI_COMMENT
-
-%%
-
-"/*"   { BEGIN(MULTI_COMMENT); line_start_comment = yylineno; }
-<MULTI_COMMENT>[^*]*        { }
-<MULTI_COMMENT>"*"+[^*/]*   { }
-<MULTI_COMMENT>"*/"         { 
-    char print_lines[20];
-    sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
-    insert_token("MULTI-LINE COMMENT", print_lines, yylineno, "enumerated"); BEGIN(INITIAL); }
-
 
 
 {IF} {
@@ -330,15 +324,6 @@ COMMENT "\/\/".*
             exit(1);
         }
     }
-    /*
-    if(str[j-1] != '"'){
-        printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
-        printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m",yylineno);
-        exit(1) ;
-    }
-    */
-    printf("\n\n\n str[i] : %c  str[i-1] : %c   str[j] : %c  str[j-1] : %c    \n\n\n",str[i],str[i-1],str[j],str[j-1]);
-    str[j] = '\0';
 
     insert_token("STRING", str, yylineno,"char*");
     free(str);
