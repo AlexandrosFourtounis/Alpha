@@ -1,3 +1,10 @@
+/* --------------------------- */
+/* Phase 1 hy340               */
+/* Alexandros Fourtounis 5031  */
+/* Dimitris Asimakopoulos 4845 */
+/* Tsanta Georgia Marina 5020  */
+/* --------------------------- */
+
 %{
     
 #include <stdlib.h>
@@ -44,28 +51,23 @@ void insert_token(char *regex, char *value, int line,char *type) {
 void print_tokens() {
     alpha_token_t *current = token_list;
     printf("-------------------		Lexical Analysis		-------------------\n\n");
-    while (current != NULL) {
-        printf("%d:      #%d     \"%s\"    %s       %s      <-- %s\n",current->line,current->occurence, current->value, current->regex, current->value, current->type);
-        current = current->next;
+    for (; current != NULL; current = current->next) {
+        printf("%d:      #%d     \"%s\"    %s       %s      <-- %s\n", current->line, current->occurence, current->value, current->regex, current->value, current->type);
     }
 }
 
 void print_tokens_to_file(char *filename) {
     FILE *fp;
-
     if (!(fp = fopen(filename, "w+"))) {
         fprintf(stderr, "Cannot open file %s for writing\n", filename);
         return;
     }
-
     fprintf(fp, "\n-------------------    Lexical Analysis    -------------------\n\n");
 
     alpha_token_t *current = token_list;
-    while (current != NULL) {
-        fprintf(fp, "%d:      #%d     \"%s\"    %s       %s      <-- %s\n", current->line, current->occurence, current->value, current->regex, current->value, current->type);
-        current = current->next;
+    for (; current != NULL; current = current->next) {
+        printf("%d:      #%d     \"%s\"    %s       %s      <-- %s\n", current->line, current->occurence, current->value, current->regex, current->value, current->type);
     }
-
     fclose(fp);
     printf("Output saved to file \"%s\"\n", filename);
 }
@@ -131,6 +133,7 @@ DOUBLECOLON "::"
 DOT "\."
 DOUBLEDOT "\.\."
 COMMENT "\/\/".*
+ERROR .
 
 
 %x MULTI_COMMENT NESTED_COMMENT
@@ -138,12 +141,24 @@ COMMENT "\/\/".*
 
 %%
 
-"/*"   {
-    line_start_comment = yylineno; 
-    BEGIN(NESTED_COMMENT);}
+\"      { BEGIN(STR); }
+<STR>.  {
+    if (yytext[0] == '\\') {
+    } else if (yytext[0] == '\"') {
+        BEGIN(INITIAL);
+    } else {
+    }
+}
+<STR><<EOF>> {
+    printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
+    printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m", yylineno);
+    exit(1);
+}
 
+"/*"   { BEGIN(MULTI_COMMENT); line_start_comment = yylineno; }
 <MULTI_COMMENT>[^*]*        { }
 <MULTI_COMMENT>"*"+[^*/]*   { }
+<MULTI_COMMENT>"/"+"*"         {  printf("sfwf"); BEGIN(NESTED_COMMENT);  }
 <MULTI_COMMENT>"*/"         { 
     char print_lines[20];
     sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
@@ -152,39 +167,14 @@ COMMENT "\/\/".*
 <NESTED_COMMENT>[^*]*        { }
 <NESTED_COMMENT>"*"+[^*/]*   { }
 <NESTED_COMMENT>"*/"         { 
-    char print_lines[20];   
+    char print_lines[20];
     sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
-    insert_token("MULTI-LINE COMMENT", print_lines, yylineno, "enumerated"); BEGIN(MULTI_COMMENT); }
+    insert_token("MULTI-LINE NESTED COMMENT", print_lines, yylineno, "enumerated"); BEGIN(MULTI_COMMENT); }
+
 <NESTED_COMMENT>"/*"         { 
     fprintf(stderr, "Error: Nested multi-line comment found at line %d\n", yylineno);
-    BEGIN(MULTI_COMMENT);}
-
-<NESTED_COMMENT><<EOF>> {
-    // handle end of comment inside a string
-    printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
-    printf("\x1b[1m"  "Comment not closed at line: %d\n" "\x1b[0m", yylineno);
-    exit(1);
+    BEGIN(INITIAL);
 }
-
-
-\"      { BEGIN(STR); }
-<STR>.  {
-    if (yytext[0] == '\\') {
-        // handle escape sequences
-    } else if (yytext[0] == '\"') {
-        // end of string, insert token and switch back to INITIAL state
-        BEGIN(INITIAL);
-    } else {
-        // handle normal characters
-    }
-}
-<STR><<EOF>> {
-    // handle end of file inside a string
-    printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
-    printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m", yylineno);
-    exit(1);
-}
-
 
 {IF} {
     insert_token("KEYWORD", "if", yylineno,"enumerated");
@@ -282,45 +272,49 @@ COMMENT "\/\/".*
     insert_token("INTCONST", yytext, yylineno,"int");
 }
 {REAL} {
-    insert_token("REALCONST", yytext, yylineno,"float");
+    insert_token("REALCONST", yytext, yylineno,"real");
 }
 {STRING} {
     char * str = strdup(yytext);
     int i = 0;
     int j = 0;
 
-    while(str[i]){
-        if(str[i] == '\\'){
-            if(str[i+1] == 'n'){
-                str[j] = '\n';
-                i += 2;
-            }else if(str[i+1] == 't'){
-                str[j] = '\t';
-                i += 2;
-            }else if(str[i+1] == 'r'){
-                str[j] = '\r';
-                i += 2;
-            }else if(str[i+1] == 'v'){
-                str[j] = '\v';
-                i += 2;
-            }
-             else {
-                
+    while (str[i]) {
+        switch (str[i]) {
+            case '\\':
+                switch (str[i + 1]) {
+                    case 'n':
+                        str[j] = '\n';
+                        i += 2;
+                        break;
+                    case 't':
+                        str[j] = '\t';
+                        i += 2;
+                        break;
+                    case 'r':
+                        str[j] = '\r';
+                        i += 2;
+                        break;
+                    case 'v':
+                        str[j] = '\v';
+                        i += 2;
+                        break;
+                    default:
+                        str[j] = str[i];
+                        i++;
+                        printf("\x1b[31m" "\x1b[1m" "WARNING: \n" "\x1b[0m");
+                        printf("\x1b[1m" "Invalid escape sequence : \\%c  at line: %d\n" "\x1b[0m", str[i], yylineno);
+                }
+                break;
+            default:
                 str[j] = str[i];
                 i++;
-                printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
-                printf("\x1b[1m"  "Invalid escape sequence : \\%c  at line: %d\n" "\x1b[0m",str[i],yylineno);
-            }
-        }
-        else{
-            str[j] = str[i];
-            i++;
         }
         j++;
-                // Check if the string ends without a closing quote
-        if(str[i] == '\0' && str[j-1] != '"'){
-            printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
-            printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m",yylineno);
+
+        if (str[i] == '\0' && str[j - 1] != '"') {
+            printf("\x1b[31m" "\x1b[1m" "WARNING: \n" "\x1b[0m");
+            printf("\x1b[1m" "String not closed at line: %d\n" "\x1b[0m", yylineno);
             exit(1);
         }
     }
@@ -368,12 +362,14 @@ COMMENT "\/\/".*
     insert_token("PUNCTUATION DOUBLE_DOT", "..", yylineno,"enumerated");
 }
 {COMMENT} {
-    insert_token("COMMENT LINE_COMMENT", "", yylineno,"char*");
+    insert_token("COMMENT LINE_COMMENT", "", yylineno,"enumerated");
 }
 {ESCAPE} {
 }
-
-
+{ERROR} {
+    printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
+    printf("\x1b[1m"  "Undefined char at line: %d\n" "\x1b[0m",yylineno);
+}
 
 %%
 

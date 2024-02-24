@@ -1,8 +1,6 @@
-"geia sas kalwshrthate sthn\n
-1h fash tou \tproject
-twn compilers"
+"geia sas kalwshrthate sthn 1h fash tou \v project twn compilers"
 
-"undefined character: \f"
+"undefined \n character: \f"
 
 /* csd4845 
 csd5032 
@@ -13,7 +11,7 @@ csd5020*/
 A = 5;
 
 if(A == 5){
-   printf("Savvidis");
+   printf("Savvidis \t hi");
 }
 else printf("Katevainhs");
 
@@ -42,3 +40,6 @@ int main() {
 
     return 0;
 } 
+
+#what_is_this
+±what_is_that
