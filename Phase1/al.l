@@ -113,7 +113,8 @@ DECREMENT "--"
 
 INTEGER (0[xX][0-9A-Fa-f]+)|([0-9]+)
 REAL [0-9]*\.[0-9](e|E)?[0-9]*
-STRING \"[^"]*\"
+STRING 	\"([^"\\]|\\.)*\" 
+
 IDENTIFIER [a-zA-Z][a-zA-Z_0-9]*
 
 LEFTBRACE "\{"
@@ -144,9 +145,7 @@ ERROR .
 \"      { BEGIN(STR); }
 <STR>.  {
     if (yytext[0] == '\\') {
-    } else if (yytext[0] == '\"') {
-        BEGIN(INITIAL);
-    } else {
+    }  else {
     }
 }
 <STR><<EOF>> {
@@ -299,6 +298,20 @@ ERROR .
                         str[j] = '\v';
                         i += 2;
                         break;
+                    case '\\':
+                        if (str[i+2] == '\"') {
+                            str[j] = '\\';
+                            str[j+1] = '\"';
+                            i += 3;
+                        } else {
+                            str[j] = '\\';
+                            i += 2;
+                        }
+                        break;
+                    case '\"':
+                        str[j] = '\"';
+                        i += 2;
+                        break;
                     default:
                         str[j] = str[i];
                         i++;
@@ -323,6 +336,7 @@ ERROR .
     insert_token("STRING", str, yylineno,"char*");
     free(str);
 }
+
 {IDENTIFIER} {
     insert_token("IDENT", yytext, yylineno,"char*");
 }
@@ -369,7 +383,7 @@ ERROR .
 }
 {ERROR} {
     printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
-    printf("\x1b[1m"  "Undefined char at line: %d\n" "\x1b[0m",yylineno);
+    printf("\x1b[1m"  "Undefined char at line: %d is : %s\n" "\x1b[0m",yylineno,yytext);
 }
 
 %%
