@@ -2,7 +2,7 @@
 
 Alpha is a compiler project made for the needs of CS-340, 2023-2024 at the Computer Science department, University of Crete.
 
-It is a database which aims to let users rent vehicles of the EVOL company as well as report malfunctions, accidents and more.
+It is a compiler for the language ALPHA with fully functional lexical, syntax analysis.
 
 The project description for each phase can be found in the respective folder (in greek).
 
