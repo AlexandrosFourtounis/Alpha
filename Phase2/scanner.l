@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#define YY_DECL int alpha_yylex(void *yylval)
+#include "parser.h"
+//#define YY_DECL int alpha_yylex(void *yylval)
 
 int tokens = 0;
 int line_start_comment = 0;
@@ -177,101 +178,133 @@ ERROR .
 
 {IF} {
     insert_token("KEYWORD", "if", yylineno,"enumerated");
+    return KEYWORD_IF;
 }
 {THEN} {
     insert_token("KEYWORD", "then", yylineno,"enumerated");
+    return KEYWORD_THEN;
 }
 {ELSE} {
     insert_token("KEYWORD", "else", yylineno,"enumerated");
+    return KEYWORD_ELSE;
 }
 {WHILE} {
     insert_token("KEYWORD", "while", yylineno,"enumerated");
+    return KEYWORD_WHILE;
 }
 {FOR} {
     insert_token("KEYWORD", "for", yylineno,"enumerated");
+    return KEYWORD_FOR;
 }
 {FUNCTION} {
     insert_token("KEYWORD", "function", yylineno,"enumerated");
+    return KEYWORD_FUNCTION;
 }
 {RETURN} {
     insert_token("KEYWORD", "return", yylineno,"enumerated");
+    return KEYWORD_RETURN;
 }
 {BREAK} {
     insert_token("KEYWORD", "break", yylineno,"enumerated");
+    return KEYWORD_BREAK;
 }
 {CONTINUE} {
     insert_token("KEYWORD", "continue", yylineno,"enumerated");
+    return KEYWORD_CONTINUE;
 }
 {AND} {
     insert_token("KEYWORD", "and", yylineno,"enumerated");
+    return KEYWORD_AND;
 }
 {NOT} {
     insert_token("KEYWORD", "not", yylineno,"enumerated");
+    return KEYWORD_NOT;
 }
 {OR} {
     insert_token("KEYWORD", "or", yylineno,"enumerated");
+    return KEYWORD_OR;
 }
 {LOCAL} {
     insert_token("KEYWORD", "local", yylineno,"enumerated");
+    return KEYWORD_LOCAL;
 }
 {TRUE} {
     insert_token("KEYWORD", "true", yylineno,"enumerated");
+    return KEYWORD_TRUE;
 }
 {FALSE} {
     insert_token("KEYWORD", "false", yylineno,"enumerated");
+    return KEYWORD_FALSE;
 }
 {NIL} {
     insert_token("KEYWORD", "nil", yylineno,"enumerated");
+    return KEYWORD_NIL;
 }
 
 {ASSIGNMENT} {
     insert_token("OPERATOR ASSIGNMENT", "=", yylineno,"enumerated");
+    return '=';
 }
 {PLUS} {
     insert_token("OPERATOR PLUS", "+", yylineno,"enumerated");
+    return '+';
 }
 {MINUS} {
     insert_token("OPERATOR MINUS", "-", yylineno,"enumerated");
+    return '-';
 }
 {TIMES} {
     insert_token("OPERATOR TIMES", "*", yylineno,"enumerated");
+    return '*';
 }
 {DIVIDE} {
     insert_token("OPERATOR DIVIDE", "/", yylineno,"enumerated");
+    return '/';
 }
 {MODULO} {
     insert_token("OPERATOR MODULO", "%", yylineno,"enumerated");
+    return '%';
 }
 {GREATER} {
     insert_token("OPERATOR GREATER", ">", yylineno,"enumerated");
+    return GREATER;
 }
 {LESS} {
     insert_token("OPERATOR LESS", "<", yylineno,"enumerated");
+    return LESS;
 }
 {EQUALS} {
     insert_token("OPERATOR EQUALS", "==", yylineno,"enumerated");
+    return EQUALS;
 }
 {NOT_EQUAL} {
     insert_token("OPERATOR NOT EQUAL", "!=", yylineno,"enumerated");
+    return NOT_EQUAL;
 }
 {GREATER_EQUAL} {
     insert_token("OPERATOR GREATER EQUAL", ">=", yylineno,"enumerated");
+    return GREATER_EQUAL;
 }
 {LESS_EQUAL} {
     insert_token("OPERATOR LESS EQUAL", "<=", yylineno,"enumerated");
+    return LESS_EQUAL;
 }
 {INCREMENT} {
     insert_token("OPERATOR PLUS_PLUS", "++", yylineno,"enumerated");
+    return INCREMENT;
 }
 {DECREMENT} {
     insert_token("OPERATOR MINUS_MINUS", "--", yylineno,"enumerated");
+    return DECREMENT;
 }
 
 {INTEGER} {
     insert_token("INTCONST", yytext, yylineno,"int");
+    return INTEGER;
 }
 {REAL} {
     insert_token("REALCONST", yytext, yylineno,"real");
+    return REAL;
 }
 {STRING} {
    char * str = strdup(yytext);
@@ -334,50 +367,68 @@ ERROR .
     str[j] = '\0';
 
     insert_token("STRING", str, yylineno,"char*");
+    return STRING;
     free(str);
 }
 
+[\n]+ {return '\n';}
+
 {IDENTIFIER} {
     insert_token("IDENT", yytext, yylineno,"char*");
+    return IDENTIFIER;
 }
 {LEFTBRACE} {
     insert_token("PUNCTUATION LEFT_BRACE", "{", yylineno,"enumerated");
+    return LEFTBRACE;
 }
 {RIGHTBRACE} {
     insert_token("PUNCTUATION RIGHT_BRACE", "}", yylineno,"enumerated");
+    return RIGHTBRACE;
 }
 {LEFTBRACKET} {
     insert_token("PUNCTUATION LEFT_BRACKET", "[", yylineno,"enumerated");
+    return LEFTBRACKET;
 }
 {RIGHTBRACKET} {
     insert_token("PUNCTUATION RIGHT_BRACKET", "]", yylineno,"enumerated");
+    return RIGHTBRACKET;
 }
 {LEFTPARENTHESIS} {
     insert_token("PUNCTUATION LEFT_PARENTHESIS", "(", yylineno,"enumerated");
+    return LEFTPARENTHESIS;
 }
 {RIGHTPARENTHESIS} {
     insert_token("PUNCTUATION RIGHT_PARENTHESIS", ")", yylineno,"enumerated");
+    return RIGHTPARENTHESIS;
 }
 {COMMA} {
     insert_token("PUNCTUATION COMMA", ",", yylineno,"enumerated");
+    return COMMA;
 }
 {SEMICOLON} {
     insert_token("PUNCTUATION SEMICOLON", ";", yylineno,"enumerated");
+    return SEMICOLON;
 }
 {COLON} {
     insert_token("PUNCTUATION COLON", ":", yylineno,"enumerated");
+    return COLON;
 }
 {DOUBLECOLON} {
     insert_token("PUNCTUATION DOUBLE_COLON", "::", yylineno,"enumerated");
+    return DOUBLECOLON;
 }
 {DOT} {
     insert_token("PUNCTUATION DOT", ".", yylineno,"enumerated");
+    return DOT;
 }
 {DOUBLEDOT} {
     insert_token("PUNCTUATION DOUBLE_DOT", "..", yylineno,"enumerated");
+    return DOUBLEDOT;
 }
 {COMMENT} {
+
     insert_token("COMMENT LINE_COMMENT", "", yylineno,"enumerated");
+    return COMMENT;
 }
 {ESCAPE} {
 }
@@ -387,25 +438,3 @@ ERROR .
 }
 
 %%
-
-int main(int argc, char **argv) {
-
-    if (argc > 1) {
-        if (!(yyin = fopen(argv[1], "r"))) {
-            fprintf(stderr, "Cannot open file %s\n", argv[1]);
-            return 1;
-        }
-    } else {
-        yyin = stdin;
-    }
-
-    alpha_yylex(NULL);
-
-    if (argc > 2) {
-        print_tokens_to_file(argv[2]);
-    } else {
-        print_tokens();
-    }
-
-    return 0;
-}
