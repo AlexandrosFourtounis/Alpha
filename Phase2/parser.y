@@ -59,11 +59,23 @@ stmt:               expr SEMICOLON
                     | funcdef
                     | SEMICOLON
 
-expr:               expr op expr
+expr:                 expr '+' expr
+                    | expr '-' expr
+                    | expr '*' expr
+                    | expr '/' expr
+                    | expr '%' expr
+                    | expr GREATER expr
+                    | expr GREATER_EQUAL expr
+                    | expr LESS expr
+                    | expr LESS_EQUAL expr
+                    | expr EQUALS expr
+                    | expr NOT_EQUAL expr
+                    | expr KEYWORD_AND expr
+                    | expr KEYWORD_OR expr
                     | assignexpr
                     | term
+                    ;
 
-op:                 '+' | '-' | '*' | '/' | '%' | GREATER | GREATER_EQUAL | LESS | LESS_EQUAL | EQUALS | NOT_EQUAL | KEYWORD_AND | KEYWORD_OR
 
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
                     | '-' expr %prec UMINUS
@@ -104,7 +116,7 @@ normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS
 methodcall:         DOUBLECOLON IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS // equivalent to lvalue.id(lvalue, elist)
 
 elist:              exprlist
-                    | 
+                    | %empty  
                     ;
 
 exprlist:           exprlist  COMMA expr
@@ -133,7 +145,7 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER  LEFTPARENTHESIS idlist RIGHTPA
 
 const:              INTEGER | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
-idlist:              
+idlist: %empty               
                     | idlist  COMMA IDENTIFIER
                     | IDENTIFIER
                     ;
