@@ -6,7 +6,7 @@
     extern char* yytext;
     extern FILE* yyin;
 %}
-%define parse.error verbose
+%error-verbose
 %start program
 
 %token ID INTEGER KEYWORD_IF KEYWORD_THEN KEYWORD_ELSE KEYWORD_WHILE 
@@ -19,31 +19,25 @@
 %token LEFTPARENTHESIS RIGHTPARENTHESIS COMMA SEMICOLON COLON 
 %token DOT DOUBLEDOT DOUBLECOLON COMMENT
 
-%left ','
 %right '='
-%left KEYWORD_OR
-%left KEYWORD_AND 
-%left EQUALS NOT_EQUAL
-%left LESS LESS_EQUAL GREATER GREATER_EQUAL
+%left ','
 %left '+' '-'
-%left '*' '/' '%'
-%left LEFTPARENTHESIS RIGHTPARENTHESIS INCREMENT DECREMENT LEFTBRACKET RIGHTBRACKET DOT
-
+%left '*' '/'
 %nonassoc UMINUS
-
+%left LEFTPARENTHESIS RIGHTPARENTHESIS
 
 %%
 
 program:            stmt
                     | program stmt
 
-stmt:               expr SEMICOLON
+stmt:               expr ;
                     | ifstmt
                     | whilestmt
                     | forstmt
                     | returnstmt
-                    | KEYWORD_BREAK SEMICOLON
-                    | KEYWORD_CONTINUE SEMICOLON
+                    | KEYWORD_BREAK ;
+                    | KEYWORD_CONTINUE;
                     | block
                     | funcdef
                     | SEMICOLON
