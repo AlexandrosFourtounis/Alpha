@@ -31,22 +31,22 @@
 %right '='
 %left KEYWORD_OR
 %left KEYWORD_AND
-%nonassoc EQUALS NOT_EQUAL
-%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
 %left '+' '-'
 %left '*' '/' '%'
 %right KEYWORD_NOT INCREMENT DECREMENT 
-%nonassoc UMINUS
 %left DOT DOUBLEDOT
 %left LEFTBRACKET RIGHTBRACKET
 %left LEFTPARENTHESIS RIGHTPARENTHESIS 
 
-
+%nonassoc EQUALS NOT_EQUAL
+%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
+%nonassoc UMINUS
 
 %%
 
-program:            stmt
-                    | program stmt
+program:            program stmt
+                    | %empty
+                    ;
 
 stmt:               expr SEMICOLON
                     | ifstmt
@@ -59,11 +59,12 @@ stmt:               expr SEMICOLON
                     | funcdef
                     | SEMICOLON
 
-expr:               assignexpr
-                    | expr op expr
+expr:               expr op expr
+                    | assignexpr
                     | term
 
 op:                 '+' | '-' | '*' | '/' | '%' | GREATER | GREATER_EQUAL | LESS | LESS_EQUAL | EQUALS | NOT_EQUAL | KEYWORD_AND | KEYWORD_OR
+
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
                     | '-' expr %prec UMINUS
                     | KEYWORD_NOT expr
@@ -102,16 +103,25 @@ normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
 methodcall:         DOUBLECOLON IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS // equivalent to lvalue.id(lvalue, elist)
 
-elist:              expr  COMMA expr '*' 
-                    | expr '*'
-                    | %empty
+elist:              exprlist
+                    | 
+                    ;
 
-objectdef:          LEFTBRACKET  elist RIGHTBRACKET | LEFTBRACKET  indexed RIGHTBRACKET
-                    | LEFTBRACKET RIGHTBRACKET
+exprlist:           exprlist  COMMA expr
+                    | expr
+                    ;
+             
 
-indexed:             indexedelem  COMMA indexedelem  '*'
-                    | indexedelem '*'
-                    | %empty
+objectdef:          LEFTBRACKET  obj RIGHTBRACKET 
+                    ;
+
+obj:                elist
+                    | indexed
+                    ;
+                    
+indexed:              indexedelem  COMMA indexedelem  
+                    | indexedelem
+                    ;
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE
 
@@ -123,9 +133,10 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER  LEFTPARENTHESIS idlist RIGHTPA
 
 const:              INTEGER | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
-idlist:              IDENTIFIER  COMMA IDENTIFIER '*'
-                    | IDENTIFIER '*'
-                    | %empty
+idlist:              
+                    | idlist  COMMA IDENTIFIER
+                    | IDENTIFIER
+                    ;
 
 ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt 
                     | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
