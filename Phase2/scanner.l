@@ -77,8 +77,7 @@ void print_tokens_to_file(char *filename) {
 
 %option noyywrap
 %option yylineno
-
-KEYWORD IF+THEN+ELSE+WHILE+FOR+FUNCTION+RETURN+BREAK+CONTINUE+AND+NOT+OR+LOCAL+TRUE+FALSE+NIL
+ESCAPE   [ \t\n\r\v]
 IF "if"
 THEN "then"
 ELSE "else"
@@ -111,7 +110,6 @@ LESS_EQUAL "<="
 INCREMENT "++"
 DECREMENT "--"
 
-
 INTEGER (0[xX][0-9A-Fa-f]+)|([0-9]+)
 REAL [0-9]*\.[0-9](e|E)?[0-9]*
 STRING 	\"([^"\\]|\\.)*\" 
@@ -126,7 +124,7 @@ RIGHTBRACKET "\]"
 
 LEFTPARENTHESIS "\("
 RIGHTPARENTHESIS "\)"
-ESCAPE   [ \t\n\r\v]
+
 
 COMMA "\,"
 SEMICOLON "\;"
@@ -134,14 +132,18 @@ COLON "\:"
 DOUBLECOLON "::"
 DOT "\."
 DOUBLEDOT "\.\."
-COMMENT "\/\/".*
+
 ERROR .
 
 
-%x MULTI_COMMENT NESTED_COMMENT
+%x COMMENT MULTI_COMMENT NESTED_COMMENT 
 %x STR
 
 %%
+"//" { BEGIN(COMMENT); }
+<COMMENT>\n { BEGIN(INITIAL); }
+<COMMENT>.* {  }
+
 
 \"      { BEGIN(STR); }
 <STR>.  {
@@ -424,11 +426,6 @@ ERROR .
 {DOUBLEDOT} {
     insert_token("PUNCTUATION DOUBLE_DOT", "..", yylineno,"enumerated");
     return DOUBLEDOT;
-}
-{COMMENT} {
-
-    insert_token("COMMENT LINE_COMMENT", "", yylineno,"enumerated");
-    return COMMENT;
 }
 {ESCAPE} {
 }
