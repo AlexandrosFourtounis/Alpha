@@ -7,7 +7,7 @@ phase1:
 
 phase2:
 	@echo "Building phase 2..."
-	bison --yacc --defines --output=Phase2/parser.c Phase2/parser.y
+	bison --yacc --defines --output=Phase2/parser.c Phase2/parser.y -v
 	flex --outfile=Phase2/scanner.c Phase2/scanner.l
 	gcc -o Phase2/parser Phase2/parser.c Phase2/scanner.c 
 

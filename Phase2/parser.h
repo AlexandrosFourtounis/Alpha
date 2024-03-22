@@ -151,7 +151,19 @@ extern int yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+union YYSTYPE
+{
+#line 10 "Phase2/parser.y"
+
+    int intv;
+    char* stringv;
+    char charv;
+    float floatv;
+
+#line 164 "Phase2/parser.h"
+
+};
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
