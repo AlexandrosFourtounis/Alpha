@@ -1,5 +1,6 @@
+#line 2 "Phase2/scanner.c"
 
-#line 3 "lex.yy.c"
+#line 4 "Phase2/scanner.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -573,14 +574,14 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "scanner.l"
+#line 1 "Phase2/scanner.l"
 /* --------------------------- */
 /* Phase 1 hy340               */
 /* Alexandros Fourtounis 5031  */
 /* Dimitris Asimakopoulos 4845 */
 /* Tsanta Georgia Marina 5020  */
 /* --------------------------- */
-#line 9 "scanner.l"
+#line 9 "Phase2/scanner.l"
     
 #include <stdlib.h>
 #include <stdio.h>
@@ -648,9 +649,9 @@ void print_tokens_to_file(char *filename) {
     printf("Output saved to file \"%s\"\n", filename);
 }
 
-#line 652 "lex.yy.c"
+#line 653 "Phase2/scanner.c"
 
-#line 654 "lex.yy.c"
+#line 655 "Phase2/scanner.c"
 
 #define INITIAL 0
 #define MULTI_COMMENT 1
@@ -870,10 +871,10 @@ YY_DECL
 		}
 
 	{
-#line 144 "scanner.l"
+#line 144 "Phase2/scanner.l"
 
 
-#line 877 "lex.yy.c"
+#line 878 "Phase2/scanner.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -942,12 +943,12 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 146 "scanner.l"
+#line 146 "Phase2/scanner.l"
 { BEGIN(STR); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 147 "scanner.l"
+#line 147 "Phase2/scanner.l"
 {
     if (yytext[0] == '\\') {
     }  else {
@@ -955,7 +956,7 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 case YY_STATE_EOF(STR):
-#line 152 "scanner.l"
+#line 152 "Phase2/scanner.l"
 {
     printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
     printf("\x1b[1m"  "String not closed at line: %d\n" "\x1b[0m", yylineno);
@@ -964,29 +965,29 @@ case YY_STATE_EOF(STR):
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 158 "scanner.l"
+#line 158 "Phase2/scanner.l"
 { BEGIN(MULTI_COMMENT); line_start_comment = yylineno; }
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 159 "scanner.l"
+#line 159 "Phase2/scanner.l"
 { }
 	YY_BREAK
 case 5:
 /* rule 5 can match eol */
 YY_RULE_SETUP
-#line 160 "scanner.l"
+#line 160 "Phase2/scanner.l"
 { }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 161 "scanner.l"
+#line 161 "Phase2/scanner.l"
 {  printf("sfwf"); BEGIN(NESTED_COMMENT);  }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 162 "scanner.l"
+#line 162 "Phase2/scanner.l"
 { 
     char print_lines[20];
     sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
@@ -995,18 +996,18 @@ YY_RULE_SETUP
 case 8:
 /* rule 8 can match eol */
 YY_RULE_SETUP
-#line 167 "scanner.l"
+#line 167 "Phase2/scanner.l"
 { }
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 168 "scanner.l"
+#line 168 "Phase2/scanner.l"
 { }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 169 "scanner.l"
+#line 169 "Phase2/scanner.l"
 { 
     char print_lines[20];
     sprintf(print_lines, "%d-%d", line_start_comment, yylineno);
@@ -1014,7 +1015,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 174 "scanner.l"
+#line 174 "Phase2/scanner.l"
 { 
     fprintf(stderr, "Error: Nested multi-line comment found at line %d\n", yylineno);
     BEGIN(INITIAL);
@@ -1022,7 +1023,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 179 "scanner.l"
+#line 179 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "if", yylineno,"enumerated");
     return KEYWORD_IF;
@@ -1030,7 +1031,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 183 "scanner.l"
+#line 183 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "then", yylineno,"enumerated");
     return KEYWORD_THEN;
@@ -1038,7 +1039,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 187 "scanner.l"
+#line 187 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "else", yylineno,"enumerated");
     return KEYWORD_ELSE;
@@ -1046,7 +1047,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 191 "scanner.l"
+#line 191 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "while", yylineno,"enumerated");
     return KEYWORD_WHILE;
@@ -1054,7 +1055,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 195 "scanner.l"
+#line 195 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "for", yylineno,"enumerated");
     return KEYWORD_FOR;
@@ -1062,7 +1063,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 199 "scanner.l"
+#line 199 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "function", yylineno,"enumerated");
     return KEYWORD_FUNCTION;
@@ -1070,7 +1071,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 203 "scanner.l"
+#line 203 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "return", yylineno,"enumerated");
     return KEYWORD_RETURN;
@@ -1078,7 +1079,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 207 "scanner.l"
+#line 207 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "break", yylineno,"enumerated");
     return KEYWORD_BREAK;
@@ -1086,7 +1087,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 211 "scanner.l"
+#line 211 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "continue", yylineno,"enumerated");
     return KEYWORD_CONTINUE;
@@ -1094,7 +1095,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 215 "scanner.l"
+#line 215 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "and", yylineno,"enumerated");
     return KEYWORD_AND;
@@ -1102,7 +1103,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 219 "scanner.l"
+#line 219 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "not", yylineno,"enumerated");
     return KEYWORD_NOT;
@@ -1110,7 +1111,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 223 "scanner.l"
+#line 223 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "or", yylineno,"enumerated");
     return KEYWORD_OR;
@@ -1118,7 +1119,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 227 "scanner.l"
+#line 227 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "local", yylineno,"enumerated");
     return KEYWORD_LOCAL;
@@ -1126,7 +1127,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 231 "scanner.l"
+#line 231 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "true", yylineno,"enumerated");
     return KEYWORD_TRUE;
@@ -1134,7 +1135,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 235 "scanner.l"
+#line 235 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "false", yylineno,"enumerated");
     return KEYWORD_FALSE;
@@ -1142,7 +1143,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 239 "scanner.l"
+#line 239 "Phase2/scanner.l"
 {
     insert_token("KEYWORD", "nil", yylineno,"enumerated");
     return KEYWORD_NIL;
@@ -1150,7 +1151,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 244 "scanner.l"
+#line 244 "Phase2/scanner.l"
 {
     insert_token("OPERATOR ASSIGNMENT", "=", yylineno,"enumerated");
     return '=';
@@ -1158,7 +1159,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 248 "scanner.l"
+#line 248 "Phase2/scanner.l"
 {
     insert_token("OPERATOR PLUS", "+", yylineno,"enumerated");
     return '+';
@@ -1166,7 +1167,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 252 "scanner.l"
+#line 252 "Phase2/scanner.l"
 {
     insert_token("OPERATOR MINUS", "-", yylineno,"enumerated");
     return '-';
@@ -1174,7 +1175,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 256 "scanner.l"
+#line 256 "Phase2/scanner.l"
 {
     insert_token("OPERATOR TIMES", "*", yylineno,"enumerated");
     return '*';
@@ -1182,7 +1183,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 260 "scanner.l"
+#line 260 "Phase2/scanner.l"
 {
     insert_token("OPERATOR DIVIDE", "/", yylineno,"enumerated");
     return '/';
@@ -1190,7 +1191,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 264 "scanner.l"
+#line 264 "Phase2/scanner.l"
 {
     insert_token("OPERATOR MODULO", "%", yylineno,"enumerated");
     return '%';
@@ -1198,7 +1199,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 268 "scanner.l"
+#line 268 "Phase2/scanner.l"
 {
     insert_token("OPERATOR GREATER", ">", yylineno,"enumerated");
     return GREATER;
@@ -1206,7 +1207,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 272 "scanner.l"
+#line 272 "Phase2/scanner.l"
 {
     insert_token("OPERATOR LESS", "<", yylineno,"enumerated");
     return LESS;
@@ -1214,7 +1215,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 276 "scanner.l"
+#line 276 "Phase2/scanner.l"
 {
     insert_token("OPERATOR EQUALS", "==", yylineno,"enumerated");
     return EQUALS;
@@ -1222,7 +1223,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 280 "scanner.l"
+#line 280 "Phase2/scanner.l"
 {
     insert_token("OPERATOR NOT EQUAL", "!=", yylineno,"enumerated");
     return NOT_EQUAL;
@@ -1230,7 +1231,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 284 "scanner.l"
+#line 284 "Phase2/scanner.l"
 {
     insert_token("OPERATOR GREATER EQUAL", ">=", yylineno,"enumerated");
     return GREATER_EQUAL;
@@ -1238,7 +1239,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 288 "scanner.l"
+#line 288 "Phase2/scanner.l"
 {
     insert_token("OPERATOR LESS EQUAL", "<=", yylineno,"enumerated");
     return LESS_EQUAL;
@@ -1246,7 +1247,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 292 "scanner.l"
+#line 292 "Phase2/scanner.l"
 {
     insert_token("OPERATOR PLUS_PLUS", "++", yylineno,"enumerated");
     return INCREMENT;
@@ -1254,7 +1255,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 296 "scanner.l"
+#line 296 "Phase2/scanner.l"
 {
     insert_token("OPERATOR MINUS_MINUS", "--", yylineno,"enumerated");
     return DECREMENT;
@@ -1262,7 +1263,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 301 "scanner.l"
+#line 301 "Phase2/scanner.l"
 {
     insert_token("INTCONST", yytext, yylineno,"int");
     return INTEGER;
@@ -1270,7 +1271,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 305 "scanner.l"
+#line 305 "Phase2/scanner.l"
 {
     insert_token("REALCONST", yytext, yylineno,"real");
     return REAL;
@@ -1279,7 +1280,7 @@ YY_RULE_SETUP
 case 44:
 /* rule 44 can match eol */
 YY_RULE_SETUP
-#line 309 "scanner.l"
+#line 309 "Phase2/scanner.l"
 {
    char * str = strdup(yytext);
     int i = 0;
@@ -1348,12 +1349,12 @@ YY_RULE_SETUP
 case 45:
 /* rule 45 can match eol */
 YY_RULE_SETUP
-#line 374 "scanner.l"
+#line 374 "Phase2/scanner.l"
 {return '\n';}
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 376 "scanner.l"
+#line 376 "Phase2/scanner.l"
 {
     insert_token("IDENT", yytext, yylineno,"char*");
     return IDENTIFIER;
@@ -1361,7 +1362,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 380 "scanner.l"
+#line 380 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION LEFT_BRACE", "{", yylineno,"enumerated");
     return LEFTBRACE;
@@ -1369,7 +1370,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 384 "scanner.l"
+#line 384 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION RIGHT_BRACE", "}", yylineno,"enumerated");
     return RIGHTBRACE;
@@ -1377,7 +1378,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 388 "scanner.l"
+#line 388 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION LEFT_BRACKET", "[", yylineno,"enumerated");
     return LEFTBRACKET;
@@ -1385,7 +1386,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 392 "scanner.l"
+#line 392 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION RIGHT_BRACKET", "]", yylineno,"enumerated");
     return RIGHTBRACKET;
@@ -1393,7 +1394,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 396 "scanner.l"
+#line 396 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION LEFT_PARENTHESIS", "(", yylineno,"enumerated");
     return LEFTPARENTHESIS;
@@ -1401,7 +1402,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 400 "scanner.l"
+#line 400 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION RIGHT_PARENTHESIS", ")", yylineno,"enumerated");
     return RIGHTPARENTHESIS;
@@ -1409,7 +1410,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 404 "scanner.l"
+#line 404 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION COMMA", ",", yylineno,"enumerated");
     return COMMA;
@@ -1417,7 +1418,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 408 "scanner.l"
+#line 408 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION SEMICOLON", ";", yylineno,"enumerated");
     return SEMICOLON;
@@ -1425,7 +1426,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 412 "scanner.l"
+#line 412 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION COLON", ":", yylineno,"enumerated");
     return COLON;
@@ -1433,7 +1434,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 416 "scanner.l"
+#line 416 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION DOUBLE_COLON", "::", yylineno,"enumerated");
     return DOUBLECOLON;
@@ -1441,7 +1442,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 420 "scanner.l"
+#line 420 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION DOT", ".", yylineno,"enumerated");
     return DOT;
@@ -1449,7 +1450,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 424 "scanner.l"
+#line 424 "Phase2/scanner.l"
 {
     insert_token("PUNCTUATION DOUBLE_DOT", "..", yylineno,"enumerated");
     return DOUBLEDOT;
@@ -1457,7 +1458,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 428 "scanner.l"
+#line 428 "Phase2/scanner.l"
 {
 
     insert_token("COMMENT LINE_COMMENT", "", yylineno,"enumerated");
@@ -1467,13 +1468,13 @@ YY_RULE_SETUP
 case 60:
 /* rule 60 can match eol */
 YY_RULE_SETUP
-#line 433 "scanner.l"
+#line 433 "Phase2/scanner.l"
 {
 }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 435 "scanner.l"
+#line 435 "Phase2/scanner.l"
 {
     printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
     printf("\x1b[1m"  "Undefined char at line: %d is : %s\n" "\x1b[0m",yylineno,yytext);
@@ -1481,10 +1482,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 440 "scanner.l"
+#line 440 "Phase2/scanner.l"
 ECHO;
 	YY_BREAK
-#line 1488 "lex.yy.c"
+#line 1489 "Phase2/scanner.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(MULTI_COMMENT):
 case YY_STATE_EOF(NESTED_COMMENT):
@@ -2503,5 +2504,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 440 "scanner.l"
+#line 440 "Phase2/scanner.l"
 

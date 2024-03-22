@@ -6,6 +6,14 @@
     extern char* yytext;
     extern FILE* yyin;
 %}
+
+%union{
+    int intv;
+    char* stringv;
+    char charv;
+    float floatv;
+}
+
 %define parse.error verbose
 %start program
 
@@ -19,17 +27,20 @@
 %token LEFTPARENTHESIS RIGHTPARENTHESIS COMMA SEMICOLON COLON 
 %token DOT DOUBLEDOT DOUBLECOLON COMMENT
 
-%left ','
+
 %right '='
 %left KEYWORD_OR
-%left KEYWORD_AND 
-%left EQUALS NOT_EQUAL
-%left LESS LESS_EQUAL GREATER GREATER_EQUAL
+%left KEYWORD_AND
+%nonassoc EQUALS NOT_EQUAL
+%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
 %left '+' '-'
 %left '*' '/' '%'
-%left LEFTPARENTHESIS RIGHTPARENTHESIS INCREMENT DECREMENT LEFTBRACKET RIGHTBRACKET DOT
-
+%right KEYWORD_NOT INCREMENT DECREMENT 
 %nonassoc UMINUS
+%left DOT DOUBLEDOT
+%left LEFTBRACKET RIGHTBRACKET
+%left LEFTPARENTHESIS RIGHTPARENTHESIS 
+
 
 
 %%
@@ -54,7 +65,7 @@ expr:               assignexpr
 
 op:                 '+' | '-' | '*' | '/' | '%' | GREATER | GREATER_EQUAL | LESS | LESS_EQUAL | EQUALS | NOT_EQUAL | KEYWORD_AND | KEYWORD_OR
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
-                    | '-' expr
+                    | '-' expr %prec UMINUS
                     | KEYWORD_NOT expr
                     | INCREMENT lvalue
                     | lvalue INCREMENT
@@ -91,29 +102,40 @@ normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
 methodcall:         DOUBLECOLON IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS // equivalent to lvalue.id(lvalue, elist)
 
-elist:              LEFTBRACKET expr LEFTBRACKET COMMA expr RIGHTBRACKET '*' RIGHTBRACKET
+elist:              expr  COMMA expr '*' 
+                    | expr '*'
+                    | %empty
 
-objectdef:          LEFTBRACKET LEFTBRACKET elist KEYWORD_OR indexed RIGHTBRACKET RIGHTBRACKET
+objectdef:          LEFTBRACKET  elist RIGHTBRACKET | LEFTBRACKET  indexed RIGHTBRACKET
+                    | LEFTBRACKET RIGHTBRACKET
 
-indexed:            LEFTBRACKET indexedelem LEFTBRACKET COMMA indexedelem RIGHTBRACKET '*' RIGHTBRACKET
+indexed:             indexedelem  COMMA indexedelem  '*'
+                    | indexedelem '*'
+                    | %empty
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE
 
-block:              LEFTBRACE LEFTBRACKET stmt'*' RIGHTBRACKET RIGHTBRACE
+block:              LEFTBRACE  stmt'*'  RIGHTBRACE
+                    | LEFTBRACE RIGHTBRACE
 
-funcdef:            KEYWORD_FUNCTION LEFTBRACKET IDENTIFIER RIGHTBRACKET LEFTPARENTHESIS idlist RIGHTPARENTHESIS block
+funcdef:            KEYWORD_FUNCTION  IDENTIFIER  LEFTPARENTHESIS idlist RIGHTPARENTHESIS block
+                    | KEYWORD_FUNCTION LEFTPARENTHESIS idlist RIGHTPARENTHESIS block
 
 const:              INTEGER | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
-idlist:             LEFTBRACKET IDENTIFIER LEFTBRACKET COMMA IDENTIFIER RIGHTBRACKET '*' RIGHTBRACKET
+idlist:              IDENTIFIER  COMMA IDENTIFIER '*'
+                    | IDENTIFIER '*'
+                    | %empty
 
-ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt LEFTBRACKET KEYWORD_ELSE stmt RIGHTBRACKET
+ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt 
+                    | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
 
 whilestmt:          KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
 
 forstmt:            KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt
 
-returnstmt:         KEYWORD_RETURN LEFTBRACKET expr RIGHTBRACKET SEMICOLON
+returnstmt:         KEYWORD_RETURN  expr  SEMICOLON
+                    | KEYWORD_RETURN SEMICOLON
 
 %%
 int yyerror (char* yaccProvidedMessage) {
