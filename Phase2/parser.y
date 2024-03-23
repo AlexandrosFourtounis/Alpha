@@ -1,7 +1,12 @@
 %{
     #include <stdio.h>
+    #define YYDEBUG 1
+
+    //#define YYLEX alpha_yylex
+    extern int yydebug;
     int yyerror (char* yaccProvidedMessage);
     int alpha_yylex(void* yylval);
+
     extern int yylineno;
     extern char* yytext;
     extern FILE* yyin;
@@ -17,7 +22,7 @@
 %define parse.error verbose
 %start program
 
-%token ID INTEGER KEYWORD_IF KEYWORD_THEN KEYWORD_ELSE KEYWORD_WHILE 
+%token INTEGER KEYWORD_IF KEYWORD_THEN KEYWORD_ELSE KEYWORD_WHILE 
 %token KEYWORD_FOR KEYWORD_FUNCTION KEYWORD_RETURN KEYWORD_BREAK KEYWORD_CONTINUE
 %token KEYWORD_AND KEYWORD_NOT KEYWORD_OR KEYWORD_LOCAL KEYWORD_TRUE
 %token KEYWORD_FALSE KEYWORD_NIL GREATER LESS EQUALS
@@ -25,28 +30,27 @@
 %token STRING REAL
 %token IDENTIFIER LEFTBRACE RIGHTBRACE LEFTBRACKET RIGHTBRACKET 
 %token LEFTPARENTHESIS RIGHTPARENTHESIS COMMA SEMICOLON COLON 
-%token DOT DOUBLEDOT DOUBLECOLON COMMENT
-
+%token DOT DOUBLEDOT DOUBLECOLON 
 
 %right '='
 %left KEYWORD_OR
 %left KEYWORD_AND
-%nonassoc EQUALS NOT_EQUAL
-%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
 %left '+' '-'
 %left '*' '/' '%'
 %right KEYWORD_NOT INCREMENT DECREMENT 
-%nonassoc UMINUS
 %left DOT DOUBLEDOT
 %left LEFTBRACKET RIGHTBRACKET
 %left LEFTPARENTHESIS RIGHTPARENTHESIS 
 
-
+%nonassoc EQUALS NOT_EQUAL
+%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
+%nonassoc UMINUS
 
 %%
 
-program:            stmt
-                    | program stmt
+program:            program stmt
+                    | %empty
+                    ;
 
 stmt:               expr SEMICOLON
                     | ifstmt
@@ -59,11 +63,24 @@ stmt:               expr SEMICOLON
                     | funcdef
                     | SEMICOLON
 
-expr:               assignexpr
-                    | expr op expr
+expr:                 expr '+' expr
+                    | expr '-' expr
+                    | expr '*' expr
+                    | expr '/' expr
+                    | expr '%' expr
+                    | expr GREATER expr
+                    | expr GREATER_EQUAL expr
+                    | expr LESS expr
+                    | expr LESS_EQUAL expr
+                    | expr EQUALS expr
+                    | expr NOT_EQUAL expr
+                    | expr KEYWORD_AND expr
+                    | expr KEYWORD_OR expr
+                    | assignexpr
                     | term
+                    ;
 
-op:                 '+' | '-' | '*' | '/' | '%' | GREATER | GREATER_EQUAL | LESS | LESS_EQUAL | EQUALS | NOT_EQUAL | KEYWORD_AND | KEYWORD_OR
+
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
                     | '-' expr %prec UMINUS
                     | KEYWORD_NOT expr
@@ -102,16 +119,25 @@ normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
 methodcall:         DOUBLECOLON IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS // equivalent to lvalue.id(lvalue, elist)
 
-elist:              expr  COMMA expr '*' 
-                    | expr '*'
-                    | %empty
+elist:              exprlist
+                    | %empty  
+                    ;
 
-objectdef:          LEFTBRACKET  elist RIGHTBRACKET | LEFTBRACKET  indexed RIGHTBRACKET
-                    | LEFTBRACKET RIGHTBRACKET
+exprlist:           exprlist  COMMA expr
+                    | expr
+                    ;
+             
 
-indexed:             indexedelem  COMMA indexedelem  '*'
-                    | indexedelem '*'
-                    | %empty
+objectdef:          LEFTBRACKET  obj RIGHTBRACKET 
+                    ;
+
+obj:                elist
+                    | indexed
+                    ;
+                    
+indexed:              indexedelem  COMMA indexedelem  
+                    | indexedelem
+                    ;
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE
 
@@ -123,9 +149,10 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER  LEFTPARENTHESIS idlist RIGHTPA
 
 const:              INTEGER | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
-idlist:              IDENTIFIER  COMMA IDENTIFIER '*'
-                    | IDENTIFIER '*'
-                    | %empty
+idlist: %empty               
+                    | idlist  COMMA IDENTIFIER
+                    | IDENTIFIER
+                    ;
 
 ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt 
                     | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
@@ -147,6 +174,7 @@ int yyerror (char* yaccProvidedMessage) {
 //**************************************************************
 
 int main(int argc,char **argv){
+    yydebug = 1;
     if(argc > 1){
         if(!(yyin = fopen(argv[1],"r"))){
             fprintf(stderr,"Cannot open file\n");

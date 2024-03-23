@@ -77,8 +77,6 @@ void print_tokens_to_file(char *filename) {
 
 %option noyywrap
 %option yylineno
-
-KEYWORD IF+THEN+ELSE+WHILE+FOR+FUNCTION+RETURN+BREAK+CONTINUE+AND+NOT+OR+LOCAL+TRUE+FALSE+NIL
 IF "if"
 THEN "then"
 ELSE "else"
@@ -111,7 +109,6 @@ LESS_EQUAL "<="
 INCREMENT "++"
 DECREMENT "--"
 
-
 INTEGER (0[xX][0-9A-Fa-f]+)|([0-9]+)
 REAL [0-9]*\.[0-9](e|E)?[0-9]*
 STRING 	\"([^"\\]|\\.)*\" 
@@ -126,7 +123,7 @@ RIGHTBRACKET "\]"
 
 LEFTPARENTHESIS "\("
 RIGHTPARENTHESIS "\)"
-ESCAPE   [ \t\n\r\v]
+
 
 COMMA "\,"
 SEMICOLON "\;"
@@ -134,14 +131,18 @@ COLON "\:"
 DOUBLECOLON "::"
 DOT "\."
 DOUBLEDOT "\.\."
-COMMENT "\/\/".*
+
 ERROR .
 
 
-%x MULTI_COMMENT NESTED_COMMENT
+%x COMMENT MULTI_COMMENT NESTED_COMMENT 
 %x STR
 
 %%
+"//" { BEGIN(COMMENT); }
+<COMMENT>\n { BEGIN(INITIAL); }
+<COMMENT>.* {  }
+
 
 \"      { BEGIN(STR); }
 <STR>.  {
@@ -175,6 +176,8 @@ ERROR .
     fprintf(stderr, "Error: Nested multi-line comment found at line %d\n", yylineno);
     BEGIN(INITIAL);
 }
+
+<INITIAL><<EOF>> {return 0;}
 
 {IF} {
     insert_token("KEYWORD", "if", yylineno,"enumerated");
@@ -320,7 +323,7 @@ ERROR .
                         i += 2;
                         break;
                     case 't':
-                        str[j] = '\t';
+                        str[j] = '\t'; 
                         i += 2;
                         break;
                     case 'r':
@@ -371,7 +374,7 @@ ERROR .
     free(str);
 }
 
-[\n]+ {return '\n';}
+[\n]+ {}
 
 {IDENTIFIER} {
     insert_token("IDENT", yytext, yylineno,"char*");
@@ -425,13 +428,7 @@ ERROR .
     insert_token("PUNCTUATION DOUBLE_DOT", "..", yylineno,"enumerated");
     return DOUBLEDOT;
 }
-{COMMENT} {
 
-    insert_token("COMMENT LINE_COMMENT", "", yylineno,"enumerated");
-    return COMMENT;
-}
-{ESCAPE} {
-}
 {ERROR} {
     printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
     printf("\x1b[1m"  "Undefined char at line: %d is : %s\n" "\x1b[0m",yylineno,yytext);
