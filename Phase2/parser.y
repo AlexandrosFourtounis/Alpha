@@ -48,8 +48,10 @@
 
 %%
 
-program:            program stmt
-                    | %empty
+program:            parsing
+                    ;
+parsing:            stmt parsing
+                    | stmt
                     ;
 
 stmt:               expr SEMICOLON
@@ -141,14 +143,21 @@ indexed:              indexedelem  COMMA indexedelem
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE
 
-block:              LEFTBRACE  stmt'*'  RIGHTBRACE
-                    | LEFTBRACE RIGHTBRACE
+block:              LEFTBRACE  blockk  RIGHTBRACE
+                    ;
+
+blockk:             blockk stmt
+                    | %empty   
+                    ;
 
 funcdef:            KEYWORD_FUNCTION  IDENTIFIER  LEFTPARENTHESIS idlist RIGHTPARENTHESIS block
                     | KEYWORD_FUNCTION LEFTPARENTHESIS idlist RIGHTPARENTHESIS block
 
-const:              INTEGER | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
+const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
+number:             INTEGER 
+                    | REAL
+                    ;
 idlist: %empty               
                     | idlist  COMMA IDENTIFIER
                     | IDENTIFIER
@@ -174,7 +183,7 @@ int yyerror (char* yaccProvidedMessage) {
 //**************************************************************
 
 int main(int argc,char **argv){
-    yydebug = 1;
+    //yydebug = 1;
     if(argc > 1){
         if(!(yyin = fopen(argv[1],"r"))){
             fprintf(stderr,"Cannot open file\n");

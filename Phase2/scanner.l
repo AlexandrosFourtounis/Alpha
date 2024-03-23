@@ -77,6 +77,7 @@ void print_tokens_to_file(char *filename) {
 
 %option noyywrap
 %option yylineno
+
 IF "if"
 THEN "then"
 ELSE "else"
@@ -177,6 +178,7 @@ ERROR .
     BEGIN(INITIAL);
 }
 
+[ \t\n] 
 <INITIAL><<EOF>> {return 0;}
 
 {IF} {
@@ -374,7 +376,6 @@ ERROR .
     free(str);
 }
 
-[\n]+ {}
 
 {IDENTIFIER} {
     insert_token("IDENT", yytext, yylineno,"char*");
