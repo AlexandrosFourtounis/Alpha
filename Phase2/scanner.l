@@ -77,7 +77,6 @@ void print_tokens_to_file(char *filename) {
 
 %option noyywrap
 %option yylineno
-ESCAPE   [ \t\n\r\v]
 IF "if"
 THEN "then"
 ELSE "else"
@@ -177,6 +176,8 @@ ERROR .
     fprintf(stderr, "Error: Nested multi-line comment found at line %d\n", yylineno);
     BEGIN(INITIAL);
 }
+
+<INITIAL><<EOF>> {return 0;}
 
 {IF} {
     insert_token("KEYWORD", "if", yylineno,"enumerated");
@@ -322,7 +323,7 @@ ERROR .
                         i += 2;
                         break;
                     case 't':
-                        str[j] = '\t';
+                        str[j] = '\t'; 
                         i += 2;
                         break;
                     case 'r':
@@ -373,7 +374,7 @@ ERROR .
     free(str);
 }
 
-[\n]+ {return '\n';}
+[\n]+ {}
 
 {IDENTIFIER} {
     insert_token("IDENT", yytext, yylineno,"char*");
@@ -427,8 +428,7 @@ ERROR .
     insert_token("PUNCTUATION DOUBLE_DOT", "..", yylineno,"enumerated");
     return DOUBLEDOT;
 }
-{ESCAPE} {
-}
+
 {ERROR} {
     printf("\x1b[31m" "\x1b[1m"  "WARNING: \n" "\x1b[0m");
     printf("\x1b[1m"  "Undefined char at line: %d is : %s\n" "\x1b[0m",yylineno,yytext);

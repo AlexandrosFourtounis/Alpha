@@ -1,7 +1,12 @@
 %{
     #include <stdio.h>
+    #define YYDEBUG 1
+
+    //#define YYLEX alpha_yylex
+    extern int yydebug;
     int yyerror (char* yaccProvidedMessage);
     int alpha_yylex(void* yylval);
+
     extern int yylineno;
     extern char* yytext;
     extern FILE* yyin;
@@ -26,7 +31,6 @@
 %token IDENTIFIER LEFTBRACE RIGHTBRACE LEFTBRACKET RIGHTBRACKET 
 %token LEFTPARENTHESIS RIGHTPARENTHESIS COMMA SEMICOLON COLON 
 %token DOT DOUBLEDOT DOUBLECOLON 
-
 
 %right '='
 %left KEYWORD_OR
@@ -170,6 +174,7 @@ int yyerror (char* yaccProvidedMessage) {
 //**************************************************************
 
 int main(int argc,char **argv){
+    yydebug = 1;
     if(argc > 1){
         if(!(yyin = fopen(argv[1],"r"))){
             fprintf(stderr,"Cannot open file\n");
