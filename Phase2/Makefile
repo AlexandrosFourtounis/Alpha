@@ -5,7 +5,7 @@ phase2:
 	@echo "Building phase 2..."
 	bison --yacc --defines --output=parser.c parser.y -v 
 	flex --outfile=scanner.c scanner.l
-	gcc -o parser parser.c scanner.c 
+	gcc -o parser parser.c scanner.c SymTable.c symtablehash.c
 
 clean:
 	@echo "Cleaning up..."
