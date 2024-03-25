@@ -183,132 +183,164 @@ ERROR .
 
 {IF} {
     insert_token("KEYWORD", "if", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_IF;
 }
 {THEN} {
     insert_token("KEYWORD", "then", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_THEN;
 }
 {ELSE} {
     insert_token("KEYWORD", "else", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_ELSE;
 }
 {WHILE} {
     insert_token("KEYWORD", "while", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_WHILE;
 }
 {FOR} {
     insert_token("KEYWORD", "for", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_FOR;
 }
 {FUNCTION} {
     insert_token("KEYWORD", "function", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_FUNCTION;
 }
 {RETURN} {
     insert_token("KEYWORD", "return", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_RETURN;
 }
 {BREAK} {
     insert_token("KEYWORD", "break", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_BREAK;
 }
 {CONTINUE} {
     insert_token("KEYWORD", "continue", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_CONTINUE;
 }
 {AND} {
     insert_token("KEYWORD", "and", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_AND;
 }
 {NOT} {
     insert_token("KEYWORD", "not", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_NOT;
 }
 {OR} {
     insert_token("KEYWORD", "or", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_OR;
 }
 {LOCAL} {
     insert_token("KEYWORD", "local", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_LOCAL;
 }
 {TRUE} {
     insert_token("KEYWORD", "true", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_TRUE;
 }
 {FALSE} {
     insert_token("KEYWORD", "false", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_FALSE;
 }
 {NIL} {
     insert_token("KEYWORD", "nil", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return KEYWORD_NIL;
 }
 
 {ASSIGNMENT} {
     insert_token("OPERATOR ASSIGNMENT", "=", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return '=';
 }
 {PLUS} {
     insert_token("OPERATOR PLUS", "+", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return '+';
 }
 {MINUS} {
     insert_token("OPERATOR MINUS", "-", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return '-';
 }
 {TIMES} {
     insert_token("OPERATOR TIMES", "*", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return '*';
 }
 {DIVIDE} {
     insert_token("OPERATOR DIVIDE", "/", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return '/';
 }
 {MODULO} {
     insert_token("OPERATOR MODULO", "%", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return '%';
 }
 {GREATER} {
     insert_token("OPERATOR GREATER", ">", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return GREATER;
 }
 {LESS} {
     insert_token("OPERATOR LESS", "<", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return LESS;
 }
 {EQUALS} {
     insert_token("OPERATOR EQUALS", "==", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return EQUALS;
 }
 {NOT_EQUAL} {
     insert_token("OPERATOR NOT EQUAL", "!=", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return NOT_EQUAL;
 }
 {GREATER_EQUAL} {
     insert_token("OPERATOR GREATER EQUAL", ">=", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return GREATER_EQUAL;
 }
 {LESS_EQUAL} {
     insert_token("OPERATOR LESS EQUAL", "<=", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return LESS_EQUAL;
 }
 {INCREMENT} {
     insert_token("OPERATOR PLUS_PLUS", "++", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return INCREMENT;
 }
 {DECREMENT} {
     insert_token("OPERATOR MINUS_MINUS", "--", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return DECREMENT;
 }
 
 {INTEGER} {
     insert_token("INTCONST", yytext, yylineno,"int");
+    yylval.intv = atoi(yytext);
     return INTEGER;
 }
 {REAL} {
     insert_token("REALCONST", yytext, yylineno,"real");
+    yylval.floatv = atof(yytext);
     return REAL;
 }
 {STRING} {
@@ -372,6 +404,7 @@ ERROR .
     str[j] = '\0';
 
     insert_token("STRING", str, yylineno,"char*");
+    yylval.stringv = str;
     return STRING;
     free(str);
 }
@@ -379,54 +412,67 @@ ERROR .
 
 {IDENTIFIER} {
     insert_token("IDENT", yytext, yylineno,"char*");
+    yylval.stringv = strdup(yytext);
     return IDENTIFIER;
 }
 {LEFTBRACE} {
     insert_token("PUNCTUATION LEFT_BRACE", "{", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return LEFTBRACE;
 }
 {RIGHTBRACE} {
     insert_token("PUNCTUATION RIGHT_BRACE", "}", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return RIGHTBRACE;
 }
 {LEFTBRACKET} {
     insert_token("PUNCTUATION LEFT_BRACKET", "[", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return LEFTBRACKET;
 }
 {RIGHTBRACKET} {
     insert_token("PUNCTUATION RIGHT_BRACKET", "]", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return RIGHTBRACKET;
 }
 {LEFTPARENTHESIS} {
     insert_token("PUNCTUATION LEFT_PARENTHESIS", "(", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return LEFTPARENTHESIS;
 }
 {RIGHTPARENTHESIS} {
     insert_token("PUNCTUATION RIGHT_PARENTHESIS", ")", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return RIGHTPARENTHESIS;
 }
 {COMMA} {
     insert_token("PUNCTUATION COMMA", ",", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return COMMA;
 }
 {SEMICOLON} {
     insert_token("PUNCTUATION SEMICOLON", ";", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return SEMICOLON;
 }
 {COLON} {
     insert_token("PUNCTUATION COLON", ":", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return COLON;
 }
 {DOUBLECOLON} {
     insert_token("PUNCTUATION DOUBLE_COLON", "::", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return DOUBLECOLON;
 }
 {DOT} {
     insert_token("PUNCTUATION DOT", ".", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return DOT;
 }
 {DOUBLEDOT} {
     insert_token("PUNCTUATION DOUBLE_DOT", "..", yylineno,"enumerated");
+    yylval.stringv = strdup(yytext);
     return DOUBLEDOT;
 }
 

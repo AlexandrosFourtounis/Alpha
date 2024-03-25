@@ -35,8 +35,8 @@
    especially those whose name start with YY_ or yy_.  They are
    private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_PHASE2_PARSER_H_INCLUDED
-# define YY_YY_PHASE2_PARSER_H_INCLUDED
+#ifndef YY_YY_PARSER_H_INCLUDED
+# define YY_YY_PARSER_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -54,8 +54,8 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    ID = 258,                      /* ID  */
-    INTEGER = 259,                 /* INTEGER  */
+    INTEGER = 258,                 /* "integer constant"  */
+    REAL = 259,                    /* "real contstant"  */
     KEYWORD_IF = 260,              /* KEYWORD_IF  */
     KEYWORD_THEN = 261,            /* KEYWORD_THEN  */
     KEYWORD_ELSE = 262,            /* KEYWORD_ELSE  */
@@ -81,22 +81,20 @@ extern int yydebug;
     INCREMENT = 282,               /* INCREMENT  */
     DECREMENT = 283,               /* DECREMENT  */
     STRING = 284,                  /* STRING  */
-    REAL = 285,                    /* REAL  */
-    IDENTIFIER = 286,              /* IDENTIFIER  */
-    LEFTBRACE = 287,               /* LEFTBRACE  */
-    RIGHTBRACE = 288,              /* RIGHTBRACE  */
-    LEFTBRACKET = 289,             /* LEFTBRACKET  */
-    RIGHTBRACKET = 290,            /* RIGHTBRACKET  */
-    LEFTPARENTHESIS = 291,         /* LEFTPARENTHESIS  */
-    RIGHTPARENTHESIS = 292,        /* RIGHTPARENTHESIS  */
-    COMMA = 293,                   /* COMMA  */
-    SEMICOLON = 294,               /* SEMICOLON  */
-    COLON = 295,                   /* COLON  */
-    DOT = 296,                     /* DOT  */
-    DOUBLEDOT = 297,               /* DOUBLEDOT  */
-    DOUBLECOLON = 298,             /* DOUBLECOLON  */
-    COMMENT = 299,                 /* COMMENT  */
-    UMINUS = 300                   /* UMINUS  */
+    IDENTIFIER = 285,              /* IDENTIFIER  */
+    LEFTBRACE = 286,               /* LEFTBRACE  */
+    RIGHTBRACE = 287,              /* RIGHTBRACE  */
+    LEFTBRACKET = 288,             /* LEFTBRACKET  */
+    RIGHTBRACKET = 289,            /* RIGHTBRACKET  */
+    LEFTPARENTHESIS = 290,         /* LEFTPARENTHESIS  */
+    RIGHTPARENTHESIS = 291,        /* RIGHTPARENTHESIS  */
+    COMMA = 292,                   /* COMMA  */
+    SEMICOLON = 293,               /* SEMICOLON  */
+    COLON = 294,                   /* COLON  */
+    DOT = 295,                     /* DOT  */
+    DOUBLEDOT = 296,               /* DOUBLEDOT  */
+    DOUBLECOLON = 297,             /* DOUBLECOLON  */
+    UMINUS = 298                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -105,8 +103,8 @@ extern int yydebug;
 #define YYEOF 0
 #define YYerror 256
 #define YYUNDEF 257
-#define ID 258
-#define INTEGER 259
+#define INTEGER 258
+#define REAL 259
 #define KEYWORD_IF 260
 #define KEYWORD_THEN 261
 #define KEYWORD_ELSE 262
@@ -132,35 +130,33 @@ extern int yydebug;
 #define INCREMENT 282
 #define DECREMENT 283
 #define STRING 284
-#define REAL 285
-#define IDENTIFIER 286
-#define LEFTBRACE 287
-#define RIGHTBRACE 288
-#define LEFTBRACKET 289
-#define RIGHTBRACKET 290
-#define LEFTPARENTHESIS 291
-#define RIGHTPARENTHESIS 292
-#define COMMA 293
-#define SEMICOLON 294
-#define COLON 295
-#define DOT 296
-#define DOUBLEDOT 297
-#define DOUBLECOLON 298
-#define COMMENT 299
-#define UMINUS 300
+#define IDENTIFIER 285
+#define LEFTBRACE 286
+#define RIGHTBRACE 287
+#define LEFTBRACKET 288
+#define RIGHTBRACKET 289
+#define LEFTPARENTHESIS 290
+#define RIGHTPARENTHESIS 291
+#define COMMA 292
+#define SEMICOLON 293
+#define COLON 294
+#define DOT 295
+#define DOUBLEDOT 296
+#define DOUBLECOLON 297
+#define UMINUS 298
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 10 "Phase2/parser.y"
+#line 19 "parser.y"
 
     int intv;
     char* stringv;
     char charv;
     float floatv;
 
-#line 164 "Phase2/parser.h"
+#line 160 "parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -175,4 +171,4 @@ extern YYSTYPE yylval;
 int yyparse (void);
 
 
-#endif /* !YY_YY_PHASE2_PARSER_H_INCLUDED  */
+#endif /* !YY_YY_PARSER_H_INCLUDED  */
