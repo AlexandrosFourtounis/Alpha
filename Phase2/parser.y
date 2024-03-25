@@ -13,6 +13,7 @@
     extern FILE* yyin;
 
     SymTable_T symTable = NULL;
+    int anonymousCounter = 0;
 %}
 
 %union{
@@ -59,13 +60,13 @@
 
 %%
 
-program:            parsing             {}
+program:            parsing             
                     ;
-parsing:            stmt parsing        {}
+parsing:            stmt parsing        
                     | stmt
                     ;
 
-stmt:               expr SEMICOLON
+stmt:               expr SEMICOLON 
                     | ifstmt
                     | whilestmt
                     | forstmt
@@ -75,21 +76,23 @@ stmt:               expr SEMICOLON
                     | block
                     | funcdef
                     | SEMICOLON
+                    | error SEMICOLON   { yyerrok; }
+                    ;
 
-expr:                 expr '+' expr
-                    | expr '-' expr
-                    | expr '*' expr
-                    | expr '/' expr
-                    | expr '%' expr
-                    | expr GREATER expr
-                    | expr GREATER_EQUAL expr
-                    | expr LESS expr
-                    | expr LESS_EQUAL expr
-                    | expr EQUALS expr
-                    | expr NOT_EQUAL expr
-                    | expr KEYWORD_AND expr
-                    | expr KEYWORD_OR expr
-                    | assignexpr
+expr:                 expr '+' expr         
+                    | expr '-' expr         
+                    | expr '*' expr         
+                    | expr '/' expr         
+                    | expr '%' expr         
+                    | expr GREATER expr      
+                    | expr GREATER_EQUAL expr 
+                    | expr LESS expr          
+                    | expr LESS_EQUAL expr    
+                    | expr EQUALS expr        
+                    | expr NOT_EQUAL expr     
+                    | expr KEYWORD_AND expr     
+                    | expr KEYWORD_OR expr    
+                    | assignexpr              
                     | term
                     ;
 
@@ -157,21 +160,21 @@ indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE
 block:              LEFTBRACE  blockk  RIGHTBRACE
                     ;
 
-blockk:             blockk stmt
+blockk:              stmt blockk
                     | %empty            {}
                     ;
 
-funcdef:            KEYWORD_FUNCTION  IDENTIFIER  LEFTPARENTHESIS idlist RIGHTPARENTHESIS block     {  entry = insert($2,USERFUNC,0,yylineno);   }
-                    | KEYWORD_FUNCTION LEFTPARENTHESIS idlist RIGHTPARENTHESIS block
-
+funcdef:            KEYWORD_FUNCTION  IDENTIFIER {  entry = insert($2,USERFUNC,0,yylineno);   } LEFTPARENTHESIS idlist RIGHTPARENTHESIS block     
+                    | KEYWORD_FUNCTION  { char str[20]; sprintf(str, "_%d", anonymousCounter++); entry = insert(str, USERFUNC, 0, yylineno);} LEFTPARENTHESIS idlist RIGHTPARENTHESIS block          
+                    ;
 const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
 number:             INTEGER 
                     | REAL
                     ;
-idlist:             idlist  COMMA IDENTIFIER                                                        {  entry = insert($3,FORMAL,0,yylineno);   }
+idlist:             IDENTIFIER COMMA idlist                                                        {  entry = insert($1,FORMAL,0,yylineno);   }
                     | IDENTIFIER                                                                    {  entry = insert($1,FORMAL,0,yylineno);   }
-                    | %empty
+                    | %empty                                                                        {}
                     ;
 
 ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt 
