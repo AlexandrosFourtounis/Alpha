@@ -84,8 +84,9 @@
 
     SymTable_T symTable = NULL;
     int anonymousCounter = 0;
+    int scope = 0;
 
-#line 89 "parser.c"
+#line 90 "parser.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -584,16 +585,16 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    63,    63,    65,    66,    69,    70,    71,    72,    73,
-      74,    75,    76,    77,    78,    79,    82,    83,    84,    85,
-      86,    87,    88,    89,    90,    91,    92,    93,    94,    95,
-      96,   100,   101,   102,   103,   104,   105,   106,   107,   109,
-     111,   112,   113,   114,   115,   117,   118,   119,   120,   122,
-     123,   124,   125,   127,   128,   129,   131,   132,   134,   136,
-     138,   139,   142,   143,   147,   150,   151,   154,   155,   158,
-     160,   163,   164,   167,   167,   168,   168,   170,   170,   170,
-     170,   170,   172,   173,   175,   176,   177,   180,   181,   183,
-     185,   187,   188
+       0,    64,    64,    66,    67,    70,    71,    72,    73,    74,
+      75,    76,    77,    78,    79,    80,    83,    84,    85,    86,
+      87,    88,    89,    90,    91,    92,    93,    94,    95,    96,
+      97,   101,   102,   103,   104,   105,   106,   107,   108,   110,
+     112,   113,   114,   115,   116,   118,   119,   120,   121,   123,
+     124,   125,   126,   128,   129,   130,   132,   133,   135,   137,
+     139,   140,   143,   144,   148,   151,   152,   155,   156,   159,
+     161,   164,   165,   168,   168,   169,   169,   171,   171,   171,
+     171,   171,   173,   174,   176,   177,   178,   181,   182,   184,
+     186,   188,   189
 };
 #endif
 
@@ -1645,73 +1646,73 @@ yyreduce:
   switch (yyn)
     {
   case 15: /* stmt: error SEMICOLON  */
-#line 79 "parser.y"
+#line 80 "parser.y"
                                         { yyerrok; }
-#line 1651 "parser.c"
+#line 1652 "parser.c"
     break;
 
   case 45: /* lvalue: IDENTIFIER  */
-#line 117 "parser.y"
+#line 118 "parser.y"
                                                         {  entry = insert((yyvsp[0].stringv),GLOBAL,0,yylineno);   }
-#line 1657 "parser.c"
+#line 1658 "parser.c"
     break;
 
   case 46: /* lvalue: KEYWORD_LOCAL IDENTIFIER  */
-#line 118 "parser.y"
-                                                        {  entry = insert((yyvsp[0].stringv),LOCAL,0,yylineno);   }
-#line 1663 "parser.c"
+#line 119 "parser.y"
+                                                        {  entry = insert((yyvsp[0].stringv),LOCAL,++scope,yylineno);   }
+#line 1664 "parser.c"
     break;
 
   case 47: /* lvalue: DOUBLECOLON IDENTIFIER  */
-#line 119 "parser.y"
-                                                        {  entry = insert((yyvsp[0].stringv),GLOBAL,0,yylineno);   }
-#line 1669 "parser.c"
+#line 120 "parser.y"
+                                                        {  entry = NULL; entry = lookup_in_scope((yyvsp[0].stringv), 0); (entry) ? (entry = insert((yyvsp[0].stringv),GLOBAL,0,yylineno)) : yyerror("error");   }
+#line 1670 "parser.c"
     break;
 
   case 61: /* elist: %empty  */
-#line 139 "parser.y"
+#line 140 "parser.y"
                                         {}
-#line 1675 "parser.c"
+#line 1676 "parser.c"
     break;
 
   case 72: /* blockk: %empty  */
-#line 164 "parser.y"
+#line 165 "parser.y"
                                         {}
-#line 1681 "parser.c"
+#line 1682 "parser.c"
     break;
 
   case 73: /* $@1: %empty  */
-#line 167 "parser.y"
+#line 168 "parser.y"
                                                  {  entry = insert((yyvsp[0].stringv),USERFUNC,0,yylineno);   }
-#line 1687 "parser.c"
+#line 1688 "parser.c"
     break;
 
   case 75: /* $@2: %empty  */
-#line 168 "parser.y"
+#line 169 "parser.y"
                                         { char str[20]; sprintf(str, "_%d", anonymousCounter++); entry = insert(str, USERFUNC, 0, yylineno);}
-#line 1693 "parser.c"
+#line 1694 "parser.c"
     break;
 
   case 84: /* idlist: IDENTIFIER COMMA idlist  */
-#line 175 "parser.y"
+#line 176 "parser.y"
                                                                                                    {  entry = insert((yyvsp[-2].stringv),FORMAL,0,yylineno);   }
-#line 1699 "parser.c"
+#line 1700 "parser.c"
     break;
 
   case 85: /* idlist: IDENTIFIER  */
-#line 176 "parser.y"
+#line 177 "parser.y"
                                                                                                     {  entry = insert((yyvsp[0].stringv),FORMAL,0,yylineno);   }
-#line 1705 "parser.c"
+#line 1706 "parser.c"
     break;
 
   case 86: /* idlist: %empty  */
-#line 177 "parser.y"
+#line 178 "parser.y"
                                                                                                     {}
-#line 1711 "parser.c"
+#line 1712 "parser.c"
     break;
 
 
-#line 1715 "parser.c"
+#line 1716 "parser.c"
 
       default: break;
     }
@@ -1935,7 +1936,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 190 "parser.y"
+#line 191 "parser.y"
 
 int yyerror (char* yaccProvidedMessage) {
     fprintf(stderr, "%s: at line %d, before token: %s\n",yaccProvidedMessage,yylineno,yytext);

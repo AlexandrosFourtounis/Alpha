@@ -14,6 +14,7 @@
 
     SymTable_T symTable = NULL;
     int anonymousCounter = 0;
+    int scope = 0;
 %}
 
 %union{
@@ -115,8 +116,8 @@ primary:            lvalue
                     | const
 
 lvalue:             IDENTIFIER                          {  entry = insert($1,GLOBAL,0,yylineno);   }
-                    | KEYWORD_LOCAL IDENTIFIER          {  entry = insert($2,LOCAL,0,yylineno);   }
-                    | DOUBLECOLON IDENTIFIER            {  entry = insert($2,GLOBAL,0,yylineno);   }
+                    | KEYWORD_LOCAL IDENTIFIER          {  entry = insert($2,LOCAL,++scope,yylineno);   }
+                    | DOUBLECOLON IDENTIFIER            {  entry = NULL; entry = lookup_in_scope($2, 0); (entry) ? (entry = insert($2,GLOBAL,0,yylineno)) : yyerror("error");   }
                     | member
 
 member:             lvalue DOT IDENTIFIER               
