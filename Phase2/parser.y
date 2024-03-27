@@ -115,9 +115,26 @@ primary:            lvalue
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS
                     | const
 
-lvalue:             IDENTIFIER                          {  entry = insert($1,GLOBAL,0,yylineno);   }
-                    | KEYWORD_LOCAL IDENTIFIER          {  entry = insert($2,LOCAL,++scope,yylineno);   }
-                    | DOUBLECOLON IDENTIFIER            {  entry = NULL; entry = lookup_in_scope($2, 0); (entry) ? (entry = insert($2,GLOBAL,0,yylineno)) : yyerror("error");   }
+lvalue:             IDENTIFIER {
+                                    entry = lookup_in_scope($1, scope); 
+                                    if (entry != NULL) {yyerror("identifier error");} 
+                                    else {
+                                        if (scope == 0) {entry = insert($1, GLOBAL, 0, yylineno);} 
+                                        else {entry = insert($1, LOCAL, scope, yylineno);}
+                                    }
+                                }
+
+                    | KEYWORD_LOCAL IDENTIFIER {  
+                                                    entry = lookup_in_scope($2, scope); 
+                                                    if (entry != NULL) {yyerror("local idenifier error");} 
+                                                    else {entry = insert($2, LOCAL, ++scope, yylineno);}
+                                                }
+
+                    | DOUBLECOLON IDENTIFIER   {
+                                                    entry = lookup_in_scope($2, 0); 
+                                                    if (entry == NULL) {yyerror("global identifier error");} 
+                                                    else {entry = insert($2, GLOBAL, 0, yylineno);}    
+                                                }
                     | member
 
 member:             lvalue DOT IDENTIFIER               
@@ -165,8 +182,21 @@ blockk:              stmt blockk
                     | %empty            {}
                     ;
 
-funcdef:            KEYWORD_FUNCTION  IDENTIFIER {  entry = insert($2,USERFUNC,0,yylineno);   } LEFTPARENTHESIS idlist RIGHTPARENTHESIS block     
-                    | KEYWORD_FUNCTION  { char str[20]; sprintf(str, "_%d", anonymousCounter++); entry = insert(str, USERFUNC, 0, yylineno);} LEFTPARENTHESIS idlist RIGHTPARENTHESIS block          
+funcdef:            KEYWORD_FUNCTION  IDENTIFIER {  entry = insert($2,USERFUNC,0,yylineno);   } LEFTPARENTHESIS idlist RIGHTPARENTHESIS block {
+    
+                        entry = lookup_in_scope($2, scope); 
+                        if (entry != NULL) {yyerror("Function redefinition error");} else {
+                            entry = insert($2, USERFUNC, scope, yylineno);
+                            scope++;
+                        }
+    }     
+                    | KEYWORD_FUNCTION  { 
+                        char str[20]; 
+                        sprintf(str, "_%d", anonymousCounter++); 
+                        entry = insert(str, USERFUNC, 0, yylineno); 
+                        scope++
+                        } 
+                        LEFTPARENTHESIS idlist RIGHTPARENTHESIS block          
                     ;
 const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
