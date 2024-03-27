@@ -61,79 +61,104 @@
 
 %%
 
-program:            parsing             
+program:            parsing {printf("program -> parsing");}            
                     ;
-parsing:            stmt parsing        
-                    | stmt
+parsing:            stmt parsing {printf("parsing -> stmt parsing");}       
+                    | stmt {printf("parsing -> stmt");}
                     ;
 
-stmt:               expr SEMICOLON 
-                    | ifstmt
-                    | whilestmt
-                    | forstmt
-                    | returnstmt
-                    | KEYWORD_BREAK SEMICOLON
-                    | KEYWORD_CONTINUE SEMICOLON
-                    | block
-                    | funcdef
-                    | SEMICOLON
+stmt:               expr SEMICOLON {printf("stmt -> expr;");}
+                    | ifstmt {printf("stmt -> ifstmt");}
+                    | whilestmt {printf("stmt -> whilestmt");}
+                    | forstmt {printf("stmt -> forstmt");}
+                    | returnstmt {printf("stmt -? returnstmt");}
+                    | KEYWORD_BREAK SEMICOLON {printf("stmt -> break;");}
+                    | KEYWORD_CONTINUE SEMICOLON {printf("stmt -> coninue;");}
+                    | block {printf("stmt -> block");}
+                    | funcdef {printf("stmt -> funcdef");}
+                    | SEMICOLON {printf("stmt -> ;");}
                     | error SEMICOLON   { yyerrok; }
                     ;
 
-expr:                 expr '+' expr         
-                    | expr '-' expr         
-                    | expr '*' expr         
-                    | expr '/' expr         
-                    | expr '%' expr         
-                    | expr GREATER expr      
-                    | expr GREATER_EQUAL expr 
-                    | expr LESS expr          
-                    | expr LESS_EQUAL expr    
-                    | expr EQUALS expr        
-                    | expr NOT_EQUAL expr     
-                    | expr KEYWORD_AND expr     
-                    | expr KEYWORD_OR expr    
-                    | assignexpr              
-                    | term
+expr:                 expr '+' expr {printf("expr -> expr + expr");}        
+                    | expr '-' expr {printf("expr -> expr - expr");}        
+                    | expr '*' expr {printf("expr -> expr * expr");}        
+                    | expr '/' expr {printf("expr -> expr / expr");}        
+                    | expr '%' expr {printf("expr -> expr % expr");}        
+                    | expr GREATER expr {printf("expr -> expr > expr");}     
+                    | expr GREATER_EQUAL expr {printf("expr -> expr >= expr");}
+                    | expr LESS expr {printf("expr -> expr < expr");}         
+                    | expr LESS_EQUAL expr {printf("expr -> expr <= expr");}    
+                    | expr EQUALS expr {printf("expr -> expr == expr");}       
+                    | expr NOT_EQUAL expr {printf("expr -> expr != expr");}    
+                    | expr KEYWORD_AND expr {printf("expr -> expr && expr");}    
+                    | expr KEYWORD_OR expr {printf("expr -> expr || expr");}   
+                    | assignexpr {printf("expr -> assignexpr");}             
+                    | term {printf("expr -> term");}
                     ;
 
 
-term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
-                    | '-' expr %prec UMINUS
-                    | KEYWORD_NOT expr
-                    | INCREMENT lvalue
-                    | lvalue INCREMENT
-                    | DECREMENT lvalue
-                    | lvalue DECREMENT
-                    | primary
+term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS {printf("term -> (expr)");}
+                    | '-' expr %prec UMINUS {printf("term -> -expr");}
+                    | KEYWORD_NOT expr {printf("term -> !expr");}
+                    | INCREMENT lvalue {printf("term -> ++lvalue");}
+                    | lvalue INCREMENT {printf("term -> lvalue++");}
+                    | DECREMENT lvalue {printf("term -> --lvalue");}
+                    | lvalue DECREMENT {printf("term -> lvalue--");}
+                    | primary {printf("term -> primary");}
 
-assignexpr:         lvalue '=' expr
+assignexpr:         lvalue '=' expr {printf("assignexpr -> lvalue = expr");}
 
-primary:            lvalue
-                    | call
-                    | objectdef
-                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS
-                    | const
+primary:            lvalue {printf("primary -> lvalue");}
+                    | call {printf("primary -> call");}
+                    | objectdef {printf("primary -> objectdef");}
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  {printf("primary -> (funcdef)");}
+                    | const {printf("primary -> const");}
 
-lvalue:             IDENTIFIER {
-                                    entry = lookup_in_scope($1, scope); 
-                                    if (entry != NULL) {yyerror("identifier error");} 
-                                    else {
-                                        if (scope == 0) {entry = insert($1, GLOBAL, 0, yylineno);} 
-                                        else {entry = insert($1, LOCAL, scope, yylineno);}
+lvalue:             IDENTIFIER {    
+                                    //check every scope "inside out"
+                                    int flag = 0;
+                                    while(scope >= 0 && flag == 0){
+                                        entry = lookup($1, scope);
+                                        if(entry != NULL) flag = 1;
+                                        scope--;
+                                    }
+                                    //if we dont find the identifier in any scope we add it to the st
+                                    if(flag == 0){
+                                        if (scope == 0) {
+                                            entry = insert($1, GLOBAL, 0, yylineno);
+                                        } else {
+                                            entry = insert($1, LOCAL, scope, yylineno);
+                                        }
+                                    }
+                                    //access rules
+                                    else{
+                                        if (!entry->isActive) yyerror("identifier error", $1); //if hidden, error
+                                        else{
+                                            printf("need to implement")
+                                        }                                                  
                                     }
                                 }
 
                     | KEYWORD_LOCAL IDENTIFIER {  
-                                                    entry = lookup_in_scope($2, scope); 
-                                                    if (entry != NULL) {yyerror("local idenifier error");} 
-                                                    else {entry = insert($2, LOCAL, ++scope, yylineno);}
+                                                    entry = lookup($2, scope); 
+                                                    if (entry != NULL) {
+                                                        if (!entry->isActive) {
+                                                            yyerror("local identifier error", $2);
+                                                        }
+                                                        //check if name collides with library or user function name                                                       
+                                                        if(entry -> type == LIBFUNC) yyerror("library function name collision", $2);
+                                                        else if(entry -> type == USERFUNC) yyerror("user function name collision", $2);
+                                                        
+                                                    } else {                                                      
+                                                        entry = insert($2, LOCAL, ++scope, yylineno);
+                                                    }
                                                 }
 
                     | DOUBLECOLON IDENTIFIER   {
-                                                    entry = lookup_in_scope($2, 0); 
-                                                    if (entry == NULL) {yyerror("global identifier error");} 
-                                                    else {entry = insert($2, GLOBAL, 0, yylineno);}    
+                                                    entry = lookup($2, 0); 
+                                                    if (entry == NULL || !entry->isActive) ("global identifier not found", $2);
+                                                    //not inserting is st when :: 
                                                 }
                     | member
 
@@ -175,18 +200,25 @@ indexed:            indexedelem  COMMA indexedelem
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE
 
-block:              LEFTBRACE  blockk  RIGHTBRACE
+block:              LEFTBRACE  { scope++; } blockk  RIGHTBRACE { scope--; }
                     ;
 
 blockk:              stmt blockk
                     | %empty            {}
                     ;
 
-funcdef:            KEYWORD_FUNCTION  IDENTIFIER {  entry = insert($2,USERFUNC,0,yylineno);   } LEFTPARENTHESIS idlist RIGHTPARENTHESIS block {
+funcdef:            KEYWORD_FUNCTION  IDENTIFIER LEFTPARENTHESIS idlist RIGHTPARENTHESIS block {
     
-                        entry = lookup_in_scope($2, scope); 
-                        if (entry != NULL) {yyerror("Function redefinition error");} else {
+                        entry = lookup($2, scope); 
+                        if (entry != NULL){
+                            //check collision with library/user functions or variables
+                            if (entry->type == LIBFUNC) yyerror("library function collision", %2);
+                            else if (entry->type == USERFUNC) yyerror("user function collision", %2);
+                            else yyerror("variable collision", %2);
+                        } 
+                        else {
                             entry = insert($2, USERFUNC, scope, yylineno);
+                            //only increment scope if function is valid
                             scope++;
                         }
     }     
@@ -194,7 +226,7 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER {  entry = insert($2,USERFUNC,0
                         char str[20]; 
                         sprintf(str, "_%d", anonymousCounter++); 
                         entry = insert(str, USERFUNC, 0, yylineno); 
-                        scope++
+                        scope++;
                         } 
                         LEFTPARENTHESIS idlist RIGHTPARENTHESIS block          
                     ;
@@ -203,9 +235,17 @@ const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 number:             INTEGER 
                     | REAL
                     ;
-idlist:             IDENTIFIER COMMA idlist                                                        {  entry = insert($1,FORMAL,0,yylineno);   }
-                    | IDENTIFIER                                                                    {  entry = insert($1,FORMAL,0,yylineno);   }
-                    | %empty                                                                        {}
+idlist:             IDENTIFIER COMMA idlist  {  
+                                                entry = lookup($1, ++scope);//lookup in function scope
+                                                if(entry != NULL) yyerror("identifier error", $1);
+                                                else if (entry->type == LIBFUNC) yyerror("library function collision", %1);
+                                                else entry = insert($1,FORMAL,0,yylineno);   
+                                            }
+                    | IDENTIFIER             {  entry = lookup($1, ++scope);//lookup in function scope
+                                                if(entry != NULL) yyerror("identifier error", $1);
+                                                else if (entry->type == LIBFUNC) yyerror("library function collision", %1);
+                                                else entry = insert($1,FORMAL,0,yylineno);     }
+                    | %empty                 {}
                     ;
 
 ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt 
@@ -232,6 +272,7 @@ int main(int argc,char **argv){
     symTable = SymTable_new();
     initialize_scope_links();
     insert_libfuncs();
+    char *libfuncs[12] = {"print", "input", "objectmemberkeys", "objecttotalmembers", "objectcopy", "totalarguments", "argument", "typeof", "strtonum", "sqrt", "cos", "sin"};
     
     if(argc > 1){
         if(!(yyin = fopen(argv[1],"r"))){
