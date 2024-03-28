@@ -151,48 +151,48 @@ lvalue:             IDENTIFIER {
                                                 }
                     | member
 
-member:             lvalue DOT IDENTIFIER               
-                    | lvalue LEFTBRACKET expr RIGHTBRACKET
-                    | call DOT IDENTIFIER               
-                    | call LEFTBRACKET expr RIGHTBRACKET
+member:             lvalue DOT IDENTIFIER  {printf("member -> lvalue.IDENTIFIER");}             
+                    | lvalue LEFTBRACKET expr RIGHTBRACKET {printf("member -> lvalue[expr]");}
+                    | call DOT IDENTIFIER {printf("member -> call.IDENTIFIER");}              
+                    | call LEFTBRACKET expr RIGHTBRACKET {printf("member -> call[expr]");}
 
-call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS
-                    | lvalue callsuffix
-                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS
+call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> call(elist)");}
+                    | lvalue callsuffix {printf("call -> lvalue callsuffix");}
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
 
-callsuffix:         normcall
-                    | methodcall
+callsuffix:         normcall {printf("callsuffix -> normcall");}
+                    | methodcall {printf("callsuffix -> methodcall");}
 
-normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS
+normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("normcall -> (elist)");}
 
-methodcall:         DOUBLECOLON IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+methodcall:         DOUBLECOLON IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("methodcall -> ::IDENTIFIER(elist)");}
 
-elist:              exprlist
+elist:              exprlist {printf("elist -> exprlist");}
                     | %empty            {}
                     ;
 
-exprlist:           exprlist  COMMA expr
-                    | expr
+exprlist:           exprlist  COMMA expr {printf("exprlist -> exprlist,expr");}
+                    | expr {printf("exprlist -> expr");}
                     ;
              
 
-objectdef:          LEFTBRACKET  obj RIGHTBRACKET 
+objectdef:          LEFTBRACKET  obj RIGHTBRACKET  {printf("objectdef -> [obj]");}
                     ;
 
-obj:                elist
-                    | indexed
+obj:                elist {printf("obj -> elist");}
+                    | indexed {printf("obj -> indexed");}
                     ;
                     
-indexed:            indexedelem  COMMA indexedelem  
-                    | indexedelem
+indexed:            indexedelem  COMMA indexedelem  {printf("indexed -> indexedelem,indexedelem");}
+                    | indexedelem {printf("indexed -> indexedelem");}
                     ;
 
-indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE
+indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE {printf("indexedelem -> {expr:expr}");}
 
 block:              LEFTBRACE  { scope++; } blockk  RIGHTBRACE { scope--; }
-                    ;
+                    ; 
 
-blockk:              stmt blockk
+blockk:              stmt blockk {printf("blockk -> stmt blockk");}
                     | %empty            {}
                     ;
 
@@ -214,23 +214,23 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER {  entry = insert($2,USERFUNC,0
                     ;
 const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
-number:             INTEGER 
-                    | REAL
+number:             INTEGER {printf("number -> INTEGER");}
+                    | REAL {printf("number -> REAL");}
                     ;
 idlist:             IDENTIFIER COMMA idlist                                                        {  entry = insert($1,FORMAL,0,yylineno);   }
                     | IDENTIFIER                                                                    {  entry = insert($1,FORMAL,0,yylineno);   }
                     | %empty                                                                        {}
                     ;
 
-ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt 
-                    | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
+ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt  {printf("ifstmt -> if(expr)stmt else stmt");}
+                    | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt {printf("ifstmt -> if(expr)stmt");}
 
-whilestmt:          KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
+whilestmt:          KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt {printf("whilestmt -> while(expr)stmt");}
 
-forstmt:            KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt
+forstmt:            KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt {printf("forstmt -> for(elist;expr;elist)stmt");}
 
-returnstmt:         KEYWORD_RETURN  expr  SEMICOLON
-                    | KEYWORD_RETURN SEMICOLON
+returnstmt:         KEYWORD_RETURN  expr  SEMICOLON {printf("returnstmt -> return expr;");}
+                    | KEYWORD_RETURN SEMICOLON {printf("returnstmt -> return;");}
 
 %%
 int yyerror (char* yaccProvidedMessage) {
