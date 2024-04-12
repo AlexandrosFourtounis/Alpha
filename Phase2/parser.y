@@ -107,6 +107,8 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
                     | primary 
 
 assignexpr:         lvalue '=' expr { 
+
+                                        entry = lookup($<stringv>1, scope);
                                         if(entry == NULL){
                                             yyerror("Error: Invalid assignment");         
                                         }
@@ -151,11 +153,12 @@ lvalue:             IDENTIFIER {
 
                     | KEYWORD_LOCAL IDENTIFIER {  
                                                 entry = lookup_in_scope($2, scope); 
+                                                if (entry != NULL ) {
+                                                        if(entry->type == LIBFUNC && scope != 0)
+                                                        yyerror("Cannot shadow a library function");  
+                                                    } 
                                                 if (entry == NULL) {
-                                                    entry = lookup($2, scope);
-                                                    if (entry != NULL && entry->type == LIBFUNC && scope != 0) {
-                                                        yyerror("Cannot shadow a library function");
-                                                    } else {
+                                                    else {
                                                         if (scope == 0) {
                                                             entry = insert($2, GLOBAL, scope, yylineno);
                                                         } else {
@@ -169,7 +172,7 @@ lvalue:             IDENTIFIER {
                                                     entry = lookup_in_scope($2, 0); 
                                                      
                                                         char error_message[256];
-                                                        sprintf(error_message, "global identifier not found%s", $2);
+                                                        sprintf(error_message, "global identifier not found %s", $2);
                                                         if (entry == NULL || !entry->isActive) yyerror(error_message);
                                                 }
                     | member
