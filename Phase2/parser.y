@@ -107,16 +107,7 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
                     | primary 
 
 assignexpr:         lvalue '=' expr { 
-
-                                        entry = lookup($<stringv>1, scope);
-                                        if(entry == NULL){
-                                            yyerror("Error: Invalid assignment");         
-                                        }
-                                        else if(entry->type == USERFUNC || entry->type == LIBFUNC){
-                                            yyerror("Error: function assignment");
-                                        }
-                    
-                                    }
+}
 
 primary:            lvalue 
                     | call 
@@ -124,6 +115,8 @@ primary:            lvalue
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  
                     | const
 lvalue:             IDENTIFIER {    
+                                    
+                                    
                                    
                                     int flag = 0;
                                     int tmp = scope;
@@ -132,9 +125,12 @@ lvalue:             IDENTIFIER {
                                         if(entry != NULL) flag = 1;
                                         tmp--;
                                     } 
+                                    entry = lookup_in_scope($1, scope);
                                     
-                                     entry = lookup($1, scope);
+                                     
+                                     
                                     //if we dont find the identifier in any scope we add it to the st
+                                    
                                     if(flag == 0){
                                         if (scope == 0) {
                                             entry = insert($1, GLOBAL, 0, yylineno);
@@ -142,28 +138,41 @@ lvalue:             IDENTIFIER {
                                             entry = insert($1, LOCAL, scope, yylineno);
                                         }
                                     }
-                                    //access rules
-                                    else{
-                                        if (!entry->isActive) yyerror("identifier error"); //if hidden, error
-                                        else{
-                                            //need to implement access rules
-                                        }                                                  
+                                    if(entry!= NULL){
+                                        if(entry->type == LIBFUNC){
+                                            yyerror("func collision at line \n");
+                                        } else if(entry->type == USERFUNC){
+                                          
+                                          goto z;
+                                                                               printf("geiaa");
+
+                                        }
+                                                                                 
+                                    }else{
+                                        printf("Cannot access %s at line %d\n",$<stringv>1,yylineno);
                                     }
+                                    z:
+                                    //access rules
+                                     
                                 }
 
                     | KEYWORD_LOCAL IDENTIFIER {  
+                                                
                                                 entry = lookup_in_scope($2, scope); 
-                                                if (entry == NULL) {
-                                                    entry = lookup($2, scope);
-                                                    if (entry != NULL && entry->type == LIBFUNC && scope != 0) {
+                                                if (entry != NULL){
+                                                    if (entry->type == LIBFUNC || entry->type == USERFUNC && scope != 0) {
                                                         yyerror("Cannot shadow a library function");
-                                                    } else {
-                                                        if (scope == 0) {
+                                                    }
+                                                }                                               
+                                                if (entry == NULL) {
+                                                    
+                                                                                                                                                       
+                                                    if (scope == 0) {
                                                             entry = insert($2, GLOBAL, scope, yylineno);
                                                         } else {
                                                             entry = insert($2, LOCAL, scope, yylineno);
                                                         }
-                                                    }
+                                                    
                                                 }
                                             }
 
@@ -238,16 +247,14 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER {
                                 yyerror("library function collision");
                             } else if (entry->type == USERFUNC) {
                                 yyerror("user function collision");
-                            } else {
-                                yyerror("variable collision");
-                            }
+                            } 
                         }
                         else {
                             entry = insert($2, USERFUNC, scope, yylineno);
-                            scope++; // increment scope here
+                            scope++;// increment scope here
                         }
                     } 
-                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; } block  
+                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; }  block  
                     | KEYWORD_FUNCTION  { 
                         char str[20]; 
                         sprintf(str, "_%d", anonymousCounter++); 
@@ -262,8 +269,8 @@ const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 number:             INTEGER 
                     | REAL 
                     ;
-idlist:             IDENTIFIER COMMA idlist  {  
-                                                entry = lookup($1, scope); //lookup in function scope
+idlist:             {scope++;} IDENTIFIER COMMA idlist  {  
+                                                entry = lookup($<stringv>1, scope); //lookup in function scope
                                                 if(entry != NULL) {
                                                     if (entry->type == LIBFUNC) {
                                                         yyerror("library function collision");
@@ -271,7 +278,7 @@ idlist:             IDENTIFIER COMMA idlist  {
                                                         yyerror("identifier error");
                                                     }
                                                 } else {
-                                                    entry = insert($1,FORMAL,scope,yylineno);   
+                                                    entry = insert($<stringv>1,FORMAL,scope,yylineno);   
                                                 }
                                             }
                     | IDENTIFIER             {  
