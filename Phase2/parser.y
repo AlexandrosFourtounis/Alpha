@@ -197,7 +197,7 @@ callsuffix:         normcall
 
 normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("normcall -> (elist)");}
 
-methodcall:         DOUBLECOLON IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS   {printf("methodcall -> ::id(elist)");}
+methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS 
 
 elist:              exprlist {printf("elist -> exprlist");}
                     | %empty            {}
@@ -208,14 +208,15 @@ exprlist:           exprlist  COMMA expr {printf("exprlist -> exprlist,expr");}
                     ;
              
 
-objectdef:          LEFTBRACKET  obj RIGHTBRACKET {printf("objectdef -> [obj]");}
+objectdef:          LEFTBRACKET  obj RIGHTBRACKET 
+                    | LEFTBRACKET RIGHTBRACKET
                     ;
 
 obj:                elist {printf("obj -> elist");}
                     | indexed {printf("obj -> indexed");}
                     ;
                     
-indexed:            indexedelem  COMMA indexedelem  {printf("indexed -> indexedelem,indexedelem");}
+indexed:            indexedelem  COMMA indexed  
                     | indexedelem
                     ;
 
