@@ -117,7 +117,15 @@ primary:            lvalue
 
 lvalue:             IDENTIFIER                          {  entry = insert($1,GLOBAL,0,yylineno);   }
                     | KEYWORD_LOCAL IDENTIFIER          {  entry = insert($2,LOCAL,++scope,yylineno);   }
-                    | DOUBLECOLON IDENTIFIER            {  entry = NULL; entry = lookup_in_scope($2, 0); (entry) ? (entry = insert($2,GLOBAL,0,yylineno)) : yyerror("error");   }
+                    | DOUBLECOLON IDENTIFIER            {  
+                                                            entry = NULL; 
+                                                            entry = lookup_in_scope($2, 0); 
+                                                            if (entry) {
+                                                                entry = insert($2,GLOBAL,0,yylineno);
+                                                            } else {
+                                                                yyerror("error");
+                                                            }
+                                                        }
                     | member
 
 member:             lvalue DOT IDENTIFIER               
@@ -136,25 +144,20 @@ normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
 methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS 
 
-elist:              exprlist
-                    | %empty            {}
-                    ;
-
-exprlist:           exprlist  COMMA expr
-                    | expr
+elist:              expr
+                    | expr COMMA elist
+                    | %empty {}
                     ;
              
 
-objectdef:          LEFTBRACKET  obj RIGHTBRACKET 
+objectdef:          LEFTBRACKET  elist RIGHTBRACKET
+                    | LEFTBRACKET indexed RIGHTBRACKET
                     | LEFTBRACKET RIGHTBRACKET
                     ;
 
-obj:                elist
-                    | indexed
-                    ;
                     
-indexed:            indexedelem  COMMA indexed  
-                    | indexedelem
+indexed:            indexedelem 
+                    | indexedelem COMMA indexed
                     ;
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE
