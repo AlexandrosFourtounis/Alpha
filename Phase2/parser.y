@@ -153,12 +153,11 @@ lvalue:             IDENTIFIER {
 
                     | KEYWORD_LOCAL IDENTIFIER {  
                                                 entry = lookup_in_scope($2, scope); 
-                                                if (entry != NULL ) {
-                                                        if(entry->type == LIBFUNC && scope != 0)
-                                                        yyerror("Cannot shadow a library function");  
-                                                    } 
                                                 if (entry == NULL) {
-                                                    else {
+                                                    entry = lookup($2, scope);
+                                                    if (entry != NULL && entry->type == LIBFUNC && scope != 0) {
+                                                        yyerror("Cannot shadow a library function");
+                                                    } else {
                                                         if (scope == 0) {
                                                             entry = insert($2, GLOBAL, scope, yylineno);
                                                         } else {
