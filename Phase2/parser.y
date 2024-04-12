@@ -125,7 +125,10 @@ lvalue:             IDENTIFIER {
                                         if(entry != NULL) flag = 1;
                                         tmp--;
                                     } 
-                                    entry = lookup_in_scope($1, scope);
+                                    printf("Checking entry for %s\n", $<stringv>1);
+                                    entry = lookup_in_scope($<stringv>1, scope);
+                                    printf("Entry: %p\n", (void*)entry);
+
                                     
                                      
                                      
