@@ -47,7 +47,7 @@ SymbolTableEntry *insert(const char *name, SymbolType type, unsigned int scope, 
 SymbolTableEntry *lookup(const char *name, int scope) {
     assert(name);
 
-    for (unsigned int curr_scope = 0; curr_scope <= 5; curr_scope++) {
+    for (unsigned int curr_scope = 0; curr_scope <= 50; curr_scope++) {
         SymbolTableEntry *entry = lookup_in_scope(name, curr_scope);
         if (entry != NULL) {
             return entry;
