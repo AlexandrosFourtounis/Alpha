@@ -195,7 +195,7 @@ callsuffix:         normcall
 
 normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
-methodcall:         DOUBLECOLON IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS 
 
 elist:              exprlist
                     | %empty            {}
@@ -207,13 +207,14 @@ exprlist:           exprlist  COMMA expr
              
 
 objectdef:          LEFTBRACKET  obj RIGHTBRACKET 
+                    | LEFTBRACKET RIGHTBRACKET
                     ;
 
 obj:                elist
                     | indexed
                     ;
                     
-indexed:            indexedelem  COMMA indexedelem  
+indexed:            indexedelem  COMMA indexed  
                     | indexedelem
                     ;
 
