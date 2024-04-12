@@ -72,8 +72,8 @@ stmt:               expr SEMICOLON
                     | whilestmt
                     | forstmt 
                     | returnstmt 
-                    | KEYWORD_BREAK SEMICOLON 
-                    | KEYWORD_CONTINUE SEMICOLON 
+                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");}
+                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");}
                     | block 
                     | funcdef 
                     | SEMICOLON 
@@ -125,12 +125,11 @@ lvalue:             IDENTIFIER {
                                         if(entry != NULL) flag = 1;
                                         tmp--;
                                     } 
-                                    printf("Checking entry for %s\n", $<stringv>1);
+                                    /*
+                                    printf("Checking entry for %s\n  Scope: %d\n", $<stringv>1,scope);
+                                    printf("Entry: %p", (void*)entry);
+                                    */
                                     entry = lookup_in_scope($<stringv>1, scope);
-                                    printf("Entry: %p\n", (void*)entry);
-
-                                    
-                                     
                                      
                                     //if we dont find the identifier in any scope we add it to the st
                                     
@@ -142,21 +141,20 @@ lvalue:             IDENTIFIER {
                                         }
                                     }
                                     if(entry!= NULL){
+                                        entry = lookup($<stringv>1,scope);
+                                        if(entry == NULL){
+                                        }else if(entry->type == USERFUNC){
+                                            break;
+                                        }
                                         if(entry->type == LIBFUNC){
                                             yyerror("func collision at line \n");
-                                        } else if(entry->type == USERFUNC){
-                                          
-                                          goto z;
-                                                                               printf("geiaa");
-
                                         }
-                                                                                 
+                                        else if(entry->type == USERFUNC) yyerror("program function collision \n");
+                                                                           
                                     }else{
                                         printf("Cannot access %s at line %d\n",$<stringv>1,yylineno);
                                     }
-                                    z:
-                                    //access rules
-                                     
+                                   
                                 }
 
                     | KEYWORD_LOCAL IDENTIFIER {  
@@ -242,7 +240,7 @@ blockk:              stmt blockk
                     ;
 
 funcdef:            KEYWORD_FUNCTION  IDENTIFIER { 
-                        entry = lookup($2, scope); 
+                        entry = lookup_in_scope($2, scope); 
                         //libfuncs
                         if (entry != NULL) {
                             //check collision with library/user functions or variables
@@ -306,8 +304,8 @@ whilestmt:          KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
 
 forstmt:            KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt 
 
-returnstmt:         KEYWORD_RETURN  expr  SEMICOLON 
-                    | KEYWORD_RETURN SEMICOLON 
+returnstmt:         KEYWORD_RETURN {if(scope == 0) yyerror("Use of 'return' while not in a loop\n");} expr  SEMICOLON 
+                    | KEYWORD_RETURN {if(scope == 0) yyerror("Use of 'return' while not in a loop\n");} SEMICOLON 
 
 %%
 int yyerror (char* yaccProvidedMessage) {
