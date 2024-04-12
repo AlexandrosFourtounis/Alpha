@@ -61,51 +61,50 @@
 
 %%
 
-program:            parsing {printf("program -> parsing");}            
+program:            parsing      
                     ;
-parsing:            stmt parsing {printf("parsing -> stmt parsing");}       
-                    | stmt {printf("parsing -> stmt");}
+parsing:            stmt parsing 
+                    | stmt 
                     ;
 
-stmt:               expr SEMICOLON {printf("stmt -> expr;");}
-                    | ifstmt {printf("stmt -> ifstmt");}
-                    | whilestmt {printf("stmt -> whilestmt");}
-                    | forstmt {printf("stmt -> forstmt");}
-                    | returnstmt {printf("stmt -? returnstmt");}
-                    | KEYWORD_BREAK SEMICOLON {printf("stmt -> break;");}
-                    | KEYWORD_CONTINUE SEMICOLON {printf("stmt -> coninue;");}
-                    | block {printf("stmt -> block");}
-                    | funcdef {printf("stmt -> funcdef");}
-                    | SEMICOLON {printf("stmt -> ;");}
+stmt:               expr SEMICOLON 
+                    | ifstmt 
+                    | whilestmt
+                    | forstmt 
+                    | returnstmt 
+                    | KEYWORD_BREAK SEMICOLON 
+                    | KEYWORD_CONTINUE SEMICOLON 
+                    | block 
+                    | funcdef 
+                    | SEMICOLON 
                     | error SEMICOLON   { yyerrok; }
                     ;
 
-expr:                 expr '+' expr {printf("expr -> expr + expr");}        
-                    | expr '-' expr {printf("expr -> expr - expr");}        
-                    | expr '*' expr {printf("expr -> expr * expr");}        
-                    | expr '/' expr {printf("expr -> expr / expr");}        
-                    | expr '%' expr {printf("expr -> expr % expr");}        
-                    | expr GREATER expr {printf("expr -> expr > expr");}     
-                    | expr GREATER_EQUAL expr {printf("expr -> expr >= expr");}
-                    | expr LESS expr {printf("expr -> expr < expr");}         
-                    | expr LESS_EQUAL expr {printf("expr -> expr <= expr");}    
-                    | expr EQUALS expr {printf("expr -> expr == expr");}       
-                    | expr NOT_EQUAL expr {printf("expr -> expr != expr");}    
-                    | expr KEYWORD_AND expr {printf("expr -> expr && expr");}    
-                    | expr KEYWORD_OR expr {printf("expr -> expr || expr");}   
-                    | assignexpr {printf("expr -> assignexpr");}             
-                    | term {printf("expr -> term");}
+expr:                 expr '+' expr           
+                    | expr '*' expr       
+                    | expr '/' expr 
+                    | expr '%' expr     
+                    | expr GREATER expr   
+                    | expr GREATER_EQUAL expr 
+                    | expr LESS expr
+                    | expr LESS_EQUAL expr   
+                    | expr EQUALS expr        
+                    | expr NOT_EQUAL expr 
+                    | expr KEYWORD_AND expr 
+                    | expr KEYWORD_OR expr   
+                    | assignexpr            
+                    | term 
                     ;
 
 
-term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS {printf("term -> (expr)");}
-                    | '-' expr %prec UMINUS {printf("term -> -expr");}
-                    | KEYWORD_NOT expr {printf("term -> !expr");}
-                    | INCREMENT lvalue {printf("term -> ++lvalue");}
-                    | lvalue INCREMENT {printf("term -> lvalue++");}
-                    | DECREMENT lvalue {printf("term -> --lvalue");}
-                    | lvalue DECREMENT {printf("term -> lvalue--");}
-                    | primary {printf("term -> primary");}
+term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
+                    | '-' expr %prec UMINUS 
+                    | KEYWORD_NOT expr 
+                    | INCREMENT lvalue 
+                    | lvalue INCREMENT 
+                    | DECREMENT lvalue 
+                    | lvalue DECREMENT 
+                    | primary 
 
 assignexpr:         lvalue '=' expr { 
                                         if(entry == NULL){
@@ -114,15 +113,14 @@ assignexpr:         lvalue '=' expr {
                                         else if(entry->type == USERFUNC || entry->type == LIBFUNC){
                                             yyerror("Error: function assignment");
                                         }
-                                        printf("assignexpr -> lvalue = expr");
+                    
                                     }
 
-primary:            lvalue {printf("primary -> lvalue");}
-                    | call {printf("primary -> call");}
-                    | objectdef {printf("primary -> objectdef");}
-                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  {printf("primary -> (funcdef)");}
-                    | const {printf("primary -> const");}
-
+primary:            lvalue 
+                    | call 
+                    | objectdef 
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  
+                    | const
 lvalue:             IDENTIFIER {    
                                    
                                     int flag = 0;
@@ -188,23 +186,23 @@ member:             lvalue DOT IDENTIFIER   {
                     | call DOT IDENTIFIER               
                     | call LEFTBRACKET expr RIGHTBRACKET
 
-call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> call(elist)");}
+call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS
                     | lvalue callsuffix
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
 
 callsuffix:         normcall 
                     | methodcall
 
-normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("normcall -> (elist)");}
+normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS 
 
 methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS 
 
-elist:              exprlist {printf("elist -> exprlist");}
+elist:              exprlist 
                     | %empty            {}
                     ;
 
-exprlist:           exprlist  COMMA expr {printf("exprlist -> exprlist,expr");}
-                    | expr {printf("exprlist -> expr");}
+exprlist:           exprlist  COMMA expr 
+                    | expr 
                     ;
              
 
@@ -212,15 +210,15 @@ objectdef:          LEFTBRACKET  obj RIGHTBRACKET
                     | LEFTBRACKET RIGHTBRACKET
                     ;
 
-obj:                elist {printf("obj -> elist");}
-                    | indexed {printf("obj -> indexed");}
+obj:                elist 
+                    | indexed 
                     ;
                     
 indexed:            indexedelem  COMMA indexed  
                     | indexedelem
                     ;
 
-indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE {printf("indexedelem -> {expr:expr}");}
+indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
 
 block:              LEFTBRACE  { scope++; } blockk  RIGHTBRACE { scope--; }
                     ;
@@ -259,8 +257,8 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER {
 
 const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
-number:             INTEGER {printf("number -> INTEGER");}
-                    | REAL {printf("number -> REAL");}
+number:             INTEGER 
+                    | REAL 
                     ;
 idlist:             IDENTIFIER COMMA idlist  {  
                                                 entry = lookup($1, scope); //lookup in function scope
@@ -289,15 +287,15 @@ idlist:             IDENTIFIER COMMA idlist  {
                     | %empty                 {}
                     ;
 
-ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt {printf("ifstmt -> if(expr)stmt else stmt");}
-                    | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt {printf("ifstmt -> if(expr)stmt");}
+ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt 
+                    | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt 
 
-whilestmt:          KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt {printf("whilestmt -> while(expr)stmt");}
+whilestmt:          KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt 
 
-forstmt:            KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt {printf("forstmt -> for(elist;expr;elist)stmt");}
+forstmt:            KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt 
 
-returnstmt:         KEYWORD_RETURN  expr  SEMICOLON {printf("returnstmt -> return expr;");}
-                    | KEYWORD_RETURN SEMICOLON {printf("returnstmt -> return;");}
+returnstmt:         KEYWORD_RETURN  expr  SEMICOLON 
+                    | KEYWORD_RETURN SEMICOLON 
 
 %%
 int yyerror (char* yaccProvidedMessage) {
