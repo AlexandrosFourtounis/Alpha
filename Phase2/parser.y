@@ -179,7 +179,7 @@ lvalue:             IDENTIFIER {
                                     }else{
                                         printf("Cannot access %s at line %d\n",$<stringv>1,yylineno);
                                     }
-                                    call_end:
+                                    call_end:;
                                    
                                 }
 
@@ -234,12 +234,12 @@ lvalue:             IDENTIFIER {
 
 member:             lvalue DOT IDENTIFIER   { 
                                             if (entry == NULL || !entry->isActive) yyerror("member error" );
-                                            if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue.id");
+                                            else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue.id");
 
                                             }            
                     | lvalue LEFTBRACKET expr RIGHTBRACKET { 
                                             if (entry == NULL || !entry->isActive) yyerror("member error");
-                                            if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue[expr]");
+                                            else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue[expr]");
                                             }
                     | call DOT IDENTIFIER               
                     | call LEFTBRACKET expr RIGHTBRACKET
@@ -283,8 +283,10 @@ blockk:              stmt blockk
                     ;
 
 funcdef:            KEYWORD_FUNCTION  IDENTIFIER { 
+                        if(scope <0  ) scope = 0;
                         entry = lookup_in_scope($2, scope); 
-                        //libfuncs
+                     
+                       //libfuncs
                         if (entry != NULL) {
                             //check collision with library/user functions or variables
                             if (entry->type == LIBFUNC) {
@@ -324,6 +326,8 @@ idlist:              IDENTIFIER ids  {
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
                                             yyerror("library function collision");
+                                        }else if(strcmp($<stringv>1, entry->value.varVal->name) == 0) {
+                                            yyerror("formal collision");
                                         }
                                     } else {
                                         entry = insert($<stringv>1,FORMAL,scope,yylineno);     
