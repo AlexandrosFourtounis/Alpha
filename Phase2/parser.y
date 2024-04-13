@@ -293,31 +293,32 @@ const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 number:             INTEGER 
                     | REAL 
                     ;
-idlist:             IDENTIFIER COMMA idlist  {  ++scope;
-                                                entry = lookup($<stringv>1, scope); //lookup in function scope
-                                                if(entry != NULL) {
-                                                    if (entry->type == LIBFUNC) {
-                                                        yyerror("library function collision");
-                                                    } else {
-                                                        yyerror("identifier error");
-                                                    }
-                                                } else {
-                                                    entry = insert($<stringv>1,FORMAL,scope,yylineno);   
-                                                }
-                                            }
-                    | IDENTIFIER             {  
-                                    ++scope;
-                                    entry = lookup($1, scope); //lookup in function scope
+
+
+idlist:              IDENTIFIER ids  {  
+                                    
+                                    entry = lookup($<stringv>1, scope); //lookup in function scope
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
                                             yyerror("library function collision");
-                                        } else {
-                                            yyerror("identifier error");
                                         }
                                     } else {
-                                        entry = insert($1,FORMAL,scope,yylineno);     
+                                        entry = insert($<stringv>1,FORMAL,scope,yylineno);     
                                     }
                                 }
+                    | %empty                 {}
+                    ;
+
+ids:                COMMA IDENTIFIER  {  
+                                    entry = lookup($<stringv>2, scope); //lookup in function scope
+                                    if(entry != NULL) {
+                                        if (entry->type == LIBFUNC) {
+                                            yyerror("library function collision");
+                                        }
+                                    } else {
+                                        entry = insert($<stringv>2,FORMAL,scope,yylineno);     
+                                    }
+                                } ids
                     | %empty                 {}
                     ;
 
