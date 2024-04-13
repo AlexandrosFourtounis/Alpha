@@ -121,7 +121,7 @@ lvalue:             IDENTIFIER {
                                     int flag = 0;
                                     int tmp = scope;
                                     while(tmp >= 0 && flag == 0){
-                                        entry = lookup($1, tmp);
+                                        entry = lookup_in_scope($1, tmp);
                                         if(entry != NULL) flag = 1;
                                         tmp--;
                                     } 
