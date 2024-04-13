@@ -1,45 +1,5 @@
-"geia sas  kalwsh\nrthate sthn 1h \tfash tou \v project twn compilers"
+/*AAA
 
-"undefined \n character: \f"
 
-/* csd4845 
-csd5032 
-csd5020*/
-
-//Dokimastiko file
-
-A = 5;
-
-if(A == 5){
-   printf("Savvidis \t hi");
-}
-else printf("Katevainhs");
-
-int main() {
-    float pi = 3.14159;
-    double euler = 2.71828;
-    
-    if (pi > euler) {
-        printf("Pi is greater than Euler.\n");
-    } else {
-        printf("Euler is greater than Pi.\n");
-    }
-
-    for (int i = 0; i < 5; ++i) {
-        switch (i) {
-            case 0:
-                printf("Zero\n");
-                break;
-            case 1:
-                printf("One\n");
-                break;
-            default:
-                printf("Other\n");
-        }
-    }
-
-    return 0;
-} 
-
-#what_is_this
-±what_is_that
+AAA*/
+   

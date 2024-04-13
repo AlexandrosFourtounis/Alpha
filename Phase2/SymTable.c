@@ -47,7 +47,7 @@ SymbolTableEntry *insert(const char *name, SymbolType type, unsigned int scope, 
 SymbolTableEntry *lookup(const char *name, int scope) {
     assert(name);
 
-    for (unsigned int curr_scope = 0; curr_scope <= 5; curr_scope++) {
+    for (unsigned int curr_scope = 0; curr_scope <= 50; curr_scope++) {
         SymbolTableEntry *entry = lookup_in_scope(name, curr_scope);
         if (entry != NULL) {
             return entry;
@@ -57,6 +57,7 @@ SymbolTableEntry *lookup(const char *name, int scope) {
 }
 
 SymbolTableEntry *lookup_in_scope(const char *name, int scope) {
+    if(scope < 0 ) printf("negative scope error at SymbolTable.c line 60\n");
     SymbolNode *current = scope_links[scope];
     while (current != NULL) {
         if (current->entry->isActive) {
