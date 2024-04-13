@@ -100,13 +100,16 @@ expr:                 expr '+' expr
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
                     | '-' expr %prec UMINUS 
                     | KEYWORD_NOT expr 
-                    | INCREMENT lvalue 
-                    | lvalue INCREMENT 
-                    | DECREMENT lvalue 
-                    | lvalue DECREMENT 
+                    | INCREMENT lvalue {entry=lookup($<stringv>1, scope); if(!entry)return; if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
+                    | lvalue INCREMENT {entry=lookup($<stringv>1, scope); if(!entry)return; if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
+                    | DECREMENT lvalue {entry=lookup($<stringv>1, scope); if(!entry)return;if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
+                    | lvalue DECREMENT  {entry=lookup($<stringv>1, scope); if(!entry)return;if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
                     | primary 
 
-assignexpr:         lvalue '=' expr { 
+assignexpr:         lvalue '=' expr {
+    printf("Entry type: %d\n", entry->type);
+    if(entry == NULL ) return;
+    else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
 }
 
 primary:            lvalue 
@@ -158,24 +161,44 @@ lvalue:             IDENTIFIER {
                                 }
 
                     | KEYWORD_LOCAL IDENTIFIER {  
-                                                
-                                                entry = lookup_in_scope($2, scope); 
-                                                if (entry != NULL){
-                                                    if (entry->type == LIBFUNC || entry->type == USERFUNC && scope != 0) {
-                                                        yyerror("Cannot shadow a library function");
-                                                    }
-                                                }                                               
-                                                if (entry == NULL) {
-                                                    
-                                                                                                                                                       
-                                                    if (scope == 0) {
-                                                            entry = insert($2, GLOBAL, scope, yylineno);
-                                                        } else {
-                                                            entry = insert($2, LOCAL, scope, yylineno);
+                                                int flag = 0;
+                                                if(1){
+                                                    entry = lookup($2, scope);
+
+                                                    if(entry != NULL){
+                                                        if(entry->type == LIBFUNC){
+                                                            yyerror("Cannot shadow a library function");
+                                    
                                                         }
+                                                        else if(scope == 0){
+                                                            yyerror("Cannot shadow a global variable");
+                                                        }
+                                                        else flag =1;
+                                                        goto end;
+                                                    }
+                                                    else {
+                                                        if(scope==0) yyerror("Cannot shadow a global variable");
+                                                        else flag = 1;
+                                                        goto end;
+
+                                                    }
+                                                }
+                                                
+                                                    
+                                                       end:
+                                                       if(flag == 1) {
+                                                            entry = lookup_in_scope($2, scope);
+                                                            if(entry == NULL) {
+                                                                entry = insert($2, LOCAL, scope, yylineno);
+                                                            }
+                                                            else {
+                                                                yyerror("Cannot shadow a local variable");
+                                                            }
+                                                       }                                                                                    
+                                                        
                                                     
                                                 }
-                                            }
+                                            
 
                     | DOUBLECOLON IDENTIFIER   {
                                                     entry = lookup_in_scope($2, 0); 
@@ -270,7 +293,7 @@ const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 number:             INTEGER 
                     | REAL 
                     ;
-idlist:             {scope++;} IDENTIFIER COMMA idlist  {  
+idlist:             IDENTIFIER COMMA idlist  {  ++scope;
                                                 entry = lookup($<stringv>1, scope); //lookup in function scope
                                                 if(entry != NULL) {
                                                     if (entry->type == LIBFUNC) {
@@ -283,6 +306,7 @@ idlist:             {scope++;} IDENTIFIER COMMA idlist  {
                                                 }
                                             }
                     | IDENTIFIER             {  
+                                    ++scope;
                                     entry = lookup($1, scope); //lookup in function scope
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
