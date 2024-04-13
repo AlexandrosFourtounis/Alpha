@@ -255,14 +255,14 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER {
                             scope++;// increment scope here
                         }
                     } 
-                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; }  block  
+                    LEFTPARENTHESIS {scope++;} idlist RIGHTPARENTHESIS { scope--; }  block  
                     | KEYWORD_FUNCTION  { 
                         char str[20]; 
                         sprintf(str, "_%d", anonymousCounter++); 
                         entry = insert(str, USERFUNC, scope, yylineno); 
                         scope++; // increment scope here
                     } 
-                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; } block
+                    LEFTPARENTHESIS {scope++;} idlist RIGHTPARENTHESIS { scope--; } block
                     ;
 
 const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
@@ -270,7 +270,7 @@ const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 number:             INTEGER 
                     | REAL 
                     ;
-idlist:             {scope++;} IDENTIFIER COMMA idlist  {  
+idlist:             IDENTIFIER COMMA idlist  {  
                                                 entry = lookup($<stringv>1, scope); //lookup in function scope
                                                 if(entry != NULL) {
                                                     if (entry->type == LIBFUNC) {
