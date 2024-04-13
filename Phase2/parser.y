@@ -15,6 +15,8 @@
     SymTable_T symTable = NULL;
     int anonymousCounter = 0;
     int scope = 0;
+    int called = 0;
+
 %}
 
 %union{
@@ -100,24 +102,46 @@ expr:                 expr '+' expr
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
                     | '-' expr %prec UMINUS 
                     | KEYWORD_NOT expr 
-                    | INCREMENT lvalue 
-                    | lvalue INCREMENT 
-                    | DECREMENT lvalue 
-                    | lvalue DECREMENT 
+                    | INCREMENT lvalue {entry=lookup($<stringv>1, scope); printf("scope %d", scope); if(!entry)return; if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
+                    | lvalue INCREMENT {entry=lookup($<stringv>1, scope); printf("scope %d", scope);if(!entry)return; if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
+                    | DECREMENT lvalue {entry=lookup($<stringv>1, scope); printf("scope %d", scope); if(!entry)return;if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
+                    | lvalue DECREMENT  {entry=lookup($<stringv>1, scope); printf("scope %d", scope); if(!entry)return; else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
                     | primary 
 
-assignexpr:         lvalue '=' expr { 
+assignexpr:         lvalue '=' expr {
+    if(entry == NULL ) return;
+    else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
 }
+call:               IDENTIFIER callsuffix { called = 1; }
+                    | call LEFTPARENTHESIS elist RIGHTPARENTHESIS
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
+                    ;
+                    
 
-primary:            lvalue 
-                    | call 
+primary:             call 
+                    | lvalue 
                     | objectdef 
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  
                     | const
+                    ;
+
 lvalue:             IDENTIFIER {    
-                                    
-                                    
-                                   
+    
+                                    if(called == 1){
+                                        //checking for function call
+                                        entry = lookup($1, scope);
+                                        if(entry == NULL){
+                                            yyerror("cannot call function");
+
+                                        }else{
+                                            if(!(entry->type == USERFUNC || entry->type == LIBFUNC)){
+                                                yyerror("you are trying to call a nonfunction\n");
+                                            }
+                                        }
+                                        called = 0;
+                                        goto call_end;
+                                    }
+
                                     int flag = 0;
                                     int tmp = scope;
                                     while(tmp >= 0 && flag == 0){
@@ -125,6 +149,7 @@ lvalue:             IDENTIFIER {
                                         if(entry != NULL) flag = 1;
                                         tmp--;
                                     } 
+
                                     /*
                                     printf("Checking entry for %s\n  Scope: %d\n", $<stringv>1,scope);
                                     printf("Entry: %p", (void*)entry);
@@ -154,28 +179,49 @@ lvalue:             IDENTIFIER {
                                     }else{
                                         printf("Cannot access %s at line %d\n",$<stringv>1,yylineno);
                                     }
+                                    call_end:
                                    
                                 }
 
                     | KEYWORD_LOCAL IDENTIFIER {  
-                                                
-                                                entry = lookup_in_scope($2, scope); 
-                                                if (entry != NULL){
-                                                    if (entry->type == LIBFUNC || entry->type == USERFUNC && scope != 0) {
-                                                        yyerror("Cannot shadow a library function");
-                                                    }
-                                                }                                               
-                                                if (entry == NULL) {
-                                                    
-                                                                                                                                                       
-                                                    if (scope == 0) {
-                                                            entry = insert($2, GLOBAL, scope, yylineno);
-                                                        } else {
-                                                            entry = insert($2, LOCAL, scope, yylineno);
+                                                int flag = 0;
+                                                if(1){
+                                                    entry = lookup($2, scope);
+
+                                                    if(entry != NULL){
+                                                        if(entry->type == LIBFUNC){
+                                                            yyerror("Cannot shadow a library function");
+                                    
                                                         }
+                                                        else if(scope == 0){
+                                                            yyerror("Cannot shadow a global variable");
+                                                        }
+                                                        else flag =1;
+                                                        goto end;
+                                                    }
+                                                    else {
+                                                        if(scope==0) yyerror("Cannot shadow a global variable");
+                                                        else flag = 1;
+                                                        goto end;
+
+                                                    }
+                                                }
+                                                
+                                                    
+                                                       end:
+                                                       if(flag == 1) {
+                                                            entry = lookup_in_scope($2, scope);
+                                                            if(entry == NULL) {
+                                                                entry = insert($2, LOCAL, scope, yylineno);
+                                                            }
+                                                            else {
+                                                                yyerror("Cannot shadow a local variable");
+                                                            }
+                                                       }                                                                                    
+                                                        
                                                     
                                                 }
-                                            }
+                                            
 
                     | DOUBLECOLON IDENTIFIER   {
                                                     entry = lookup_in_scope($2, 0); 
@@ -198,9 +244,6 @@ member:             lvalue DOT IDENTIFIER   {
                     | call DOT IDENTIFIER               
                     | call LEFTBRACKET expr RIGHTBRACKET
 
-call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS
-                    | lvalue callsuffix
-                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
 
 callsuffix:         normcall 
                     | methodcall
@@ -248,7 +291,10 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER {
                                 yyerror("library function collision");
                             } else if (entry->type == USERFUNC) {
                                 yyerror("user function collision");
-                            } 
+                            } else if (entry->type == FORMAL){
+                                yyerror("formal collision");
+
+                            }
                         }
                         else {
                             entry = insert($2, USERFUNC, scope, yylineno);
@@ -270,30 +316,32 @@ const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 number:             INTEGER 
                     | REAL 
                     ;
-idlist:             IDENTIFIER COMMA idlist  {  
-                                                entry = lookup($<stringv>1, scope); //lookup in function scope
-                                                if(entry != NULL) {
-                                                    if (entry->type == LIBFUNC) {
-                                                        yyerror("library function collision");
-                                                    } else {
-                                                        yyerror("identifier error");
-                                                    }
-                                                } else {
-                                                    entry = insert($<stringv>1,FORMAL,scope,yylineno);   
-                                                }
-                                            }
-                    | IDENTIFIER             {  
-                                    entry = lookup($1, scope); //lookup in function scope
+
+
+idlist:              IDENTIFIER ids  {  
+                                    
+                                    entry = lookup($<stringv>1, scope); //lookup in function scope
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
                                             yyerror("library function collision");
-                                        } else {
-                                            yyerror("identifier error");
                                         }
                                     } else {
-                                        entry = insert($1,FORMAL,scope,yylineno);     
+                                        entry = insert($<stringv>1,FORMAL,scope,yylineno);     
                                     }
                                 }
+                    | %empty                 {}
+                    ;
+
+ids:                COMMA IDENTIFIER  {  
+                                    entry = lookup($<stringv>2, scope); //lookup in function scope
+                                    if(entry != NULL) {
+                                        if (entry->type == LIBFUNC) {
+                                            yyerror("library function collision");
+                                        }
+                                    } else {
+                                        entry = insert($<stringv>2,FORMAL,scope,yylineno);     
+                                    }
+                                } ids
                     | %empty                 {}
                     ;
 
