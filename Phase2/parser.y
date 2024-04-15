@@ -112,14 +112,10 @@ assignexpr:         lvalue '=' expr {
     if(entry == NULL ) return;
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
 }
-call:               IDENTIFIER callsuffix { called = 1; }
-                    | call LEFTPARENTHESIS elist RIGHTPARENTHESIS
-                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
-                    ;
                     
 
-primary:             call 
-                    | lvalue 
+primary:             lvalue
+                    | call 
                     | objectdef 
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  
                     | const
@@ -244,6 +240,10 @@ member:             lvalue DOT IDENTIFIER   {
                     | call DOT IDENTIFIER               
                     | call LEFTBRACKET expr RIGHTBRACKET
 
+call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+                    | IDENTIFIER callsuffix
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
+                    ;
 
 callsuffix:         normcall 
                     | methodcall
