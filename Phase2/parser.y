@@ -16,7 +16,7 @@
     int anonymousCounter = 0;
     int scope = 0;
     int called = 0;
-
+    int doublec_flag = 0;
 %}
 
 %union{
@@ -43,9 +43,9 @@
 %token <stringv> LEFTPARENTHESIS RIGHTPARENTHESIS COMMA SEMICOLON COLON 
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
-/*
+
 %type <stringv> program parsing stmt expr term assignexpr primary lvalue member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk funcdef const number idlist ifstmt whilestmt forstmt returnstmt
-*/
+
 
 %right '='
 %left KEYWORD_OR
@@ -108,10 +108,29 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
                     | lvalue DECREMENT  {entry=lookup($<stringv>1, scope); printf("scope %d", scope); if(!entry)return; else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
                     | primary 
 
-assignexpr:         lvalue '=' expr {
-    if(entry == NULL ) return;
+assignexpr:         lvalue  '=' {
+    if( entry == NULL ){
+        printf("Searching for hidden entries , scope %d\n ",scope);
+        if(scope > 0 )
+        entry = lookup_hidden($1,scope);
+        /* ERROR9.asc -> ACCESSING FORMAL IN ANOTHER SCOPE*/
+        if(entry){
+            if(entry->type == FORMAL){
+                yyerror("cannot access formal argument in another scope");
+            }else if(entry->type == LOCAL){
+                yyerror("Cannot access local variable in another scope");
+            }
+        }else{
+            if(scope==0){
+                insert($1, GLOBAL, scope, yylineno);
+            }else{
+                insert($1, LOCAL, scope, yylineno);  
+            }
+        }
+        
+    }
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
-}
+} expr 
                     
 
 primary:             lvalue
@@ -121,9 +140,20 @@ primary:             lvalue
                     | const
                     ;
 
-lvalue:             IDENTIFIER {    
-    
-                            }   
+lvalue:             IDENTIFIER          {    
+                                                
+                                                entry = lookup_in_scope($1, scope);
+                                                if(entry == NULL) {
+                                                    printf("all ok\n");
+                                                }
+                                                else if(entry->type == LIBFUNC) {
+                                                    yyerror("Cannot assign to a library function");
+                                                }
+                                                else if(entry->type == USERFUNC) {
+                                                    yyerror("Cannot assign to a user function");
+                                                }
+                                                
+                                        }   
 
                     | KEYWORD_LOCAL IDENTIFIER {  
                                                 int flag = 0;
@@ -165,12 +195,21 @@ lvalue:             IDENTIFIER {
                                                 }
                                             
 
+                    /*WORKS FOR ::f() BUT NOT FOR :f(f()) or (functiondef)(elist)*/
+                    | DOUBLECOLON IDENTIFIER callsuffix {
+                                                            entry = lookup_in_scope($2, 0); 
+                                                            if(entry == NULL) yyerror("global identifier not found");
+                                                            
+                                                        }
+                    
+                    
                     | DOUBLECOLON IDENTIFIER   {
                                                     entry = lookup_in_scope($2, 0); 
-                                                     
+                                            
                                                         char error_message[256];
                                                         sprintf(error_message, "global identifier not found %s", $2);
                                                         if (entry == NULL || !entry->isActive) yyerror(error_message);
+
                                                 }
                     | member
 
@@ -187,7 +226,7 @@ member:             lvalue DOT IDENTIFIER   {
                     | call LEFTBRACKET expr RIGHTBRACKET
 
 call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS 
-                    | IDENTIFIER callsuffix
+                    | IDENTIFIER callsuffix 
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
                     ;
 
@@ -228,7 +267,13 @@ blockk:              stmt blockk
                     | %empty            {}
                     ;
 
-funcdef:            KEYWORD_FUNCTION  IDENTIFIER { 
+funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
+                        int temp = scope;
+                        while(temp >= 0){
+                        hide_scope(temp);
+                        temp--;
+                        }
+
                         if(scope <0  ) scope = 0;
                         entry = lookup_in_scope($2, scope); 
                      
@@ -251,6 +296,13 @@ funcdef:            KEYWORD_FUNCTION  IDENTIFIER {
                     } 
                     LEFTPARENTHESIS {scope++;} idlist RIGHTPARENTHESIS { scope--; }  block  
                     | KEYWORD_FUNCTION  { 
+                        int temp = scope;
+                        printf("scope %d\n", scope);
+                        while(temp != 0){
+                        hide_scope(temp);
+                        temp--;
+                        }
+
                         char str[20]; 
                         sprintf(str, "_%d", anonymousCounter++); 
                         entry = insert(str, USERFUNC, scope, yylineno); 
