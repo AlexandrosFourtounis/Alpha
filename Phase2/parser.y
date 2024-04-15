@@ -123,61 +123,7 @@ primary:             lvalue
 
 lvalue:             IDENTIFIER {    
     
-                                    if(called == 1){
-                                        //checking for function call
-                                        entry = lookup($1, scope);
-                                        if(entry == NULL){
-                                            yyerror("cannot call function");
-
-                                        }else{
-                                            if(!(entry->type == USERFUNC || entry->type == LIBFUNC)){
-                                                yyerror("you are trying to call a nonfunction\n");
-                                            }
-                                        }
-                                        called = 0;
-                                        goto call_end;
-                                    }
-
-                                    int flag = 0;
-                                    int tmp = scope;
-                                    while(tmp >= 0 && flag == 0){
-                                        entry = lookup($1, tmp);
-                                        if(entry != NULL) flag = 1;
-                                        tmp--;
-                                    } 
-
-                                    /*
-                                    printf("Checking entry for %s\n  Scope: %d\n", $<stringv>1,scope);
-                                    printf("Entry: %p", (void*)entry);
-                                    */
-                                    entry = lookup_in_scope($<stringv>1, scope);
-                                     
-                                    //if we dont find the identifier in any scope we add it to the st
-                                    
-                                    if(flag == 0){
-                                        if (scope == 0) {
-                                            entry = insert($1, GLOBAL, 0, yylineno);
-                                        } else {
-                                            entry = insert($1, LOCAL, scope, yylineno);
-                                        }
-                                    }
-                                    if(entry!= NULL){
-                                        entry = lookup($<stringv>1,scope);
-                                        if(entry == NULL){
-                                        }else if(entry->type == USERFUNC){
-                                            break;
-                                        }
-                                        if(entry->type == LIBFUNC){
-                                            yyerror("func collision at line \n");
-                                        }
-                                        else if(entry->type == USERFUNC) yyerror("program function collision \n");
-                                                                           
-                                    }else{
-                                        printf("Cannot access %s at line %d\n",$<stringv>1,yylineno);
-                                    }
-                                    call_end:;
-                                   
-                                }
+                            }   
 
                     | KEYWORD_LOCAL IDENTIFIER {  
                                                 int flag = 0;
