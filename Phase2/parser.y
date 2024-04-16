@@ -144,18 +144,18 @@ lvalue:             IDENTIFIER          {
                                                 entry = lookup_in_scope($1, scope);
                                                 if(entry == NULL) {                                                
                                                 }
-                                                else if(entry->type == LIBFUNC) {
-                                                    yyerror("Cannot assign to a library function");
-                                                }
-                                                else if(entry->type == USERFUNC) {
-                                                    yyerror("Cannot assign to a user function");
-                                                }
+                                                // else if(entry->type == LIBFUNC) {
+                                                //     yyerror("Cannot assign to a library function");
+                                                // }
+                                                // else if(entry->type == USERFUNC) {
+                                                //     yyerror("Cannot assign to a user function");
+                                                // }
                                                 
                                         }   
 
                     | KEYWORD_LOCAL IDENTIFIER {  
                                                 int flag = 0;
-                                                if(1){
+                                                
                                                     entry = lookup($2, scope);
 
                                                     if(entry != NULL){
@@ -163,19 +163,18 @@ lvalue:             IDENTIFIER          {
                                                             yyerror("Cannot shadow a library function");
                                     
                                                         }
-                                                        else if(scope == 0){
-                                                            yyerror("Cannot shadow a global variable");
-                                                        }
+                                                        // else if(scope == 0){
+                                                        //     yyerror("Cannot shadow a global variable");
+                                                        // }
                                                         else flag =1;
                                                         goto end;
                                                     }
                                                     else {
-                                                        if(scope==0) yyerror("Cannot shadow a global variable");
-                                                        else flag = 1;
+                                                        //if(scope==0) yyerror("Cannot shadow a global variable");
+                                                        flag = 1;
                                                         goto end;
-
                                                     }
-                                                }
+                                                
                                                 
                                                     
                                                        end:
@@ -211,7 +210,7 @@ lvalue:             IDENTIFIER          {
                                                 }
                     | member
 
-member:             lvalue DOT IDENTIFIER   { 
+member:             lvalue DOT IDENTIFIER member   { 
                                             if (entry == NULL || !entry->isActive) yyerror("member error" );
                                             else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue.id");
 
@@ -222,6 +221,8 @@ member:             lvalue DOT IDENTIFIER   {
                                             }
                     | call DOT IDENTIFIER               
                     | call LEFTBRACKET expr RIGHTBRACKET
+                    | %empty
+                    ;
 
 call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS 
                     | IDENTIFIER callsuffix {
