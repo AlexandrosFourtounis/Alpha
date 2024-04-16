@@ -102,15 +102,14 @@ expr:                 expr '+' expr
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
                     | '-' expr %prec UMINUS 
                     | KEYWORD_NOT expr 
-                    | INCREMENT lvalue {entry=lookup($2, scope); printf("scope %d", scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
-                    | lvalue INCREMENT {entry=lookup($1, scope); printf("scope %d", scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
-                    | DECREMENT lvalue {entry=lookup($2, scope); printf("scope %d", scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
-                    | lvalue DECREMENT {entry=lookup($1, scope); printf("scope %d", scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
+                    | INCREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
+                    | lvalue INCREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
+                    | DECREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
+                    | lvalue DECREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
                     | primary 
 
 assignexpr:         lvalue  '=' {
     if( entry == NULL ){
-        printf("Searching for hidden entries , scope %d\n ",scope);
         if(scope > 0 )
         entry = lookup_hidden($1,scope);
         /* ERROR9.asc -> ACCESSING FORMAL IN ANOTHER SCOPE*/
@@ -226,14 +225,14 @@ member:             lvalue DOT IDENTIFIER   {
 
 call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS 
                     | IDENTIFIER callsuffix {
-                                                int temp = scope-1;
-                                                while(temp >= 0){
-                                                    entry = lookup_in_scope($1, temp);
-                                                    if(entry != NULL) break;
-                                                    temp--;
-                                                }
-                                                if(entry == NULL) yyerror("Cannot call function");
-                                                else if(entry->type != LIBFUNC || entry->type != USERFUNC) yyerror("not a function");
+                                                // int temp = scope-1;
+                                                // while(temp >= 0){
+                                                //     entry = lookup_in_scope($1, temp);
+                                                //     if(entry != NULL) break;
+                                                //     temp--;
+                                                // }
+                                                // if(entry == NULL) yyerror("Cannot call function");
+                                                // else if(entry->type != LIBFUNC || entry->type != USERFUNC) yyerror("not a function");
                     }
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
                     ;
@@ -334,10 +333,8 @@ idlist:              IDENTIFIER ids  {
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
                                             yyerror("library function collision");
-                                        }else if(strcmp($<stringv>1, entry->value.varVal->name) == 0) {
-                                            yyerror("formal collision");
                                         }
-                                    } else {
+                                    } else {  
                                         entry = insert($<stringv>1,FORMAL,scope,yylineno);     
                                     }
                                 }

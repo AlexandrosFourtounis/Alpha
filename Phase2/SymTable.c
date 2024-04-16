@@ -102,10 +102,10 @@ SymbolTableEntry *lookup_hidden(const char *name, int scope)
 }
 
 SymbolTableEntry *lookup_in_scope(const char *name, int scope) {
-    if(scope < 0 ) printf("negative scope error at SymbolTable.c line 60\n");
+    if(scope < 0 ) printf("negative scope error at SymbolTable.c \n");
     SymbolNode *current = scope_links[scope];
     while (current != NULL) {
-        if (current->entry->isActive) {
+        if (current->entry->isActive ) {
             const char *entryName;
             if (current->entry->type == GLOBAL || current->entry->type == LOCAL || current->entry->type == FORMAL) {
                 entryName = current->entry->value.varVal->name;
@@ -116,6 +116,7 @@ SymbolTableEntry *lookup_in_scope(const char *name, int scope) {
                 return current->entry;
             }
         }
+        //else if(current->entry->type == USERFUNC) return current->entry;
         current = current->next;
     }
     return NULL;
