@@ -102,10 +102,10 @@ expr:                 expr '+' expr
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
                     | '-' expr %prec UMINUS 
                     | KEYWORD_NOT expr 
-                    | INCREMENT lvalue {entry=lookup($<stringv>1, scope); printf("scope %d", scope); if(!entry)return; if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
-                    | lvalue INCREMENT {entry=lookup($<stringv>1, scope); printf("scope %d", scope);if(!entry)return; if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
-                    | DECREMENT lvalue {entry=lookup($<stringv>1, scope); printf("scope %d", scope); if(!entry)return;if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
-                    | lvalue DECREMENT  {entry=lookup($<stringv>1, scope); printf("scope %d", scope); if(!entry)return; else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
+                    | INCREMENT lvalue {entry=lookup($2, scope); printf("scope %d", scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
+                    | lvalue INCREMENT {entry=lookup($1, scope); printf("scope %d", scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
+                    | DECREMENT lvalue {entry=lookup($2, scope); printf("scope %d", scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
+                    | lvalue DECREMENT {entry=lookup($1, scope); printf("scope %d", scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
                     | primary 
 
 assignexpr:         lvalue  '=' {
@@ -143,8 +143,7 @@ primary:             lvalue
 lvalue:             IDENTIFIER          {    
                                                 
                                                 entry = lookup_in_scope($1, scope);
-                                                if(entry == NULL) {
-                                                    printf("all ok\n");
+                                                if(entry == NULL) {                                                
                                                 }
                                                 else if(entry->type == LIBFUNC) {
                                                     yyerror("Cannot assign to a library function");
@@ -268,30 +267,32 @@ blockk:              stmt blockk
                     ;
 
 funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
+                        
+
+                        if(scope < 0) scope = 0;
+                        entry = lookup_in_scope($2, scope); 
+
                         int temp = scope;
                         while(temp >= 0){
-                        hide_scope(temp);
-                        temp--;
+                            hide_scope(temp);
+                            temp--;
                         }
-
-                        if(scope <0  ) scope = 0;
-                        entry = lookup_in_scope($2, scope); 
                      
                        //libfuncs
                         if (entry != NULL) {
-                            //check collision with library/user functions or variables
-                            if (entry->type == LIBFUNC) {
-                                yyerror("library function collision");
-                            } else if (entry->type == USERFUNC) {
-                                yyerror("user function collision");
-                            } else if (entry->type == FORMAL){
-                                yyerror("formal collision");
-
-                            }
+                            //check collision with library/user functions or formals
+                            if (entry->type == LIBFUNC) yyerror("library function collision");
+                            else if (entry->type == USERFUNC) yyerror("user function collision");
+                            else if (entry->type == FORMAL) yyerror("function name already defined as formal");
+                            
                         }
                         else {
-                            entry = insert($2, USERFUNC, scope, yylineno);
-                            scope++;// increment scope here
+                            //entry = lookup_in_scope_hidden($<stringv>2, scope);
+                            //if(!entry) yyerror("variable already defined"); 
+                            //else{ 
+                                entry = insert($2, USERFUNC, scope, yylineno);
+                                scope++;
+                            //} 
                         }
                     } 
                     LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; }  block  

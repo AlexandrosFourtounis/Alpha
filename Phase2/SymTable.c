@@ -57,7 +57,6 @@ SymbolTableEntry *lookup(const char *name, int scope) {
 }
 SymbolTableEntry *lookup_in_scope_hidden(const char *name, int scope)
 {
-    printf("scope inside lookup_in_scope_hidden: %d\n", scope);
     if (scope < 0)
         printf("negative scope error at SymbolTable.c line 60\n");
     SymbolNode *current = scope_links[scope];
@@ -216,7 +215,7 @@ void insert_to_scope(SymbolTableEntry *entry){
 void hide_scope(int scope) {
     SymbolNode *current = scope_links[scope];
     while (current != NULL) {
-        current->entry->isActive = 0; 
+        if(current->entry->type != LIBFUNC) current->entry->isActive = 0; 
         current = current->next;
     }
 }
