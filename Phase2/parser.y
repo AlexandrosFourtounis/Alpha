@@ -225,7 +225,16 @@ member:             lvalue DOT IDENTIFIER   {
                     | call LEFTBRACKET expr RIGHTBRACKET
 
 call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS 
-                    | IDENTIFIER callsuffix 
+                    | IDENTIFIER callsuffix {
+                                                int temp = scope-1;
+                                                while(temp >= 0){
+                                                    entry = lookup_in_scope($1, temp);
+                                                    if(entry != NULL) break;
+                                                    temp--;
+                                                }
+                                                if(entry == NULL) yyerror("Cannot call function");
+                                                else if(entry->type != LIBFUNC || entry->type != USERFUNC) yyerror("not a function");
+                    }
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
                     ;
 
