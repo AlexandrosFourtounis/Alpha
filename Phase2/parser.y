@@ -339,6 +339,8 @@ ids:                COMMA IDENTIFIER  {
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
                                             yyerror("library function collision");
+                                        }else if(strcmp($<stringv>1, entry->value.varVal->name) == 0) {
+                                            yyerror("formal collision");
                                         }
                                     } else {
                                         entry = insert($<stringv>2,FORMAL,scope,yylineno);     
