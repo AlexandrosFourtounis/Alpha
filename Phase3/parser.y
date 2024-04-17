@@ -1,9 +1,8 @@
 %{
     #include <stdio.h>
     #define YYDEBUG 1
-    //#include "symtablehash.h"
-    #include "SymTable.h"
     //#define YYLEX alpha_yylex
+    #include "quads.h"
     extern int yydebug;
     int yyerror (char* yaccProvidedMessage);
     int alpha_yylex(void* yylval);
@@ -24,6 +23,8 @@
     char* stringv;
     char charv;
     float floatv;
+    struct SymbolTableEntry *sym;
+    struct expr *expression;
 }
 
 %define parse.error verbose
@@ -44,8 +45,8 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt expr term assignexpr primary lvalue member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk funcdef const number idlist ifstmt whilestmt forstmt returnstmt
-
+%type <stringv> program parsing stmt expr  assignexpr primary lvalue member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk funcdef const number idlist ifstmt whilestmt forstmt returnstmt
+%type<expression> term
 
 %right '='
 %left KEYWORD_OR
@@ -100,8 +101,18 @@ expr:                 expr '+' expr
 
 
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
-                    | '-' expr %prec UMINUS 
-                    | KEYWORD_NOT expr 
+                    | '-' expr %prec UMINUS  {
+                                                check_arith($2,(const char*)"- expr");
+                                                $$ = newexpr(arithexpr_e);
+                                                $$->sym = newtemp();
+                                                emit(uminus,$2,NULL,$$,0,yylineno);
+                                             }
+                    | KEYWORD_NOT expr {
+                                            $$ = newexpr(boolexpr_e);
+                                            $$->sym = newtemp();
+                                            emit(not,$2,NULL,$$,0,yylineno);
+                                            
+                                        }
                     | INCREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
                     | lvalue INCREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
                     | DECREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}

@@ -1,14 +1,26 @@
+#include "SymTable.h"
+
 #define EXPAND_SIZE 1024
 #define CURR_SIZE (total * sizeof(quad))
 #define NEW_SIZE (EXPAND_SIZE * sizeof(quad) + CURR_SIZE)
 
+typedef enum expr_t
+{
+    var_e,
+    tableitem_e,
+    programfunc_e,
+    libraryfunc_e,
+    arithexpr_e,
+    boolexpr_e,
+    assignexpr_e,
+    newtable_e,
+    constnum_e,
+    constbool_e,
+    conststring_e,
+    nil_e
+}expr_t;
 
-typedef enum scopespace_t {
-    programVar,
-    functionLocal,
-    formalArg
-} scopespace_t;
-
+/*
 typedef enum symbol_t
 {
     var_s,
@@ -16,18 +28,18 @@ typedef enum symbol_t
     libraryfunc_s
 } symbol_t;
 
+
 typedef struct symbol {
     char *name;
     enum symbol_t type;
     unsigned int line;
     unsigned int scope;
     //unsigned int active;
-    unsigned int offset;
-    enum scopespace_t space;
+    
     //unsigned int funcscope;
     struct symbol *next;
 } symbol;
-
+*/
 
 
 scopespace_t currscopespace(void);
@@ -66,8 +78,15 @@ typedef enum iopcode
 }iopcode;
 
 typedef struct expr{
-
+    expr_t type;
+    SymbolTableEntry *sym;
+    struct expr *index;
+    double numConst;
+    char *strConst;
+    unsigned char boolConst;
+    struct expr *next;
 }expr;
+
 typedef struct quad{
     iopcode op;
     expr *result;
@@ -77,10 +96,18 @@ typedef struct quad{
     unsigned line;
 }quad;
 
-quad *quads = (quad *)0;
-unsigned total = 0;
-unsigned int currQuad = 0;
+extern quad *quads;
+extern unsigned total;
+extern unsigned int currQuad;
 
 
 void expand(void);
 void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned label, unsigned line);
+
+//UTILS
+void check_arith(expr *e, const char *context);
+expr *lvalue_expr(SymbolTableEntry *sym);
+expr *newexpr(expr_t t);
+char *newtempname();
+void resettemp();
+SymbolTableEntry *newtemp();

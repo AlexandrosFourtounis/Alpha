@@ -1,9 +1,12 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "quads.h"
 
-
+ quad *quads = (quad *)0;
+ unsigned total =0;
+ unsigned int currQuad = 0;
 
 unsigned int programVarOffset = 0;
 unsigned int functionLocalOffset = 0;
@@ -71,4 +74,84 @@ void enterscopespace(void){
 void exitscopespace(void){
     assert(scopeSpaceCounter > 1);
     --scopeSpaceCounter;
+}
+
+int tempcounter = 0;
+extern int scope;
+extern int yylineno;
+
+char *newtempname()
+{
+    char buffer[50];
+    sprintf(buffer, "_t%d", tempcounter);
+    return buffer;
+}
+void resettemp()
+{
+    tempcounter = 0;
+}
+void check_arith(expr *e, const char *context)
+{
+    if (e->type == constbool_e ||
+        e->type == conststring_e ||
+        e->type == nil_e ||
+        e->type == newtable_e ||
+        e->type == programfunc_e ||
+        e->type == libraryfunc_e ||
+        e->type == boolexpr_e)
+    {
+        printf("Illegal expr used in %s!", context);
+        exit(-1);
+    }
+}
+
+expr *newexpr(expr_t t)
+{
+    expr *e = (expr *)malloc(sizeof(expr));
+    memset(e, 0, sizeof(expr));
+    e->type = t;
+    return e;
+}
+
+expr *lvalue_expr(SymbolTableEntry *sym)
+{
+    assert(sym);
+    expr *e = (expr *)malloc(sizeof(expr));
+    memset(e, 0, sizeof(expr));
+    e->next = (expr *)0;
+    e->sym = sym;
+    switch (sym->type)
+    {
+    case (GLOBAL ||  LOCAL ||  FORMAL):
+        e = newexpr(var_e);
+        break;
+    case ( USERFUNC):
+        e = newexpr(programfunc_e);
+        break;
+    case (LIBFUNC):
+        e = newexpr(libraryfunc_e);
+        break;
+    default:
+        assert(0);
+    }
+
+    return e;
+}
+
+
+
+SymbolTableEntry *newtemp()
+{
+    char *name = newtempname();
+    SymbolTableEntry *entry = lookup_in_scope(name, scope);
+    if (entry == NULL)
+    {
+        SymbolType type = (scope == 0) ? GLOBAL : LOCAL;
+        entry = insert(name, type, scope, yylineno);
+        return entry;
+    }
+    else
+    {
+        return entry;
+    }
 }
