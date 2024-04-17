@@ -304,7 +304,7 @@ funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
                             //} 
                         }
                     } 
-                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; }  block  
+                    LEFTPARENTHESIS {scope++;} idlist RIGHTPARENTHESIS { scope--; }  block  
                     | KEYWORD_FUNCTION  { 
                         int temp = scope;
                         printf("scope %d\n", scope);
@@ -318,7 +318,7 @@ funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
                         entry = insert(str, USERFUNC, scope, yylineno); 
                         scope++; // increment scope here
                     } 
-                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; } block
+                    LEFTPARENTHESIS {scope++;} idlist RIGHTPARENTHESIS { scope--; } block
                     ;
 
 const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
@@ -331,6 +331,7 @@ number:             INTEGER
 idlist:              IDENTIFIER ids  {  
                                     
                                     entry = lookup($<stringv>1, scope); //lookup in function scope
+
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
                                             yyerror("library function collision");
