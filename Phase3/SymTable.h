@@ -11,6 +11,13 @@ extern char *entry_types[];
 extern char *libfuncs[12];
 extern SymTable_T symTable;
 
+typedef enum scopespace_t
+{
+    programVar,
+    functionLocal,
+    formalArg
+} scopespace_t;
+
 typedef struct Variable {
     const char *name;
     unsigned int scope;
@@ -33,8 +40,10 @@ typedef struct SymbolTableEntry{
         Variable *varVal;
         Function *funcVal;
     }value;
-    enum SymbolType type;
-    
+    SymbolType type;
+    unsigned int offset;
+    scopespace_t space;
+
 }SymbolTableEntry;
 
 // Structure to represent a symbol node in the scope link
