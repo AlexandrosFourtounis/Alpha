@@ -47,7 +47,7 @@ SymbolTableEntry *insert(const char *name, SymbolType type, unsigned int scope, 
 SymbolTableEntry *lookup(const char *name, int scope) {
     assert(name);
 
-    for (unsigned int curr_scope = 0; curr_scope <= 5; curr_scope++) {
+    for (unsigned int curr_scope = 0; curr_scope <= 50; curr_scope++) {
         SymbolTableEntry *entry = lookup_in_scope(name, curr_scope);
         if (entry != NULL) {
             return entry;
@@ -55,11 +55,57 @@ SymbolTableEntry *lookup(const char *name, int scope) {
     }
     return NULL;
 }
+SymbolTableEntry *lookup_in_scope_hidden(const char *name, int scope)
+{
+    if (scope < 0)
+        printf("negative scope error at SymbolTable.c line 60\n");
+    SymbolNode *current = scope_links[scope];
+    while (current != NULL)
+    {
+        if (!(current->entry->isActive))
+        {
+            const char *entryName;
+            if (current->entry->type == GLOBAL || current->entry->type == LOCAL || current->entry->type == FORMAL)
+            {
+                entryName = current->entry->value.varVal->name;
+            }
+            else if (IS_FUNCTION(current->entry))
+            {
+                entryName = current->entry->value.funcVal->name;
+            }
+            if (strcmp(entryName, name) == 0)
+            {
+                return current->entry;
+            }
+        }
+        current = current->next;
+    }
+    return NULL;
+}
+
+SymbolTableEntry *lookup_hidden(const char *name, int scope)
+{
+    assert(name);
+
+    int curr_scope = scope;
+    while (curr_scope >= 0){
+        SymbolTableEntry *entry = lookup_in_scope_hidden(name, curr_scope);
+        if (entry != NULL)
+        {
+            return entry;
+        }
+        curr_scope--;
+    }
+        
+
+    return NULL;
+}
 
 SymbolTableEntry *lookup_in_scope(const char *name, int scope) {
+    if(scope < 0 ) printf("negative scope error at SymbolTable.c \n");
     SymbolNode *current = scope_links[scope];
     while (current != NULL) {
-        if (current->entry->isActive) {
+        if (current->entry->isActive ) {
             const char *entryName;
             if (current->entry->type == GLOBAL || current->entry->type == LOCAL || current->entry->type == FORMAL) {
                 entryName = current->entry->value.varVal->name;
@@ -70,10 +116,13 @@ SymbolTableEntry *lookup_in_scope(const char *name, int scope) {
                 return current->entry;
             }
         }
+        //else if(current->entry->type == USERFUNC) return current->entry;
         current = current->next;
     }
     return NULL;
 }
+
+
 
 SymbolTableEntry *lookup_without_active(const char *name, int scope) {
     assert(name);
@@ -167,7 +216,7 @@ void insert_to_scope(SymbolTableEntry *entry){
 void hide_scope(int scope) {
     SymbolNode *current = scope_links[scope];
     while (current != NULL) {
-        current->entry->isActive = 0; 
+        if(current->entry->type != LIBFUNC) current->entry->isActive = 0; 
         current = current->next;
     }
 }
