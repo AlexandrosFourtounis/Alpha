@@ -210,7 +210,7 @@ lvalue:             IDENTIFIER          {
                                                 }
                     | member
 
-member:             lvalue DOT IDENTIFIER member   { 
+member:             lvalue DOT IDENTIFIER   { 
                                             if (entry == NULL || !entry->isActive) yyerror("member error" );
                                             else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue.id");
 
@@ -221,7 +221,6 @@ member:             lvalue DOT IDENTIFIER member   {
                                             }
                     | call DOT IDENTIFIER               
                     | call LEFTBRACKET expr RIGHTBRACKET
-                    | %empty
                     ;
 
 call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS 
@@ -304,7 +303,7 @@ funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
                             //} 
                         }
                     } 
-                    LEFTPARENTHESIS {scope++;} idlist RIGHTPARENTHESIS { scope--; }  block  
+                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; }  block  
                     | KEYWORD_FUNCTION  { 
                         int temp = scope;
                         printf("scope %d\n", scope);
@@ -318,7 +317,7 @@ funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
                         entry = insert(str, USERFUNC, scope, yylineno); 
                         scope++; // increment scope here
                     } 
-                    LEFTPARENTHESIS {scope++;} idlist RIGHTPARENTHESIS { scope--; } block
+                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; } block
                     ;
 
 const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
@@ -331,7 +330,6 @@ number:             INTEGER
 idlist:              IDENTIFIER ids  {  
                                     
                                     entry = lookup($<stringv>1, scope); //lookup in function scope
-
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
                                             yyerror("library function collision");

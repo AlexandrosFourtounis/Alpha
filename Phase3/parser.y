@@ -210,7 +210,7 @@ lvalue:             IDENTIFIER          {
                                                 }
                     | member
 
-member:             lvalue DOT IDENTIFIER member   { 
+member:             lvalue DOT IDENTIFIER   { 
                                             if (entry == NULL || !entry->isActive) yyerror("member error" );
                                             else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue.id");
 
@@ -221,7 +221,6 @@ member:             lvalue DOT IDENTIFIER member   {
                                             }
                     | call DOT IDENTIFIER               
                     | call LEFTBRACKET expr RIGHTBRACKET
-                    | %empty
                     ;
 
 call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS 

@@ -3,3 +3,4 @@ Phase2/parser.c
 Phase2/parser.h
 Phase2/parser.output
 Phase2/scanner.c
+settings.json
