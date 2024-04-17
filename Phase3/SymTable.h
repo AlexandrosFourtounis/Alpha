@@ -43,6 +43,7 @@ typedef struct SymbolNode {
     struct SymbolNode *next;
 } SymbolNode;
 
+SymbolTableEntry *lookup_hidden(const char *name, int scope);
 SymbolTableEntry *new_entry(const char *name, SymbolType type, unsigned int scope, unsigned int line);
 SymbolTableEntry *insert(const char *name, SymbolType type, unsigned int scope, unsigned int line);
 SymbolTableEntry *lookup(const char *name, int scope);
