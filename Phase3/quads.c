@@ -3,6 +3,10 @@
 #include <string.h>
 #include <stdio.h>
 #include "quads.h"
+#include "stack.h"
+
+#define BOLD_RED "\033[1;31m"
+#define RESET "\033[0m"
 
  quad *quads = (quad *)0;
  unsigned total =0;
@@ -100,7 +104,7 @@ void check_arith(expr *e, const char *context)
         e->type == libraryfunc_e ||
         e->type == boolexpr_e)
     {
-        printf("Illegal expr used in %s!", context);
+        printf(BOLD_RED"Illegal expr used in %s!"RESET, context);
         exit(-1);
     }
 }
@@ -122,13 +126,15 @@ expr *lvalue_expr(SymbolTableEntry *sym)
     e->sym = sym;
     switch (sym->type)
     {
-    case (GLOBAL ||  LOCAL ||  FORMAL):
+    case GLOBAL:
+    case LOCAL:
+    case FORMAL:
         e = newexpr(var_e);
         break;
-    case ( USERFUNC):
+    case USERFUNC:
         e = newexpr(programfunc_e);
         break;
-    case (LIBFUNC):
+    case LIBFUNC:
         e = newexpr(libraryfunc_e);
         break;
     default:

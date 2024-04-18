@@ -234,7 +234,7 @@ Nonterminals, with rules where they appear
     primary <stringv> (58)
         on left: 39 40 41 42 43
         on right: 36
-    lvalue <stringv> (59)
+    lvalue <expression> (59)
         on left: 44 45 46 47 48
         on right: 32 33 34 35 38 39 49 50
     member <stringv> (60)

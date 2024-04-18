@@ -1,12 +1,17 @@
 %{
     #include <stdio.h>
-    #define YYDEBUG 1
-    //#define YYLEX alpha_yylex
     #include "quads.h"
+
+    #define YYDEBUG 1
+    #define BOLD_RED "\033[1;31m"
+    #define RESET "\033[0m"
+     
     extern int yydebug;
     int yyerror (char* yaccProvidedMessage);
     int alpha_yylex(void* yylval);
     SymbolTableEntry *entry;
+    SymbolTableEntry *sym;
+
     extern int yylineno;
     extern char* yytext;
     extern FILE* yyin;
@@ -45,8 +50,8 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt expr  assignexpr primary lvalue member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk funcdef const number idlist ifstmt whilestmt forstmt returnstmt
-%type<expression> term
+%type <stringv> program parsing stmt expr  assignexpr primary member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk funcdef const number idlist ifstmt whilestmt forstmt returnstmt
+%type<expression> term lvalue
 
 %right '='
 %left KEYWORD_OR
@@ -102,7 +107,7 @@ expr:                 expr '+' expr
 
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
                     | '-' expr %prec UMINUS  {
-                                                check_arith($2,(const char*)"- expr");
+                                                check_arith($2,(const char*)"- expr\n");
                                                 $$ = newexpr(arithexpr_e);
                                                 $$->sym = newtemp();
                                                 emit(uminus,$2,NULL,$$,0,yylineno);
@@ -151,29 +156,30 @@ primary:             lvalue
                     ;
 
 lvalue:             IDENTIFIER          {    
-                                                
-                                                entry = lookup_in_scope($1, scope);
-                                                if(entry == NULL) {                                                
-                                                }
-                                                // else if(entry->type == LIBFUNC) {
+                                                entry = lookup_in_scope($1, scope);                                                                                                // else if(entry->type == LIBFUNC) {
                                                 //     yyerror("Cannot assign to a library function");
                                                 // }
                                                 // else if(entry->type == USERFUNC) {
                                                 //     yyerror("Cannot assign to a user function");
                                                 // }
-                                                
+
+                                                //phase3                                               
+                                                //sym = lookup($1, scope);
+                                                if(entry == NULL) {
+                                                    entry = (scope == 0) ? insert($1, GLOBAL, 0, yylineno) : insert($1, LOCAL, scope, yylineno); 
+                                                    entry->space = currscopespace();
+                                                    entry->offset = currscopeoffset();
+                                                    inccurrscopeoffset();
+                                                }
+                                                $$->sym = entry;
+                                                $$ = lvalue_expr(entry);                                               
                                         }   
 
                     | KEYWORD_LOCAL IDENTIFIER {  
-                                                int flag = 0;
-                                                
+                                                    int flag = 0;                                               
                                                     entry = lookup($2, scope);
-
                                                     if(entry != NULL){
-                                                        if(entry->type == LIBFUNC){
-                                                            yyerror("Cannot shadow a library function");
-                                    
-                                                        }
+                                                        if(entry->type == LIBFUNC) yyerror("Cannot shadow a library function");                                                                      
                                                         // else if(scope == 0){
                                                         //     yyerror("Cannot shadow a global variable");
                                                         // }
@@ -186,19 +192,27 @@ lvalue:             IDENTIFIER          {
                                                         goto end;
                                                     }
                                                 
-                                                
-                                                    
-                                                       end:
-                                                       if(flag == 1) {
-                                                            entry = lookup_in_scope($2, scope);
-                                                            if(entry == NULL) {
-                                                                entry = insert($2, LOCAL, scope, yylineno);
-                                                            }
-                                                            else {
-                                                                yyerror("Cannot shadow a local variable");
-                                                            }
-                                                       }                                                                                    
-                                                        
+                                                    end:
+                                                    if(flag == 1) {
+                                                        entry = lookup_in_scope($2, scope);
+                                                        if(entry == NULL) entry = insert($2, LOCAL, scope, yylineno);                                                   
+                                                        else yyerror("Cannot shadow a local variable"); 
+                                                    }
+
+                                                    //phase 3
+                                                    sym = lookup_in_scope($2, scope);
+                                                    if (sym == NULL){
+                                                        sym = (scope == 0) ? insert($2, GLOBAL, 0, yylineno) : insert($2, LOCAL, scope, yylineno); 
+                                                        sym->space = currscopespace();
+                                                        sym->offset = currscopeoffset();
+                                                        inccurrscopeoffset();
+                                                    } else {
+                                                        if(sym->type == USERFUNC || sym->type == LIBFUNC ){
+                                                            printf(BOLD_RED"sym is a function\n"RESET);
+                                                        }
+
+                                                    }
+                                                    $$ = lvalue_expr(sym);                                                                                                                                      
                                                     
                                                 }
                                             
