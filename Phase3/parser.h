@@ -149,7 +149,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 26 "parser.y"
+#line 30 "parser.y"
 
     int intv;
     char* stringv;
@@ -157,8 +157,9 @@ union YYSTYPE
     float floatv;
     struct SymbolTableEntry *sym;
     struct expr *expression;
+    unsigned int unsignedv;
 
-#line 162 "parser.h"
+#line 163 "parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

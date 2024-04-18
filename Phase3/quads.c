@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "quads.h"
-#include "stack.h"
+
 
 #define BOLD_RED "\033[1;31m"
 #define RESET "\033[0m"
@@ -28,7 +28,7 @@ void expand(void){
     total += EXPAND_SIZE;
 }
 
-void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned label, unsigned line){
+void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, unsigned int line){
     if(currQuad == total){
         expand();
     }
@@ -172,9 +172,9 @@ void resetfunctionlocalsoffset(){
 
 void restorecurrscopeoffset(unsigned int n){
     switch (currscopespace()){
-        case: programVar    : programVarOffset = n; break;
-        case: functionLocal : functionLocalOffset = n; break;
-        case: formalArg     : formalArgOffset = n; break;
+        case programVar    : programVarOffset = n; break;
+        case functionLocal : functionLocalOffset = n; break;
+        case formalArg     : formalArgOffset = n; break;
         default: assert(0);
     }
 }

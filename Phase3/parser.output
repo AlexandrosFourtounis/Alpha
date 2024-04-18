@@ -4,7 +4,7 @@ Terminals unused in grammar
 
 
 State 21 conflicts: 1 shift/reduce
-State 159 conflicts: 1 shift/reduce
+State 164 conflicts: 1 shift/reduce
 
 
 Grammar
@@ -108,17 +108,16 @@ Grammar
    73 blockk: stmt blockk
    74       | ε
 
-   75 $@3: ε
+   75 funcname: IDENTIFIER
+   76         | ε
 
-   76 $@4: ε
+   77 funcprefix: KEYWORD_FUNCTION funcname
 
-   77 funcdef: KEYWORD_FUNCTION IDENTIFIER $@3 LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@4 block
+   78 funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS
 
-   78 $@5: ε
+   79 funcbody: block
 
-   79 $@6: ε
-
-   80 funcdef: KEYWORD_FUNCTION $@5 LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@6 block
+   80 funcdef: funcprefix funcargs funcbody
 
    81 const: number
    82      | STRING
@@ -132,9 +131,9 @@ Grammar
    88 idlist: IDENTIFIER ids
    89       | ε
 
-   90 $@7: ε
+   90 $@3: ε
 
-   91 ids: COMMA IDENTIFIER $@7 ids
+   91 ids: COMMA IDENTIFIER $@3 ids
    92    | ε
 
    93 ifstmt: KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt KEYWORD_ELSE stmt
@@ -144,13 +143,13 @@ Grammar
 
    96 forstmt: KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt
 
-   97 $@8: ε
+   97 $@4: ε
 
-   98 returnstmt: KEYWORD_RETURN $@8 expr SEMICOLON
+   98 returnstmt: KEYWORD_RETURN $@4 expr SEMICOLON
 
-   99 $@9: ε
+   99 $@5: ε
 
-  100 returnstmt: KEYWORD_RETURN $@9 SEMICOLON
+  100 returnstmt: KEYWORD_RETURN $@5 SEMICOLON
 
 
 Terminals, with rules where they appear
@@ -170,7 +169,7 @@ Terminals, with rules where they appear
     KEYWORD_ELSE <stringv> (262) 93
     KEYWORD_WHILE <stringv> (263) 95
     KEYWORD_FOR <stringv> (264) 96
-    KEYWORD_FUNCTION <stringv> (265) 77 80
+    KEYWORD_FUNCTION <stringv> (265) 77
     KEYWORD_RETURN <stringv> (266) 98 100
     KEYWORD_BREAK <stringv> (267) 9
     KEYWORD_CONTINUE <stringv> (268) 10
@@ -190,13 +189,13 @@ Terminals, with rules where they appear
     INCREMENT <stringv> (282) 32 33
     DECREMENT <stringv> (283) 34 35
     STRING <stringv> (284) 82
-    IDENTIFIER <stringv> (285) 44 45 46 47 49 51 54 59 77 88 91
+    IDENTIFIER <stringv> (285) 44 45 46 47 49 51 54 59 75 88 91
     LEFTBRACE <stringv> (286) 70 72
     RIGHTBRACE <stringv> (287) 70 72
     LEFTBRACKET <stringv> (288) 50 52 64 65
     RIGHTBRACKET <stringv> (289) 50 52 64 65
-    LEFTPARENTHESIS <stringv> (290) 29 42 53 55 58 59 77 80 93 94 95 96
-    RIGHTPARENTHESIS <stringv> (291) 29 42 53 55 58 59 77 80 93 94 95 96
+    LEFTPARENTHESIS <stringv> (290) 29 42 53 55 58 59 78 93 94 95 96
+    RIGHTPARENTHESIS <stringv> (291) 29 42 53 55 58 59 78 93 94 95 96
     COMMA <stringv> (292) 62 68 91
     SEMICOLON <stringv> (293) 4 9 10 13 14 96 98 100
     COLON <stringv> (294) 70
@@ -272,28 +271,28 @@ Nonterminals, with rules where they appear
         on right: 68 69
     block <stringv> (71)
         on left: 72
-        on right: 11 77 80
+        on right: 11 79
     $@2 (72)
         on left: 71
         on right: 72
     blockk <stringv> (73)
         on left: 73 74
         on right: 72 73
-    funcdef <stringv> (74)
-        on left: 77 80
-        on right: 12 42 55
-    $@3 (75)
-        on left: 75
+    funcname <stringv> (74)
+        on left: 75 76
         on right: 77
-    $@4 (76)
-        on left: 76
-        on right: 77
-    $@5 (77)
+    funcprefix <sym> (75)
+        on left: 77
+        on right: 80
+    funcargs (76)
         on left: 78
         on right: 80
-    $@6 (78)
+    funcbody <unsignedv> (77)
         on left: 79
         on right: 80
+    funcdef <sym> (78)
+        on left: 80
+        on right: 12 42 55
     const <stringv> (79)
         on left: 81 82 83 84 85
         on right: 43
@@ -302,11 +301,11 @@ Nonterminals, with rules where they appear
         on right: 81
     idlist <stringv> (81)
         on left: 88 89
-        on right: 77 80
+        on right: 78
     ids (82)
         on left: 91 92
         on right: 88 91
-    $@7 (83)
+    $@3 (83)
         on left: 90
         on right: 91
     ifstmt <stringv> (84)
@@ -321,10 +320,10 @@ Nonterminals, with rules where they appear
     returnstmt <stringv> (87)
         on left: 98 100
         on right: 8
-    $@8 (88)
+    $@4 (88)
         on left: 97
         on right: 98
-    $@9 (89)
+    $@5 (89)
         on left: 99
         on right: 100
 
@@ -371,20 +370,21 @@ State 0
     call        go to state 35
     objectdef   go to state 36
     block       go to state 37
-    funcdef     go to state 38
-    const       go to state 39
-    number      go to state 40
-    ifstmt      go to state 41
-    whilestmt   go to state 42
-    forstmt     go to state 43
-    returnstmt  go to state 44
+    funcprefix  go to state 38
+    funcdef     go to state 39
+    const       go to state 40
+    number      go to state 41
+    ifstmt      go to state 42
+    whilestmt   go to state 43
+    forstmt     go to state 44
+    returnstmt  go to state 45
 
 
 State 1
 
    14 stmt: error • SEMICOLON
 
-    SEMICOLON  shift, and go to state 45
+    SEMICOLON  shift, and go to state 46
 
 
 State 2
@@ -406,59 +406,58 @@ State 4
    93 ifstmt: KEYWORD_IF • LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt KEYWORD_ELSE stmt
    94       | KEYWORD_IF • LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
 
-    LEFTPARENTHESIS  shift, and go to state 46
+    LEFTPARENTHESIS  shift, and go to state 47
 
 
 State 5
 
    95 whilestmt: KEYWORD_WHILE • LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
 
-    LEFTPARENTHESIS  shift, and go to state 47
+    LEFTPARENTHESIS  shift, and go to state 48
 
 
 State 6
 
    96 forstmt: KEYWORD_FOR • LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt
 
-    LEFTPARENTHESIS  shift, and go to state 48
+    LEFTPARENTHESIS  shift, and go to state 49
 
 
 State 7
 
-   77 funcdef: KEYWORD_FUNCTION • IDENTIFIER $@3 LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@4 block
-   80        | KEYWORD_FUNCTION • $@5 LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@6 block
+   77 funcprefix: KEYWORD_FUNCTION • funcname
 
-    IDENTIFIER  shift, and go to state 49
+    IDENTIFIER  shift, and go to state 50
 
-    $default  reduce using rule 78 ($@5)
+    $default  reduce using rule 76 (funcname)
 
-    $@5  go to state 50
+    funcname  go to state 51
 
 
 State 8
 
-   98 returnstmt: KEYWORD_RETURN • $@8 expr SEMICOLON
-  100           | KEYWORD_RETURN • $@9 SEMICOLON
+   98 returnstmt: KEYWORD_RETURN • $@4 expr SEMICOLON
+  100           | KEYWORD_RETURN • $@5 SEMICOLON
 
-    SEMICOLON  reduce using rule 99 ($@9)
-    $default   reduce using rule 97 ($@8)
+    SEMICOLON  reduce using rule 99 ($@5)
+    $default   reduce using rule 97 ($@4)
 
-    $@8  go to state 51
-    $@9  go to state 52
+    $@4  go to state 52
+    $@5  go to state 53
 
 
 State 9
 
     9 stmt: KEYWORD_BREAK • SEMICOLON
 
-    SEMICOLON  shift, and go to state 53
+    SEMICOLON  shift, and go to state 54
 
 
 State 10
 
    10 stmt: KEYWORD_CONTINUE • SEMICOLON
 
-    SEMICOLON  shift, and go to state 54
+    SEMICOLON  shift, and go to state 55
 
 
 State 11
@@ -481,7 +480,7 @@ State 11
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 55
+    expr        go to state 56
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -489,15 +488,15 @@ State 11
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 12
 
    45 lvalue: KEYWORD_LOCAL • IDENTIFIER
 
-    IDENTIFIER  shift, and go to state 56
+    IDENTIFIER  shift, and go to state 57
 
 
 State 13
@@ -527,12 +526,12 @@ State 16
 
     KEYWORD_LOCAL    shift, and go to state 12
     IDENTIFIER       shift, and go to state 19
-    LEFTPARENTHESIS  shift, and go to state 57
+    LEFTPARENTHESIS  shift, and go to state 58
     DOUBLECOLON      shift, and go to state 24
 
-    lvalue  go to state 58
+    lvalue  go to state 59
     member  go to state 34
-    call    go to state 59
+    call    go to state 60
 
 
 State 17
@@ -541,12 +540,12 @@ State 17
 
     KEYWORD_LOCAL    shift, and go to state 12
     IDENTIFIER       shift, and go to state 19
-    LEFTPARENTHESIS  shift, and go to state 57
+    LEFTPARENTHESIS  shift, and go to state 58
     DOUBLECOLON      shift, and go to state 24
 
-    lvalue  go to state 60
+    lvalue  go to state 61
     member  go to state 34
-    call    go to state 59
+    call    go to state 60
 
 
 State 18
@@ -561,14 +560,14 @@ State 19
    44 lvalue: IDENTIFIER •
    54 call: IDENTIFIER • callsuffix
 
-    LEFTPARENTHESIS  shift, and go to state 61
-    DOUBLEDOT        shift, and go to state 62
+    LEFTPARENTHESIS  shift, and go to state 62
+    DOUBLEDOT        shift, and go to state 63
 
     $default  reduce using rule 44 (lvalue)
 
-    callsuffix  go to state 63
-    normcall    go to state 64
-    methodcall  go to state 65
+    callsuffix  go to state 64
+    normcall    go to state 65
+    methodcall  go to state 66
 
 
 State 20
@@ -577,7 +576,7 @@ State 20
 
     $default  reduce using rule 71 ($@2)
 
-    $@2  go to state 66
+    $@2  go to state 67
 
 
 State 21
@@ -596,30 +595,30 @@ State 21
     DECREMENT           shift, and go to state 17
     STRING              shift, and go to state 18
     IDENTIFIER          shift, and go to state 19
-    LEFTBRACE           shift, and go to state 67
+    LEFTBRACE           shift, and go to state 68
     LEFTBRACKET         shift, and go to state 21
-    RIGHTBRACKET        shift, and go to state 68
+    RIGHTBRACKET        shift, and go to state 69
     LEFTPARENTHESIS     shift, and go to state 22
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
     RIGHTBRACKET  [reduce using rule 61 (elist)]
 
-    expr         go to state 69
+    expr         go to state 70
     term         go to state 30
     assignexpr   go to state 31
     primary      go to state 32
     lvalue       go to state 33
     member       go to state 34
     call         go to state 35
-    elist        go to state 70
-    exprlist     go to state 71
+    elist        go to state 71
+    exprlist     go to state 72
     objectdef    go to state 36
-    obj          go to state 72
-    indexed      go to state 73
-    indexedelem  go to state 74
-    const        go to state 39
-    number       go to state 40
+    obj          go to state 73
+    indexed      go to state 74
+    indexedelem  go to state 75
+    const        go to state 40
+    number       go to state 41
 
 
 State 22
@@ -645,7 +644,7 @@ State 22
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 75
+    expr        go to state 76
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -653,9 +652,10 @@ State 22
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    funcdef     go to state 76
-    const       go to state 39
-    number      go to state 40
+    funcprefix  go to state 38
+    funcdef     go to state 77
+    const       go to state 40
+    number      go to state 41
 
 
 State 23
@@ -670,7 +670,7 @@ State 24
    46 lvalue: DOUBLECOLON • IDENTIFIER callsuffix
    47       | DOUBLECOLON • IDENTIFIER
 
-    IDENTIFIER  shift, and go to state 77
+    IDENTIFIER  shift, and go to state 78
 
 
 State 25
@@ -693,7 +693,7 @@ State 25
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 78
+    expr        go to state 79
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -701,15 +701,15 @@ State 25
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 26
 
     0 $accept: program • $end
 
-    $end  shift, and go to state 79
+    $end  shift, and go to state 80
 
 
 State 27
@@ -752,7 +752,7 @@ State 28
 
     $end  reduce using rule 3 (parsing)
 
-    parsing     go to state 80
+    parsing     go to state 81
     stmt        go to state 28
     expr        go to state 29
     term        go to state 30
@@ -763,13 +763,14 @@ State 28
     call        go to state 35
     objectdef   go to state 36
     block       go to state 37
-    funcdef     go to state 38
-    const       go to state 39
-    number      go to state 40
-    ifstmt      go to state 41
-    whilestmt   go to state 42
-    forstmt     go to state 43
-    returnstmt  go to state 44
+    funcprefix  go to state 38
+    funcdef     go to state 39
+    const       go to state 40
+    number      go to state 41
+    ifstmt      go to state 42
+    whilestmt   go to state 43
+    forstmt     go to state 44
+    returnstmt  go to state 45
 
 
 State 29
@@ -788,19 +789,19 @@ State 29
    25     | expr • KEYWORD_AND expr
    26     | expr • KEYWORD_OR expr
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    SEMICOLON      shift, and go to state 89
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    SEMICOLON      shift, and go to state 90
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
 
 State 30
@@ -833,11 +834,11 @@ State 33
    49 member: lvalue • DOT IDENTIFIER
    50       | lvalue • LEFTBRACKET expr RIGHTBRACKET
 
-    INCREMENT    shift, and go to state 94
-    DECREMENT    shift, and go to state 95
-    LEFTBRACKET  shift, and go to state 96
-    DOT          shift, and go to state 97
-    '='          shift, and go to state 98
+    INCREMENT    shift, and go to state 95
+    DECREMENT    shift, and go to state 96
+    LEFTBRACKET  shift, and go to state 97
+    DOT          shift, and go to state 98
+    '='          shift, and go to state 99
 
     $default  reduce using rule 39 (primary)
 
@@ -856,9 +857,9 @@ State 35
    52       | call • LEFTBRACKET expr RIGHTBRACKET
    53 call: call • LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
-    LEFTBRACKET      shift, and go to state 99
-    LEFTPARENTHESIS  shift, and go to state 100
-    DOT              shift, and go to state 101
+    LEFTBRACKET      shift, and go to state 100
+    LEFTPARENTHESIS  shift, and go to state 101
+    DOT              shift, and go to state 102
 
     $default  reduce using rule 40 (primary)
 
@@ -879,61 +880,70 @@ State 37
 
 State 38
 
+   80 funcdef: funcprefix • funcargs funcbody
+
+    LEFTPARENTHESIS  shift, and go to state 103
+
+    funcargs  go to state 104
+
+
+State 39
+
    12 stmt: funcdef •
 
     $default  reduce using rule 12 (stmt)
 
 
-State 39
+State 40
 
    43 primary: const •
 
     $default  reduce using rule 43 (primary)
 
 
-State 40
+State 41
 
    81 const: number •
 
     $default  reduce using rule 81 (const)
 
 
-State 41
+State 42
 
     5 stmt: ifstmt •
 
     $default  reduce using rule 5 (stmt)
 
 
-State 42
+State 43
 
     6 stmt: whilestmt •
 
     $default  reduce using rule 6 (stmt)
 
 
-State 43
+State 44
 
     7 stmt: forstmt •
 
     $default  reduce using rule 7 (stmt)
 
 
-State 44
+State 45
 
     8 stmt: returnstmt •
 
     $default  reduce using rule 8 (stmt)
 
 
-State 45
+State 46
 
    14 stmt: error SEMICOLON •
 
     $default  reduce using rule 14 (stmt)
 
 
-State 46
+State 47
 
    93 ifstmt: KEYWORD_IF LEFTPARENTHESIS • expr RIGHTPARENTHESIS stmt KEYWORD_ELSE stmt
    94       | KEYWORD_IF LEFTPARENTHESIS • expr RIGHTPARENTHESIS stmt
@@ -954,7 +964,7 @@ State 46
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 102
+    expr        go to state 105
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -962,11 +972,11 @@ State 46
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 47
+State 48
 
    95 whilestmt: KEYWORD_WHILE LEFTPARENTHESIS • expr RIGHTPARENTHESIS stmt
 
@@ -986,7 +996,7 @@ State 47
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 103
+    expr        go to state 106
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -994,11 +1004,11 @@ State 47
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 48
+State 49
 
    96 forstmt: KEYWORD_FOR LEFTPARENTHESIS • elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt
 
@@ -1020,39 +1030,37 @@ State 48
 
     $default  reduce using rule 61 (elist)
 
-    expr        go to state 69
+    expr        go to state 70
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
     lvalue      go to state 33
     member      go to state 34
     call        go to state 35
-    elist       go to state 104
-    exprlist    go to state 71
+    elist       go to state 107
+    exprlist    go to state 72
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
-
-
-State 49
-
-   77 funcdef: KEYWORD_FUNCTION IDENTIFIER • $@3 LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@4 block
-
-    $default  reduce using rule 75 ($@3)
-
-    $@3  go to state 105
+    const       go to state 40
+    number      go to state 41
 
 
 State 50
 
-   80 funcdef: KEYWORD_FUNCTION $@5 • LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@6 block
+   75 funcname: IDENTIFIER •
 
-    LEFTPARENTHESIS  shift, and go to state 106
+    $default  reduce using rule 75 (funcname)
 
 
 State 51
 
-   98 returnstmt: KEYWORD_RETURN $@8 • expr SEMICOLON
+   77 funcprefix: KEYWORD_FUNCTION funcname •
+
+    $default  reduce using rule 77 (funcprefix)
+
+
+State 52
+
+   98 returnstmt: KEYWORD_RETURN $@4 • expr SEMICOLON
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1070,7 +1078,7 @@ State 51
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 107
+    expr        go to state 108
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -1078,32 +1086,32 @@ State 51
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
-
-
-State 52
-
-  100 returnstmt: KEYWORD_RETURN $@9 • SEMICOLON
-
-    SEMICOLON  shift, and go to state 108
+    const       go to state 40
+    number      go to state 41
 
 
 State 53
+
+  100 returnstmt: KEYWORD_RETURN $@5 • SEMICOLON
+
+    SEMICOLON  shift, and go to state 109
+
+
+State 54
 
     9 stmt: KEYWORD_BREAK SEMICOLON •
 
     $default  reduce using rule 9 (stmt)
 
 
-State 54
+State 55
 
    10 stmt: KEYWORD_CONTINUE SEMICOLON •
 
     $default  reduce using rule 10 (stmt)
 
 
-State 55
+State 56
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -1119,68 +1127,69 @@ State 55
    26     | expr • KEYWORD_OR expr
    31 term: KEYWORD_NOT expr •
 
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
 
     $default  reduce using rule 31 (term)
 
 
-State 56
+State 57
 
    45 lvalue: KEYWORD_LOCAL IDENTIFIER •
 
     $default  reduce using rule 45 (lvalue)
 
 
-State 57
+State 58
 
    55 call: LEFTPARENTHESIS • funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
     KEYWORD_FUNCTION  shift, and go to state 7
 
-    funcdef  go to state 109
+    funcprefix  go to state 38
+    funcdef     go to state 110
 
 
-State 58
+State 59
 
    32 term: INCREMENT lvalue •
    49 member: lvalue • DOT IDENTIFIER
    50       | lvalue • LEFTBRACKET expr RIGHTBRACKET
 
-    LEFTBRACKET  shift, and go to state 96
-    DOT          shift, and go to state 97
+    LEFTBRACKET  shift, and go to state 97
+    DOT          shift, and go to state 98
 
     $default  reduce using rule 32 (term)
 
 
-State 59
+State 60
 
    51 member: call • DOT IDENTIFIER
    52       | call • LEFTBRACKET expr RIGHTBRACKET
    53 call: call • LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
-    LEFTBRACKET      shift, and go to state 99
-    LEFTPARENTHESIS  shift, and go to state 100
-    DOT              shift, and go to state 101
+    LEFTBRACKET      shift, and go to state 100
+    LEFTPARENTHESIS  shift, and go to state 101
+    DOT              shift, and go to state 102
 
 
-State 60
+State 61
 
    34 term: DECREMENT lvalue •
    49 member: lvalue • DOT IDENTIFIER
    50       | lvalue • LEFTBRACKET expr RIGHTBRACKET
 
-    LEFTBRACKET  shift, and go to state 96
-    DOT          shift, and go to state 97
+    LEFTBRACKET  shift, and go to state 97
+    DOT          shift, and go to state 98
 
     $default  reduce using rule 34 (term)
 
 
-State 61
+State 62
 
    58 normcall: LEFTPARENTHESIS • elist RIGHTPARENTHESIS
 
@@ -1202,49 +1211,49 @@ State 61
 
     $default  reduce using rule 61 (elist)
 
-    expr        go to state 69
+    expr        go to state 70
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
     lvalue      go to state 33
     member      go to state 34
     call        go to state 35
-    elist       go to state 110
-    exprlist    go to state 71
+    elist       go to state 111
+    exprlist    go to state 72
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
-
-
-State 62
-
-   59 methodcall: DOUBLEDOT • IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
-
-    IDENTIFIER  shift, and go to state 111
+    const       go to state 40
+    number      go to state 41
 
 
 State 63
+
+   59 methodcall: DOUBLEDOT • IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
+
+    IDENTIFIER  shift, and go to state 112
+
+
+State 64
 
    54 call: IDENTIFIER callsuffix •
 
     $default  reduce using rule 54 (call)
 
 
-State 64
+State 65
 
    56 callsuffix: normcall •
 
     $default  reduce using rule 56 (callsuffix)
 
 
-State 65
+State 66
 
    57 callsuffix: methodcall •
 
     $default  reduce using rule 57 (callsuffix)
 
 
-State 66
+State 67
 
    72 block: LEFTBRACE $@2 • blockk RIGHTBRACE
 
@@ -1276,7 +1285,7 @@ State 66
 
     RIGHTBRACE  reduce using rule 74 (blockk)
 
-    stmt        go to state 112
+    stmt        go to state 113
     expr        go to state 29
     term        go to state 30
     assignexpr  go to state 31
@@ -1286,17 +1295,18 @@ State 66
     call        go to state 35
     objectdef   go to state 36
     block       go to state 37
-    blockk      go to state 113
-    funcdef     go to state 38
-    const       go to state 39
-    number      go to state 40
-    ifstmt      go to state 41
-    whilestmt   go to state 42
-    forstmt     go to state 43
-    returnstmt  go to state 44
+    blockk      go to state 114
+    funcprefix  go to state 38
+    funcdef     go to state 39
+    const       go to state 40
+    number      go to state 41
+    ifstmt      go to state 42
+    whilestmt   go to state 43
+    forstmt     go to state 44
+    returnstmt  go to state 45
 
 
-State 67
+State 68
 
    70 indexedelem: LEFTBRACE • expr COLON expr RIGHTBRACE
 
@@ -1316,7 +1326,7 @@ State 67
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 114
+    expr        go to state 115
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -1324,18 +1334,18 @@ State 67
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 68
+State 69
 
    65 objectdef: LEFTBRACKET RIGHTBRACKET •
 
     $default  reduce using rule 65 (objectdef)
 
 
-State 69
+State 70
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -1351,64 +1361,64 @@ State 69
    26     | expr • KEYWORD_OR expr
    63 exprlist: expr •
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
     $default  reduce using rule 63 (exprlist)
 
 
-State 70
+State 71
 
    66 obj: elist •
 
     $default  reduce using rule 66 (obj)
 
 
-State 71
+State 72
 
    60 elist: exprlist •
    62 exprlist: exprlist • COMMA expr
 
-    COMMA  shift, and go to state 115
+    COMMA  shift, and go to state 116
 
     $default  reduce using rule 60 (elist)
 
 
-State 72
+State 73
 
    64 objectdef: LEFTBRACKET obj • RIGHTBRACKET
 
-    RIGHTBRACKET  shift, and go to state 116
+    RIGHTBRACKET  shift, and go to state 117
 
 
-State 73
+State 74
 
    67 obj: indexed •
 
     $default  reduce using rule 67 (obj)
 
 
-State 74
+State 75
 
    68 indexed: indexedelem • COMMA indexed
    69        | indexedelem •
 
-    COMMA  shift, and go to state 117
+    COMMA  shift, and go to state 118
 
     $default  reduce using rule 69 (indexed)
 
 
-State 75
+State 76
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -1424,45 +1434,45 @@ State 75
    26     | expr • KEYWORD_OR expr
    29 term: LEFTPARENTHESIS expr • RIGHTPARENTHESIS
 
-    KEYWORD_AND       shift, and go to state 81
-    KEYWORD_OR        shift, and go to state 82
-    GREATER           shift, and go to state 83
-    LESS              shift, and go to state 84
-    EQUALS            shift, and go to state 85
-    GREATER_EQUAL     shift, and go to state 86
-    LESS_EQUAL        shift, and go to state 87
-    NOT_EQUAL         shift, and go to state 88
-    RIGHTPARENTHESIS  shift, and go to state 118
-    '+'               shift, and go to state 90
-    '*'               shift, and go to state 91
-    '/'               shift, and go to state 92
-    '%'               shift, and go to state 93
-
-
-State 76
-
-   42 primary: LEFTPARENTHESIS funcdef • RIGHTPARENTHESIS
-   55 call: LEFTPARENTHESIS funcdef • RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS
-
+    KEYWORD_AND       shift, and go to state 82
+    KEYWORD_OR        shift, and go to state 83
+    GREATER           shift, and go to state 84
+    LESS              shift, and go to state 85
+    EQUALS            shift, and go to state 86
+    GREATER_EQUAL     shift, and go to state 87
+    LESS_EQUAL        shift, and go to state 88
+    NOT_EQUAL         shift, and go to state 89
     RIGHTPARENTHESIS  shift, and go to state 119
+    '+'               shift, and go to state 91
+    '*'               shift, and go to state 92
+    '/'               shift, and go to state 93
+    '%'               shift, and go to state 94
 
 
 State 77
 
-   46 lvalue: DOUBLECOLON IDENTIFIER • callsuffix
-   47       | DOUBLECOLON IDENTIFIER •
+   42 primary: LEFTPARENTHESIS funcdef • RIGHTPARENTHESIS
+   55 call: LEFTPARENTHESIS funcdef • RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
-    LEFTPARENTHESIS  shift, and go to state 61
-    DOUBLEDOT        shift, and go to state 62
-
-    $default  reduce using rule 47 (lvalue)
-
-    callsuffix  go to state 120
-    normcall    go to state 64
-    methodcall  go to state 65
+    RIGHTPARENTHESIS  shift, and go to state 120
 
 
 State 78
+
+   46 lvalue: DOUBLECOLON IDENTIFIER • callsuffix
+   47       | DOUBLECOLON IDENTIFIER •
+
+    LEFTPARENTHESIS  shift, and go to state 62
+    DOUBLEDOT        shift, and go to state 63
+
+    $default  reduce using rule 47 (lvalue)
+
+    callsuffix  go to state 121
+    normcall    go to state 65
+    methodcall  go to state 66
+
+
+State 79
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -1481,55 +1491,23 @@ State 78
     $default  reduce using rule 30 (term)
 
 
-State 79
+State 80
 
     0 $accept: program $end •
 
     $default  accept
 
 
-State 80
+State 81
 
     2 parsing: stmt parsing •
 
     $default  reduce using rule 2 (parsing)
 
 
-State 81
-
-   25 expr: expr KEYWORD_AND • expr
-
-    "integer constant"  shift, and go to state 2
-    "real contstant"    shift, and go to state 3
-    KEYWORD_NOT         shift, and go to state 11
-    KEYWORD_LOCAL       shift, and go to state 12
-    KEYWORD_TRUE        shift, and go to state 13
-    KEYWORD_FALSE       shift, and go to state 14
-    KEYWORD_NIL         shift, and go to state 15
-    INCREMENT           shift, and go to state 16
-    DECREMENT           shift, and go to state 17
-    STRING              shift, and go to state 18
-    IDENTIFIER          shift, and go to state 19
-    LEFTBRACKET         shift, and go to state 21
-    LEFTPARENTHESIS     shift, and go to state 22
-    DOUBLECOLON         shift, and go to state 24
-    '-'                 shift, and go to state 25
-
-    expr        go to state 121
-    term        go to state 30
-    assignexpr  go to state 31
-    primary     go to state 32
-    lvalue      go to state 33
-    member      go to state 34
-    call        go to state 35
-    objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
-
-
 State 82
 
-   26 expr: expr KEYWORD_OR • expr
+   25 expr: expr KEYWORD_AND • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1555,13 +1533,13 @@ State 82
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 83
 
-   19 expr: expr GREATER • expr
+   26 expr: expr KEYWORD_OR • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1587,13 +1565,13 @@ State 83
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 84
 
-   21 expr: expr LESS • expr
+   19 expr: expr GREATER • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1619,13 +1597,13 @@ State 84
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 85
 
-   23 expr: expr EQUALS • expr
+   21 expr: expr LESS • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1651,13 +1629,13 @@ State 85
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 86
 
-   20 expr: expr GREATER_EQUAL • expr
+   23 expr: expr EQUALS • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1683,13 +1661,13 @@ State 86
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 87
 
-   22 expr: expr LESS_EQUAL • expr
+   20 expr: expr GREATER_EQUAL • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1715,13 +1693,13 @@ State 87
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 88
 
-   24 expr: expr NOT_EQUAL • expr
+   22 expr: expr LESS_EQUAL • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1747,20 +1725,13 @@ State 88
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 89
 
-    4 stmt: expr SEMICOLON •
-
-    $default  reduce using rule 4 (stmt)
-
-
-State 90
-
-   15 expr: expr '+' • expr
+   24 expr: expr NOT_EQUAL • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1786,13 +1757,20 @@ State 90
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
+
+
+State 90
+
+    4 stmt: expr SEMICOLON •
+
+    $default  reduce using rule 4 (stmt)
 
 
 State 91
 
-   16 expr: expr '*' • expr
+   15 expr: expr '+' • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1818,13 +1796,13 @@ State 91
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 92
 
-   17 expr: expr '/' • expr
+   16 expr: expr '*' • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1850,13 +1828,13 @@ State 92
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 93
 
-   18 expr: expr '%' • expr
+   17 expr: expr '/' • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1882,27 +1860,13 @@ State 93
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
 State 94
 
-   33 term: lvalue INCREMENT •
-
-    $default  reduce using rule 33 (term)
-
-
-State 95
-
-   35 term: lvalue DECREMENT •
-
-    $default  reduce using rule 35 (term)
-
-
-State 96
-
-   50 member: lvalue LEFTBRACKET • expr RIGHTBRACKET
+   18 expr: expr '%' • expr
 
     "integer constant"  shift, and go to state 2
     "real contstant"    shift, and go to state 3
@@ -1928,27 +1892,73 @@ State 96
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
+
+
+State 95
+
+   33 term: lvalue INCREMENT •
+
+    $default  reduce using rule 33 (term)
+
+
+State 96
+
+   35 term: lvalue DECREMENT •
+
+    $default  reduce using rule 35 (term)
 
 
 State 97
 
-   49 member: lvalue DOT • IDENTIFIER
+   50 member: lvalue LEFTBRACKET • expr RIGHTBRACKET
 
-    IDENTIFIER  shift, and go to state 134
+    "integer constant"  shift, and go to state 2
+    "real contstant"    shift, and go to state 3
+    KEYWORD_NOT         shift, and go to state 11
+    KEYWORD_LOCAL       shift, and go to state 12
+    KEYWORD_TRUE        shift, and go to state 13
+    KEYWORD_FALSE       shift, and go to state 14
+    KEYWORD_NIL         shift, and go to state 15
+    INCREMENT           shift, and go to state 16
+    DECREMENT           shift, and go to state 17
+    STRING              shift, and go to state 18
+    IDENTIFIER          shift, and go to state 19
+    LEFTBRACKET         shift, and go to state 21
+    LEFTPARENTHESIS     shift, and go to state 22
+    DOUBLECOLON         shift, and go to state 24
+    '-'                 shift, and go to state 25
+
+    expr        go to state 134
+    term        go to state 30
+    assignexpr  go to state 31
+    primary     go to state 32
+    lvalue      go to state 33
+    member      go to state 34
+    call        go to state 35
+    objectdef   go to state 36
+    const       go to state 40
+    number      go to state 41
 
 
 State 98
+
+   49 member: lvalue DOT • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 135
+
+
+State 99
 
    38 assignexpr: lvalue '=' • $@1 expr
 
     $default  reduce using rule 37 ($@1)
 
-    $@1  go to state 135
+    $@1  go to state 136
 
 
-State 99
+State 100
 
    52 member: call LEFTBRACKET • expr RIGHTBRACKET
 
@@ -1968,7 +1978,7 @@ State 99
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 136
+    expr        go to state 137
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -1976,11 +1986,11 @@ State 99
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 100
+State 101
 
    53 call: call LEFTPARENTHESIS • elist RIGHTPARENTHESIS
 
@@ -2002,28 +2012,49 @@ State 100
 
     $default  reduce using rule 61 (elist)
 
-    expr        go to state 69
+    expr        go to state 70
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
     lvalue      go to state 33
     member      go to state 34
     call        go to state 35
-    elist       go to state 137
-    exprlist    go to state 71
+    elist       go to state 138
+    exprlist    go to state 72
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
-
-
-State 101
-
-   51 member: call DOT • IDENTIFIER
-
-    IDENTIFIER  shift, and go to state 138
+    const       go to state 40
+    number      go to state 41
 
 
 State 102
+
+   51 member: call DOT • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 139
+
+
+State 103
+
+   78 funcargs: LEFTPARENTHESIS • idlist RIGHTPARENTHESIS
+
+    IDENTIFIER  shift, and go to state 140
+
+    $default  reduce using rule 89 (idlist)
+
+    idlist  go to state 141
+
+
+State 104
+
+   80 funcdef: funcprefix funcargs • funcbody
+
+    LEFTBRACE  shift, and go to state 20
+
+    block     go to state 142
+    funcbody  go to state 143
+
+
+State 105
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2040,22 +2071,22 @@ State 102
    93 ifstmt: KEYWORD_IF LEFTPARENTHESIS expr • RIGHTPARENTHESIS stmt KEYWORD_ELSE stmt
    94       | KEYWORD_IF LEFTPARENTHESIS expr • RIGHTPARENTHESIS stmt
 
-    KEYWORD_AND       shift, and go to state 81
-    KEYWORD_OR        shift, and go to state 82
-    GREATER           shift, and go to state 83
-    LESS              shift, and go to state 84
-    EQUALS            shift, and go to state 85
-    GREATER_EQUAL     shift, and go to state 86
-    LESS_EQUAL        shift, and go to state 87
-    NOT_EQUAL         shift, and go to state 88
-    RIGHTPARENTHESIS  shift, and go to state 139
-    '+'               shift, and go to state 90
-    '*'               shift, and go to state 91
-    '/'               shift, and go to state 92
-    '%'               shift, and go to state 93
+    KEYWORD_AND       shift, and go to state 82
+    KEYWORD_OR        shift, and go to state 83
+    GREATER           shift, and go to state 84
+    LESS              shift, and go to state 85
+    EQUALS            shift, and go to state 86
+    GREATER_EQUAL     shift, and go to state 87
+    LESS_EQUAL        shift, and go to state 88
+    NOT_EQUAL         shift, and go to state 89
+    RIGHTPARENTHESIS  shift, and go to state 144
+    '+'               shift, and go to state 91
+    '*'               shift, and go to state 92
+    '/'               shift, and go to state 93
+    '%'               shift, and go to state 94
 
 
-State 103
+State 106
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2071,47 +2102,29 @@ State 103
    26     | expr • KEYWORD_OR expr
    95 whilestmt: KEYWORD_WHILE LEFTPARENTHESIS expr • RIGHTPARENTHESIS stmt
 
-    KEYWORD_AND       shift, and go to state 81
-    KEYWORD_OR        shift, and go to state 82
-    GREATER           shift, and go to state 83
-    LESS              shift, and go to state 84
-    EQUALS            shift, and go to state 85
-    GREATER_EQUAL     shift, and go to state 86
-    LESS_EQUAL        shift, and go to state 87
-    NOT_EQUAL         shift, and go to state 88
-    RIGHTPARENTHESIS  shift, and go to state 140
-    '+'               shift, and go to state 90
-    '*'               shift, and go to state 91
-    '/'               shift, and go to state 92
-    '%'               shift, and go to state 93
-
-
-State 104
-
-   96 forstmt: KEYWORD_FOR LEFTPARENTHESIS elist • SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt
-
-    SEMICOLON  shift, and go to state 141
-
-
-State 105
-
-   77 funcdef: KEYWORD_FUNCTION IDENTIFIER $@3 • LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@4 block
-
-    LEFTPARENTHESIS  shift, and go to state 142
-
-
-State 106
-
-   80 funcdef: KEYWORD_FUNCTION $@5 LEFTPARENTHESIS • idlist RIGHTPARENTHESIS $@6 block
-
-    IDENTIFIER  shift, and go to state 143
-
-    $default  reduce using rule 89 (idlist)
-
-    idlist  go to state 144
+    KEYWORD_AND       shift, and go to state 82
+    KEYWORD_OR        shift, and go to state 83
+    GREATER           shift, and go to state 84
+    LESS              shift, and go to state 85
+    EQUALS            shift, and go to state 86
+    GREATER_EQUAL     shift, and go to state 87
+    LESS_EQUAL        shift, and go to state 88
+    NOT_EQUAL         shift, and go to state 89
+    RIGHTPARENTHESIS  shift, and go to state 145
+    '+'               shift, and go to state 91
+    '*'               shift, and go to state 92
+    '/'               shift, and go to state 93
+    '%'               shift, and go to state 94
 
 
 State 107
+
+   96 forstmt: KEYWORD_FOR LEFTPARENTHESIS elist • SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt
+
+    SEMICOLON  shift, and go to state 146
+
+
+State 108
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2125,52 +2138,52 @@ State 107
    24     | expr • NOT_EQUAL expr
    25     | expr • KEYWORD_AND expr
    26     | expr • KEYWORD_OR expr
-   98 returnstmt: KEYWORD_RETURN $@8 expr • SEMICOLON
+   98 returnstmt: KEYWORD_RETURN $@4 expr • SEMICOLON
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    SEMICOLON      shift, and go to state 145
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
-
-
-State 108
-
-  100 returnstmt: KEYWORD_RETURN $@9 SEMICOLON •
-
-    $default  reduce using rule 100 (returnstmt)
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    SEMICOLON      shift, and go to state 147
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
 
 State 109
 
-   55 call: LEFTPARENTHESIS funcdef • RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS
+  100 returnstmt: KEYWORD_RETURN $@5 SEMICOLON •
 
-    RIGHTPARENTHESIS  shift, and go to state 146
+    $default  reduce using rule 100 (returnstmt)
 
 
 State 110
 
-   58 normcall: LEFTPARENTHESIS elist • RIGHTPARENTHESIS
+   55 call: LEFTPARENTHESIS funcdef • RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
-    RIGHTPARENTHESIS  shift, and go to state 147
+    RIGHTPARENTHESIS  shift, and go to state 148
 
 
 State 111
 
-   59 methodcall: DOUBLEDOT IDENTIFIER • LEFTPARENTHESIS elist RIGHTPARENTHESIS
+   58 normcall: LEFTPARENTHESIS elist • RIGHTPARENTHESIS
 
-    LEFTPARENTHESIS  shift, and go to state 148
+    RIGHTPARENTHESIS  shift, and go to state 149
 
 
 State 112
+
+   59 methodcall: DOUBLEDOT IDENTIFIER • LEFTPARENTHESIS elist RIGHTPARENTHESIS
+
+    LEFTPARENTHESIS  shift, and go to state 150
+
+
+State 113
 
    73 blockk: stmt • blockk
 
@@ -2202,7 +2215,7 @@ State 112
 
     RIGHTBRACE  reduce using rule 74 (blockk)
 
-    stmt        go to state 112
+    stmt        go to state 113
     expr        go to state 29
     term        go to state 30
     assignexpr  go to state 31
@@ -2212,24 +2225,25 @@ State 112
     call        go to state 35
     objectdef   go to state 36
     block       go to state 37
-    blockk      go to state 149
-    funcdef     go to state 38
-    const       go to state 39
-    number      go to state 40
-    ifstmt      go to state 41
-    whilestmt   go to state 42
-    forstmt     go to state 43
-    returnstmt  go to state 44
-
-
-State 113
-
-   72 block: LEFTBRACE $@2 blockk • RIGHTBRACE
-
-    RIGHTBRACE  shift, and go to state 150
+    blockk      go to state 151
+    funcprefix  go to state 38
+    funcdef     go to state 39
+    const       go to state 40
+    number      go to state 41
+    ifstmt      go to state 42
+    whilestmt   go to state 43
+    forstmt     go to state 44
+    returnstmt  go to state 45
 
 
 State 114
+
+   72 block: LEFTBRACE $@2 blockk • RIGHTBRACE
+
+    RIGHTBRACE  shift, and go to state 152
+
+
+State 115
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2245,22 +2259,22 @@ State 114
    26     | expr • KEYWORD_OR expr
    70 indexedelem: LEFTBRACE expr • COLON expr RIGHTBRACE
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    COLON          shift, and go to state 151
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    COLON          shift, and go to state 153
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
 
-State 115
+State 116
 
    62 exprlist: exprlist COMMA • expr
 
@@ -2280,7 +2294,7 @@ State 115
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 152
+    expr        go to state 154
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -2288,79 +2302,49 @@ State 115
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 116
+State 117
 
    64 objectdef: LEFTBRACKET obj RIGHTBRACKET •
 
     $default  reduce using rule 64 (objectdef)
 
 
-State 117
+State 118
 
    68 indexed: indexedelem COMMA • indexed
 
-    LEFTBRACE  shift, and go to state 67
+    LEFTBRACE  shift, and go to state 68
 
-    indexed      go to state 153
-    indexedelem  go to state 74
+    indexed      go to state 155
+    indexedelem  go to state 75
 
 
-State 118
+State 119
 
    29 term: LEFTPARENTHESIS expr RIGHTPARENTHESIS •
 
     $default  reduce using rule 29 (term)
 
 
-State 119
+State 120
 
    42 primary: LEFTPARENTHESIS funcdef RIGHTPARENTHESIS •
    55 call: LEFTPARENTHESIS funcdef RIGHTPARENTHESIS • LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
-    LEFTPARENTHESIS  shift, and go to state 154
+    LEFTPARENTHESIS  shift, and go to state 156
 
     $default  reduce using rule 42 (primary)
 
 
-State 120
+State 121
 
    46 lvalue: DOUBLECOLON IDENTIFIER callsuffix •
 
     $default  reduce using rule 46 (lvalue)
-
-
-State 121
-
-   15 expr: expr • '+' expr
-   16     | expr • '*' expr
-   17     | expr • '/' expr
-   18     | expr • '%' expr
-   19     | expr • GREATER expr
-   20     | expr • GREATER_EQUAL expr
-   21     | expr • LESS expr
-   22     | expr • LESS_EQUAL expr
-   23     | expr • EQUALS expr
-   24     | expr • NOT_EQUAL expr
-   25     | expr • KEYWORD_AND expr
-   25     | expr KEYWORD_AND expr •
-   26     | expr • KEYWORD_OR expr
-
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
-
-    $default  reduce using rule 25 (expr)
 
 
 State 122
@@ -2376,25 +2360,55 @@ State 122
    23     | expr • EQUALS expr
    24     | expr • NOT_EQUAL expr
    25     | expr • KEYWORD_AND expr
+   25     | expr KEYWORD_AND expr •
+   26     | expr • KEYWORD_OR expr
+
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
+
+    $default  reduce using rule 25 (expr)
+
+
+State 123
+
+   15 expr: expr • '+' expr
+   16     | expr • '*' expr
+   17     | expr • '/' expr
+   18     | expr • '%' expr
+   19     | expr • GREATER expr
+   20     | expr • GREATER_EQUAL expr
+   21     | expr • LESS expr
+   22     | expr • LESS_EQUAL expr
+   23     | expr • EQUALS expr
+   24     | expr • NOT_EQUAL expr
+   25     | expr • KEYWORD_AND expr
    26     | expr • KEYWORD_OR expr
    26     | expr KEYWORD_OR expr •
 
-    KEYWORD_AND    shift, and go to state 81
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
+    KEYWORD_AND    shift, and go to state 82
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
     $default  reduce using rule 26 (expr)
 
 
-State 123
+State 124
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2418,7 +2432,7 @@ State 123
     $default  reduce using rule 19 (expr)
 
 
-State 124
+State 125
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2442,7 +2456,7 @@ State 124
     $default  reduce using rule 21 (expr)
 
 
-State 125
+State 126
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2458,10 +2472,10 @@ State 125
    25     | expr • KEYWORD_AND expr
    26     | expr • KEYWORD_OR expr
 
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
 
     EQUALS     error (nonassociative)
     NOT_EQUAL  error (nonassociative)
@@ -2469,7 +2483,7 @@ State 125
     $default  reduce using rule 23 (expr)
 
 
-State 126
+State 127
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2493,7 +2507,7 @@ State 126
     $default  reduce using rule 20 (expr)
 
 
-State 127
+State 128
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2517,7 +2531,7 @@ State 127
     $default  reduce using rule 22 (expr)
 
 
-State 128
+State 129
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2533,10 +2547,10 @@ State 128
    25     | expr • KEYWORD_AND expr
    26     | expr • KEYWORD_OR expr
 
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
 
     EQUALS     error (nonassociative)
     NOT_EQUAL  error (nonassociative)
@@ -2544,7 +2558,7 @@ State 128
     $default  reduce using rule 24 (expr)
 
 
-State 129
+State 130
 
    15 expr: expr • '+' expr
    15     | expr '+' expr •
@@ -2560,20 +2574,20 @@ State 129
    25     | expr • KEYWORD_AND expr
    26     | expr • KEYWORD_OR expr
 
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
     $default  reduce using rule 15 (expr)
 
 
-State 130
+State 131
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2589,17 +2603,17 @@ State 130
    25     | expr • KEYWORD_AND expr
    26     | expr • KEYWORD_OR expr
 
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
 
     $default  reduce using rule 16 (expr)
 
 
-State 131
+State 132
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2615,17 +2629,17 @@ State 131
    25     | expr • KEYWORD_AND expr
    26     | expr • KEYWORD_OR expr
 
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
 
     $default  reduce using rule 17 (expr)
 
 
-State 132
+State 133
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2641,17 +2655,17 @@ State 132
    25     | expr • KEYWORD_AND expr
    26     | expr • KEYWORD_OR expr
 
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
 
     $default  reduce using rule 18 (expr)
 
 
-State 133
+State 134
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2667,29 +2681,29 @@ State 133
    26     | expr • KEYWORD_OR expr
    50 member: lvalue LEFTBRACKET expr • RIGHTBRACKET
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    RIGHTBRACKET   shift, and go to state 155
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    RIGHTBRACKET   shift, and go to state 157
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
 
-State 134
+State 135
 
    49 member: lvalue DOT IDENTIFIER •
 
     $default  reduce using rule 49 (member)
 
 
-State 135
+State 136
 
    38 assignexpr: lvalue '=' $@1 • expr
 
@@ -2709,7 +2723,7 @@ State 135
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 156
+    expr        go to state 158
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -2717,11 +2731,11 @@ State 135
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 136
+State 137
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -2737,36 +2751,68 @@ State 136
    26     | expr • KEYWORD_OR expr
    52 member: call LEFTBRACKET expr • RIGHTBRACKET
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    RIGHTBRACKET   shift, and go to state 157
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
-
-
-State 137
-
-   53 call: call LEFTPARENTHESIS elist • RIGHTPARENTHESIS
-
-    RIGHTPARENTHESIS  shift, and go to state 158
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    RIGHTBRACKET   shift, and go to state 159
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
 
 State 138
+
+   53 call: call LEFTPARENTHESIS elist • RIGHTPARENTHESIS
+
+    RIGHTPARENTHESIS  shift, and go to state 160
+
+
+State 139
 
    51 member: call DOT IDENTIFIER •
 
     $default  reduce using rule 51 (member)
 
 
-State 139
+State 140
+
+   88 idlist: IDENTIFIER • ids
+
+    COMMA  shift, and go to state 161
+
+    $default  reduce using rule 92 (ids)
+
+    ids  go to state 162
+
+
+State 141
+
+   78 funcargs: LEFTPARENTHESIS idlist • RIGHTPARENTHESIS
+
+    RIGHTPARENTHESIS  shift, and go to state 163
+
+
+State 142
+
+   79 funcbody: block •
+
+    $default  reduce using rule 79 (funcbody)
+
+
+State 143
+
+   80 funcdef: funcprefix funcargs funcbody •
+
+    $default  reduce using rule 80 (funcdef)
+
+
+State 144
 
    93 ifstmt: KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS • stmt KEYWORD_ELSE stmt
    94       | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS • stmt
@@ -2797,7 +2843,7 @@ State 139
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    stmt        go to state 159
+    stmt        go to state 164
     expr        go to state 29
     term        go to state 30
     assignexpr  go to state 31
@@ -2807,16 +2853,17 @@ State 139
     call        go to state 35
     objectdef   go to state 36
     block       go to state 37
-    funcdef     go to state 38
-    const       go to state 39
-    number      go to state 40
-    ifstmt      go to state 41
-    whilestmt   go to state 42
-    forstmt     go to state 43
-    returnstmt  go to state 44
+    funcprefix  go to state 38
+    funcdef     go to state 39
+    const       go to state 40
+    number      go to state 41
+    ifstmt      go to state 42
+    whilestmt   go to state 43
+    forstmt     go to state 44
+    returnstmt  go to state 45
 
 
-State 140
+State 145
 
    95 whilestmt: KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS • stmt
 
@@ -2846,7 +2893,7 @@ State 140
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    stmt        go to state 160
+    stmt        go to state 165
     expr        go to state 29
     term        go to state 30
     assignexpr  go to state 31
@@ -2856,16 +2903,17 @@ State 140
     call        go to state 35
     objectdef   go to state 36
     block       go to state 37
-    funcdef     go to state 38
-    const       go to state 39
-    number      go to state 40
-    ifstmt      go to state 41
-    whilestmt   go to state 42
-    forstmt     go to state 43
-    returnstmt  go to state 44
+    funcprefix  go to state 38
+    funcdef     go to state 39
+    const       go to state 40
+    number      go to state 41
+    ifstmt      go to state 42
+    whilestmt   go to state 43
+    forstmt     go to state 44
+    returnstmt  go to state 45
 
 
-State 141
+State 146
 
    96 forstmt: KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON • expr SEMICOLON elist RIGHTPARENTHESIS stmt
 
@@ -2885,7 +2933,7 @@ State 141
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 161
+    expr        go to state 166
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -2893,61 +2941,32 @@ State 141
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 142
+State 147
 
-   77 funcdef: KEYWORD_FUNCTION IDENTIFIER $@3 LEFTPARENTHESIS • idlist RIGHTPARENTHESIS $@4 block
-
-    IDENTIFIER  shift, and go to state 143
-
-    $default  reduce using rule 89 (idlist)
-
-    idlist  go to state 162
-
-
-State 143
-
-   88 idlist: IDENTIFIER • ids
-
-    COMMA  shift, and go to state 163
-
-    $default  reduce using rule 92 (ids)
-
-    ids  go to state 164
-
-
-State 144
-
-   80 funcdef: KEYWORD_FUNCTION $@5 LEFTPARENTHESIS idlist • RIGHTPARENTHESIS $@6 block
-
-    RIGHTPARENTHESIS  shift, and go to state 165
-
-
-State 145
-
-   98 returnstmt: KEYWORD_RETURN $@8 expr SEMICOLON •
+   98 returnstmt: KEYWORD_RETURN $@4 expr SEMICOLON •
 
     $default  reduce using rule 98 (returnstmt)
 
 
-State 146
+State 148
 
    55 call: LEFTPARENTHESIS funcdef RIGHTPARENTHESIS • LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
-    LEFTPARENTHESIS  shift, and go to state 154
+    LEFTPARENTHESIS  shift, and go to state 156
 
 
-State 147
+State 149
 
    58 normcall: LEFTPARENTHESIS elist RIGHTPARENTHESIS •
 
     $default  reduce using rule 58 (normcall)
 
 
-State 148
+State 150
 
    59 methodcall: DOUBLEDOT IDENTIFIER LEFTPARENTHESIS • elist RIGHTPARENTHESIS
 
@@ -2969,35 +2988,35 @@ State 148
 
     $default  reduce using rule 61 (elist)
 
-    expr        go to state 69
+    expr        go to state 70
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
     lvalue      go to state 33
     member      go to state 34
     call        go to state 35
-    elist       go to state 166
-    exprlist    go to state 71
+    elist       go to state 167
+    exprlist    go to state 72
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 149
+State 151
 
    73 blockk: stmt blockk •
 
     $default  reduce using rule 73 (blockk)
 
 
-State 150
+State 152
 
    72 block: LEFTBRACE $@2 blockk RIGHTBRACE •
 
     $default  reduce using rule 72 (block)
 
 
-State 151
+State 153
 
    70 indexedelem: LEFTBRACE expr COLON • expr RIGHTBRACE
 
@@ -3017,7 +3036,7 @@ State 151
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    expr        go to state 167
+    expr        go to state 168
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -3025,11 +3044,11 @@ State 151
     member      go to state 34
     call        go to state 35
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 152
+State 154
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -3045,30 +3064,30 @@ State 152
    26     | expr • KEYWORD_OR expr
    62 exprlist: exprlist COMMA expr •
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
     $default  reduce using rule 62 (exprlist)
 
 
-State 153
+State 155
 
    68 indexed: indexedelem COMMA indexed •
 
     $default  reduce using rule 68 (indexed)
 
 
-State 154
+State 156
 
    55 call: LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS • elist RIGHTPARENTHESIS
 
@@ -3090,28 +3109,28 @@ State 154
 
     $default  reduce using rule 61 (elist)
 
-    expr        go to state 69
+    expr        go to state 70
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
     lvalue      go to state 33
     member      go to state 34
     call        go to state 35
-    elist       go to state 168
-    exprlist    go to state 71
+    elist       go to state 169
+    exprlist    go to state 72
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
+    const       go to state 40
+    number      go to state 41
 
 
-State 155
+State 157
 
    50 member: lvalue LEFTBRACKET expr RIGHTBRACKET •
 
     $default  reduce using rule 50 (member)
 
 
-State 156
+State 158
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -3127,55 +3146,76 @@ State 156
    26     | expr • KEYWORD_OR expr
    38 assignexpr: lvalue '=' $@1 expr •
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
     $default  reduce using rule 38 (assignexpr)
 
 
-State 157
+State 159
 
    52 member: call LEFTBRACKET expr RIGHTBRACKET •
 
     $default  reduce using rule 52 (member)
 
 
-State 158
+State 160
 
    53 call: call LEFTPARENTHESIS elist RIGHTPARENTHESIS •
 
     $default  reduce using rule 53 (call)
 
 
-State 159
+State 161
+
+   91 ids: COMMA • IDENTIFIER $@3 ids
+
+    IDENTIFIER  shift, and go to state 170
+
+
+State 162
+
+   88 idlist: IDENTIFIER ids •
+
+    $default  reduce using rule 88 (idlist)
+
+
+State 163
+
+   78 funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS •
+
+    $default  reduce using rule 78 (funcargs)
+
+
+State 164
 
    93 ifstmt: KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt • KEYWORD_ELSE stmt
    94       | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt •
 
-    KEYWORD_ELSE  shift, and go to state 169
+    KEYWORD_ELSE  shift, and go to state 171
 
     KEYWORD_ELSE  [reduce using rule 94 (ifstmt)]
     $default      reduce using rule 94 (ifstmt)
 
 
-State 160
+State 165
 
    95 whilestmt: KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt •
 
     $default  reduce using rule 95 (whilestmt)
 
 
-State 161
+State 166
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -3191,59 +3231,29 @@ State 161
    26     | expr • KEYWORD_OR expr
    96 forstmt: KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr • SEMICOLON elist RIGHTPARENTHESIS stmt
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    SEMICOLON      shift, and go to state 170
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
-
-
-State 162
-
-   77 funcdef: KEYWORD_FUNCTION IDENTIFIER $@3 LEFTPARENTHESIS idlist • RIGHTPARENTHESIS $@4 block
-
-    RIGHTPARENTHESIS  shift, and go to state 171
-
-
-State 163
-
-   91 ids: COMMA • IDENTIFIER $@7 ids
-
-    IDENTIFIER  shift, and go to state 172
-
-
-State 164
-
-   88 idlist: IDENTIFIER ids •
-
-    $default  reduce using rule 88 (idlist)
-
-
-State 165
-
-   80 funcdef: KEYWORD_FUNCTION $@5 LEFTPARENTHESIS idlist RIGHTPARENTHESIS • $@6 block
-
-    $default  reduce using rule 79 ($@6)
-
-    $@6  go to state 173
-
-
-State 166
-
-   59 methodcall: DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist • RIGHTPARENTHESIS
-
-    RIGHTPARENTHESIS  shift, and go to state 174
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    SEMICOLON      shift, and go to state 172
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
 
 State 167
+
+   59 methodcall: DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist • RIGHTPARENTHESIS
+
+    RIGHTPARENTHESIS  shift, and go to state 173
+
+
+State 168
 
    15 expr: expr • '+' expr
    16     | expr • '*' expr
@@ -3259,29 +3269,38 @@ State 167
    26     | expr • KEYWORD_OR expr
    70 indexedelem: LEFTBRACE expr COLON expr • RIGHTBRACE
 
-    KEYWORD_AND    shift, and go to state 81
-    KEYWORD_OR     shift, and go to state 82
-    GREATER        shift, and go to state 83
-    LESS           shift, and go to state 84
-    EQUALS         shift, and go to state 85
-    GREATER_EQUAL  shift, and go to state 86
-    LESS_EQUAL     shift, and go to state 87
-    NOT_EQUAL      shift, and go to state 88
-    RIGHTBRACE     shift, and go to state 175
-    '+'            shift, and go to state 90
-    '*'            shift, and go to state 91
-    '/'            shift, and go to state 92
-    '%'            shift, and go to state 93
-
-
-State 168
-
-   55 call: LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist • RIGHTPARENTHESIS
-
-    RIGHTPARENTHESIS  shift, and go to state 176
+    KEYWORD_AND    shift, and go to state 82
+    KEYWORD_OR     shift, and go to state 83
+    GREATER        shift, and go to state 84
+    LESS           shift, and go to state 85
+    EQUALS         shift, and go to state 86
+    GREATER_EQUAL  shift, and go to state 87
+    LESS_EQUAL     shift, and go to state 88
+    NOT_EQUAL      shift, and go to state 89
+    RIGHTBRACE     shift, and go to state 174
+    '+'            shift, and go to state 91
+    '*'            shift, and go to state 92
+    '/'            shift, and go to state 93
+    '%'            shift, and go to state 94
 
 
 State 169
+
+   55 call: LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist • RIGHTPARENTHESIS
+
+    RIGHTPARENTHESIS  shift, and go to state 175
+
+
+State 170
+
+   91 ids: COMMA IDENTIFIER • $@3 ids
+
+    $default  reduce using rule 90 ($@3)
+
+    $@3  go to state 176
+
+
+State 171
 
    93 ifstmt: KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt KEYWORD_ELSE • stmt
 
@@ -3321,16 +3340,17 @@ State 169
     call        go to state 35
     objectdef   go to state 36
     block       go to state 37
-    funcdef     go to state 38
-    const       go to state 39
-    number      go to state 40
-    ifstmt      go to state 41
-    whilestmt   go to state 42
-    forstmt     go to state 43
-    returnstmt  go to state 44
+    funcprefix  go to state 38
+    funcdef     go to state 39
+    const       go to state 40
+    number      go to state 41
+    ifstmt      go to state 42
+    whilestmt   go to state 43
+    forstmt     go to state 44
+    returnstmt  go to state 45
 
 
-State 170
+State 172
 
    96 forstmt: KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON • elist RIGHTPARENTHESIS stmt
 
@@ -3352,7 +3372,7 @@ State 170
 
     $default  reduce using rule 61 (elist)
 
-    expr        go to state 69
+    expr        go to state 70
     term        go to state 30
     assignexpr  go to state 31
     primary     go to state 32
@@ -3360,58 +3380,42 @@ State 170
     member      go to state 34
     call        go to state 35
     elist       go to state 178
-    exprlist    go to state 71
+    exprlist    go to state 72
     objectdef   go to state 36
-    const       go to state 39
-    number      go to state 40
-
-
-State 171
-
-   77 funcdef: KEYWORD_FUNCTION IDENTIFIER $@3 LEFTPARENTHESIS idlist RIGHTPARENTHESIS • $@4 block
-
-    $default  reduce using rule 76 ($@4)
-
-    $@4  go to state 179
-
-
-State 172
-
-   91 ids: COMMA IDENTIFIER • $@7 ids
-
-    $default  reduce using rule 90 ($@7)
-
-    $@7  go to state 180
+    const       go to state 40
+    number      go to state 41
 
 
 State 173
-
-   80 funcdef: KEYWORD_FUNCTION $@5 LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@6 • block
-
-    LEFTBRACE  shift, and go to state 20
-
-    block  go to state 181
-
-
-State 174
 
    59 methodcall: DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS •
 
     $default  reduce using rule 59 (methodcall)
 
 
-State 175
+State 174
 
    70 indexedelem: LEFTBRACE expr COLON expr RIGHTBRACE •
 
     $default  reduce using rule 70 (indexedelem)
 
 
-State 176
+State 175
 
    55 call: LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS •
 
     $default  reduce using rule 55 (call)
+
+
+State 176
+
+   91 ids: COMMA IDENTIFIER $@3 • ids
+
+    COMMA  shift, and go to state 161
+
+    $default  reduce using rule 92 (ids)
+
+    ids  go to state 179
 
 
 State 177
@@ -3425,37 +3429,17 @@ State 178
 
    96 forstmt: KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist • RIGHTPARENTHESIS stmt
 
-    RIGHTPARENTHESIS  shift, and go to state 182
+    RIGHTPARENTHESIS  shift, and go to state 180
 
 
 State 179
 
-   77 funcdef: KEYWORD_FUNCTION IDENTIFIER $@3 LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@4 • block
+   91 ids: COMMA IDENTIFIER $@3 ids •
 
-    LEFTBRACE  shift, and go to state 20
-
-    block  go to state 183
+    $default  reduce using rule 91 (ids)
 
 
 State 180
-
-   91 ids: COMMA IDENTIFIER $@7 • ids
-
-    COMMA  shift, and go to state 163
-
-    $default  reduce using rule 92 (ids)
-
-    ids  go to state 184
-
-
-State 181
-
-   80 funcdef: KEYWORD_FUNCTION $@5 LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@6 block •
-
-    $default  reduce using rule 80 (funcdef)
-
-
-State 182
 
    96 forstmt: KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS • stmt
 
@@ -3485,7 +3469,7 @@ State 182
     DOUBLECOLON         shift, and go to state 24
     '-'                 shift, and go to state 25
 
-    stmt        go to state 185
+    stmt        go to state 181
     expr        go to state 29
     term        go to state 30
     assignexpr  go to state 31
@@ -3495,30 +3479,17 @@ State 182
     call        go to state 35
     objectdef   go to state 36
     block       go to state 37
-    funcdef     go to state 38
-    const       go to state 39
-    number      go to state 40
-    ifstmt      go to state 41
-    whilestmt   go to state 42
-    forstmt     go to state 43
-    returnstmt  go to state 44
+    funcprefix  go to state 38
+    funcdef     go to state 39
+    const       go to state 40
+    number      go to state 41
+    ifstmt      go to state 42
+    whilestmt   go to state 43
+    forstmt     go to state 44
+    returnstmt  go to state 45
 
 
-State 183
-
-   77 funcdef: KEYWORD_FUNCTION IDENTIFIER $@3 LEFTPARENTHESIS idlist RIGHTPARENTHESIS $@4 block •
-
-    $default  reduce using rule 77 (funcdef)
-
-
-State 184
-
-   91 ids: COMMA IDENTIFIER $@7 ids •
-
-    $default  reduce using rule 91 (ids)
-
-
-State 185
+State 181
 
    96 forstmt: KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt •
 

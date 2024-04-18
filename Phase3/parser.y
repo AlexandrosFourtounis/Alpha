@@ -1,13 +1,14 @@
 %{
     #include <stdio.h>
     #include "quads.h"
+    #include "stack.h"
 
     #define YYDEBUG 1
     #define BOLD_RED "\033[1;31m"
     #define RESET "\033[0m"
 
-    Stack scopeoffsetstack;
-    initialize(&scopeoffsetstack);
+    Stack *scopeoffsetstack;
+    initialize(scopeoffsetstack);
 
     extern int yydebug;
     int yyerror (char* yaccProvidedMessage);
@@ -54,11 +55,11 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt expr  assignexpr primary member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk funcdef const number idlist ifstmt whilestmt forstmt returnstmt
+%type <stringv> program parsing stmt expr  assignexpr primary member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk const number idlist ifstmt whilestmt forstmt returnstmt
 %type <expression> term lvalue
-%typeof <stringv> funcname
-%typeof <unsignedv> funcbody
-%typeof <sym> funcprefix funcdef
+%type <stringv> funcname
+%type <unsignedv> funcbody
+%type <sym> funcprefix funcdef
 
 %right '='
 %left KEYWORD_OR
@@ -309,7 +310,7 @@ blockk:              stmt blockk
 funcname: IDENTIFIER {
                         
                         if(scope < 0) scope = 0;
-                        entry = lookup_in_scope($2, scope); 
+                        entry = lookup_in_scope($1, scope); 
 
                         int temp = scope;
                         while(temp >= 0){
@@ -329,12 +330,12 @@ funcname: IDENTIFIER {
                             //entry = lookup_in_scope_hidden($<stringv>2, scope);
                             //if(!entry) yyerror("variable already defined"); 
                             //else{ 
-                                entry = insert($2, USERFUNC, scope, yylineno);
+                                entry = insert($1, USERFUNC, scope, yylineno);
                                 scope++;
                             //} 
                         }
 
-                        $$ = $1->sym->value->funcVal;
+                        $$ = $1->value.funcVal;
                     } 
 
 funcname: %empty  { 
@@ -355,8 +356,8 @@ funcname: %empty  {
 
 funcprefix: KEYWORD_FUNCTION funcname {
                                         $$ = insert($2, USERFUNC, scope, yylineno);
-                                        $$->sym->iadress = nextquadlabel();
-                                        emit(funcstart, lvalue_expr($$), NULL, NULL);
+                                        $$->iaddress = nextquadlabel();
+                                        emit(funcstart, lvalue_expr($$), NULL, NULL, $$->iaddress, yylineno);
                                         push(scopeoffsetstack, currscopeoffset());
                                         enterscopespace();
                                         resetformalargsoffset();
@@ -371,18 +372,18 @@ funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS {
                                                      resetfunctionlocalsoffset();
                                                   } 
 funcbody: block {
-                 $$->sym->offset = currscopeoffset();
+                 $$.offset = currscopeoffset();
                  exitscopespace();
                  //slide 6 mathima 10
                 }
 
 funcdef:   funcprefix funcargs funcbody  {
                                             exitscopespace();
-                                            $$->sym->totalLocals = $3;
+                                            $$->totalLocals = $3;
                                             int offset = pop(scopeoffsetstack);
                                             restorecurrscopeoffset(offset);
                                             $$ = $1;
-                                            emit(funcend, lvalue_expr($1), NULL, NULL);
+                                            emit(funcend, lvalue_expr($1), NULL, NULL, $1->iaddress + yylineno, yylineno);
 
 }                         
            ;

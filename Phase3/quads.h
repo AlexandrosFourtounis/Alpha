@@ -107,7 +107,7 @@ extern unsigned int currQuad;
 
 
 void expand(void);
-void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned label, unsigned line);
+void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, unsigned int line);
 
 //UTILS
 void check_arith(expr *e, const char *context);
