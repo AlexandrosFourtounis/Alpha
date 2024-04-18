@@ -611,9 +611,9 @@ static const yytype_int16 yyrline[] =
      246,   251,   255,   256,   259,   260,   270,   273,   274,   276,
      278,   280,   281,   284,   285,   289,   290,   293,   294,   297,
      298,   301,   303,   303,   306,   307,   310,   341,   357,   369,
-     374,   380,   391,   391,   391,   391,   391,   393,   394,   398,
-     409,   412,   412,   424,   427,   428,   430,   432,   434,   434,
-     435,   435
+     374,   381,   392,   392,   392,   392,   392,   394,   395,   399,
+     410,   413,   413,   425,   428,   429,   431,   433,   435,   435,
+     436,   436
 };
 #endif
 
@@ -1980,15 +1980,16 @@ yyreduce:
   case 80: /* funcbody: block  */
 #line 374 "parser.y"
                 {
-                 (yyval.unsignedv).offset = currscopeoffset();
+                 (yyval.unsignedv) = (yyvsp[0].stringv);
+                 (yyval.unsignedv)->offset = currscopeoffset();
                  exitscopespace();
                  //slide 6 mathima 10
                 }
-#line 1988 "parser.c"
+#line 1989 "parser.c"
     break;
 
   case 81: /* funcdef: funcprefix funcargs funcbody  */
-#line 380 "parser.y"
+#line 381 "parser.y"
                                          {
                                             exitscopespace();
                                             (yyval.sym)->totalLocals = (yyvsp[0].unsignedv);
@@ -1998,11 +1999,11 @@ yyreduce:
                                             emit(funcend, lvalue_expr((yyvsp[-2].sym)), NULL, NULL, (yyvsp[-2].sym)->iaddress + yylineno, yylineno);
 
 }
-#line 2002 "parser.c"
+#line 2003 "parser.c"
     break;
 
   case 89: /* idlist: IDENTIFIER ids  */
-#line 398 "parser.y"
+#line 399 "parser.y"
                                      {  
                                     
                                     entry = lookup((yyvsp[-1].stringv), scope); //lookup in function scope
@@ -2014,17 +2015,17 @@ yyreduce:
                                         entry = insert((yyvsp[-1].stringv),FORMAL,scope,yylineno);     
                                     }
                                 }
-#line 2018 "parser.c"
+#line 2019 "parser.c"
     break;
 
   case 90: /* idlist: %empty  */
-#line 409 "parser.y"
+#line 410 "parser.y"
                                              {}
-#line 2024 "parser.c"
+#line 2025 "parser.c"
     break;
 
   case 91: /* $@3: %empty  */
-#line 412 "parser.y"
+#line 413 "parser.y"
                                       {  
                                     entry = lookup((yyvsp[0].stringv), scope); //lookup in function scope
                                     if(entry != NULL) {
@@ -2037,29 +2038,29 @@ yyreduce:
                                         entry = insert((yyvsp[0].stringv),FORMAL,scope,yylineno);     
                                     }
                                 }
-#line 2041 "parser.c"
+#line 2042 "parser.c"
     break;
 
   case 93: /* ids: %empty  */
-#line 424 "parser.y"
+#line 425 "parser.y"
                                              {}
-#line 2047 "parser.c"
+#line 2048 "parser.c"
     break;
 
   case 98: /* $@4: %empty  */
-#line 434 "parser.y"
+#line 435 "parser.y"
                                    {if(scope == 0) yyerror("Use of 'return' while not in a loop\n");}
-#line 2053 "parser.c"
+#line 2054 "parser.c"
     break;
 
   case 100: /* $@5: %empty  */
-#line 435 "parser.y"
+#line 436 "parser.y"
                                      {if(scope == 0) yyerror("Use of 'return' while not in a loop\n");}
-#line 2059 "parser.c"
+#line 2060 "parser.c"
     break;
 
 
-#line 2063 "parser.c"
+#line 2064 "parser.c"
 
       default: break;
     }
@@ -2283,7 +2284,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 437 "parser.y"
+#line 438 "parser.y"
 
 int yyerror (char* yaccProvidedMessage) {
     fprintf(stderr, "%s: at line %d, before token: %s\n",yaccProvidedMessage,yylineno,yytext);

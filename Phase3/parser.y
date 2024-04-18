@@ -372,7 +372,7 @@ funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS {
                                                      resetfunctionlocalsoffset();
                                                   } 
 funcbody: block {
-                 $$.offset = currscopeoffset();
+                 $$->offset = currscopeoffset();
                  exitscopespace();
                  //slide 6 mathima 10
                 }
