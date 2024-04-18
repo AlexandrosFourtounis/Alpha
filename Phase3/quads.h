@@ -47,6 +47,11 @@ unsigned int currscopeoffset(void);
 void inccurrscopeoffset(void);
 void enterscopespace(void);
 void exitscopespace(void);
+void resetformalargsoffset();
+void resetfunctionlocalsoffset();
+void restorecurrscopeoffset(unsigned int n);
+unsigned nextquadlabel();
+void patchlabel(unsigned int quadNo, unsigned int label);
 
 typedef enum iopcode
 {

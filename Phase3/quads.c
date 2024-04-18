@@ -161,3 +161,29 @@ SymbolTableEntry *newtemp()
         return entry;
     }
 }
+
+void resetformalargsoffset(){
+    formalArgOffset = 0;
+}
+
+void resetfunctionlocalsoffset(){
+    functionLocalOffset = 0;
+}
+
+void restorecurrscopeoffset(unsigned int n){
+    switch (currscopespace()){
+        case: programVar    : programVarOffset = n; break;
+        case: functionLocal : functionLocalOffset = n; break;
+        case: formalArg     : formalArgOffset = n; break;
+        default: assert(0);
+    }
+}
+
+unsigned nextquadlabel(){
+    return currQuad;
+}
+
+void patchlabel(unsigned int quadNo, unsigned int label){
+    assert(quadNo < currQuad);
+    quads[quadNo].label = label;
+}

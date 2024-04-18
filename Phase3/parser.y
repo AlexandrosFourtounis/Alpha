@@ -5,7 +5,10 @@
     #define YYDEBUG 1
     #define BOLD_RED "\033[1;31m"
     #define RESET "\033[0m"
-     
+
+    Stack scopeoffsetstack;
+    initialize(&scopeoffsetstack);
+
     extern int yydebug;
     int yyerror (char* yaccProvidedMessage);
     int alpha_yylex(void* yylval);
@@ -30,6 +33,7 @@
     float floatv;
     struct SymbolTableEntry *sym;
     struct expr *expression;
+    unsigned int unsignedv;
 }
 
 %define parse.error verbose
@@ -51,7 +55,10 @@
 
 
 %type <stringv> program parsing stmt expr  assignexpr primary member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk funcdef const number idlist ifstmt whilestmt forstmt returnstmt
-%type<expression> term lvalue
+%type <expression> term lvalue
+%typeof <stringv> funcname
+%typeof <unsignedv> funcbody
+%typeof <sym> funcprefix funcdef
 
 %right '='
 %left KEYWORD_OR
@@ -107,7 +114,7 @@ expr:                 expr '+' expr
 
 term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
                     | '-' expr %prec UMINUS  {
-                                                check_arith($2,(const char*)"- expr\n");
+                                                check_arith($2,(const char*)"- expr");
                                                 $$ = newexpr(arithexpr_e);
                                                 $$->sym = newtemp();
                                                 emit(uminus,$2,NULL,$$,0,yylineno);
@@ -299,9 +306,8 @@ blockk:              stmt blockk
                     | %empty            {}
                     ;
 
-funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
+funcname: IDENTIFIER {
                         
-
                         if(scope < 0) scope = 0;
                         entry = lookup_in_scope($2, scope); 
 
@@ -327,9 +333,11 @@ funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
                                 scope++;
                             //} 
                         }
+
+                        $$ = $1->sym->value->funcVal;
                     } 
-                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; }  block  
-                    | KEYWORD_FUNCTION  { 
+
+funcname: %empty  { 
                         int temp = scope;
                         printf("scope %d\n", scope);
                         while(temp != 0){
@@ -341,9 +349,43 @@ funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
                         sprintf(str, "_%d", anonymousCounter++); 
                         entry = insert(str, USERFUNC, scope, yylineno); 
                         scope++; // increment scope here
+
+                        $$ = entry;
                     } 
-                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; } block
-                    ;
+
+funcprefix: KEYWORD_FUNCTION funcname {
+                                        $$ = insert($2, USERFUNC, scope, yylineno);
+                                        $$->sym->iadress = nextquadlabel();
+                                        emit(funcstart, lvalue_expr($$), NULL, NULL);
+                                        push(scopeoffsetstack, currscopeoffset());
+                                        enterscopespace();
+                                        resetformalargsoffset();
+                                       }  
+
+
+
+
+funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS {
+                                                     scope--;
+                                                     enterscopespace();
+                                                     resetfunctionlocalsoffset();
+                                                  } 
+funcbody: block {
+                 $$->sym->offset = currscopeoffset();
+                 exitscopespace();
+                 //slide 6 mathima 10
+                }
+
+funcdef:   funcprefix funcargs funcbody  {
+                                            exitscopespace();
+                                            $$->sym->totalLocals = $3;
+                                            int offset = pop(scopeoffsetstack);
+                                            restorecurrscopeoffset(offset);
+                                            $$ = $1;
+                                            emit(funcend, lvalue_expr($1), NULL, NULL);
+
+}                         
+           ;
 
 const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
