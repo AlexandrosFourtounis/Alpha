@@ -8,7 +8,6 @@
     #define RESET "\033[0m"
 
     Stack *scopeoffsetstack;
-    initialize(scopeoffsetstack);
 
     extern int yydebug;
     int yyerror (char* yaccProvidedMessage);
@@ -335,7 +334,7 @@ funcname: IDENTIFIER {
                             //} 
                         }
 
-                        $$ = $1->value.funcVal;
+                        $$ = entry->value.funcVal;
                     } 
 
 funcname: %empty  { 
@@ -372,7 +371,7 @@ funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS {
                                                      resetfunctionlocalsoffset();
                                                   } 
 funcbody: block {
-                 $$->offset = currscopeoffset();
+                 $$ = currscopeoffset();
                  exitscopespace();
                  //slide 6 mathima 10
                 }
@@ -450,6 +449,13 @@ int main(int argc,char **argv){
     insert_libfuncs();
     char *libfuncs[12] = {"print", "input", "objectmemberkeys", "objecttotalmembers", "objectcopy", "totalarguments", "argument", "typeof", "strtonum", "sqrt", "cos", "sin"};
     
+    scopeoffsetstack = malloc(sizeof(Stack));
+    if (scopeoffsetstack == NULL) {
+        fprintf(stderr, "Failed to allocate memory for scopeoffsetstack\n");
+        return 1;
+    }
+    initialize(scopeoffsetstack);
+
     if(argc > 1){
         if(!(yyin = fopen(argv[1],"r"))){
             fprintf(stderr,"Cannot open file\n");
