@@ -233,8 +233,11 @@ void print_expression(expr *expr, FILE *f){
         case conststring_e :
             fprintf(f, "%-16s", expr->strConst);
             break;
+        case var_e :
+            fprintf(f, "%-8s","var");
+            break;
         default :
-            fprintf(f, "%-16s", "default");
+            fprintf(f, "%-8s", "default");
             break;
     }
 }
@@ -242,13 +245,15 @@ void print_expression(expr *expr, FILE *f){
 void print_quads(){
     unsigned int i = 0U;
     FILE *f = fopen("quads.txt", "w");
-
-    while(i <= currQuad ){
+    fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "Quad", "Op", "Result", "Arg1", "Arg2", "Label", "Line");
+    while(i < currQuad ){
         if(quads[i].op == assign){
-            fprintf(f, "%-8d%-16s%-8d", i, "ASSIGN",quads[i].line);
-            //print_expression(quads[i].result, f);
+            fprintf(f, "%-8d%-16s", i+1, "ASSIGN");
+            print_expression(quads[i].result, f);
             //print_expression(quads[i].arg1, f);
-            fprintf(f, "               \n");
+            fprintf(f, "%-8s", "");
+            fprintf(f,"%-8s%-8d%-8d", "", quads[i].label, quads[i].line);
+            fprintf(f, "\n");
         }
         i++;
 
