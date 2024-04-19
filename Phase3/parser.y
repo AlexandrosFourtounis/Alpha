@@ -34,6 +34,7 @@
     struct SymbolTableEntry *sym;
     struct expr *expression;
     unsigned int unsignedv;
+    //struct expr *index;
 }
 
 %define parse.error verbose
@@ -54,8 +55,8 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt expr  assignexpr primary member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk const number idlist ifstmt whilestmt forstmt returnstmt
-%type <expression> term lvalue
+%type <stringv> program parsing stmt primary call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk const number idlist ifstmt whilestmt forstmt returnstmt
+%type <expression> term lvalue assignexpr expr member
 %type <stringv> funcname
 %type <unsignedv> funcbody
 %type <sym> funcprefix funcdef
@@ -152,10 +153,23 @@ assignexpr:         lvalue  '=' {
         
     }
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
-} expr 
+
+} expr {
+    if($1->type == tableitem_e){
+        emit(tablesetelem, $1, $1->index, $3, 0U, yylineno);
+        $$ = emit_iftableitem($1);
+        $$->type = assignexpr_e;
+    }
+    else{
+        emit(assign, $3, NULL, $1, 0U, yylineno);
+        $$ = newexpr(assignexpr_e);
+        $$->sym = newtemp();
+        emit(assign, $1, NULL, $$, 0U, yylineno);
+    }
+} 
                     
 
-primary:             lvalue
+primary:             lvalue {$$ = emit_iftableitem($1);}
                     | call 
                     | objectdef 
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  
@@ -240,16 +254,22 @@ lvalue:             IDENTIFIER          {
                                                         if (entry == NULL || !entry->isActive) yyerror(error_message);
 
                                                 }
-                    | member
+                    | member {$$ = $1;}
 
 member:             lvalue DOT IDENTIFIER   { 
                                             if (entry == NULL || !entry->isActive) yyerror("member error" );
                                             else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue.id");
-
+                                            $$ = member_item($1, $3);
                                             }            
                     | lvalue LEFTBRACKET expr RIGHTBRACKET { 
+                                            expr* tmp;
                                             if (entry == NULL || !entry->isActive) yyerror("member error");
                                             else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue[expr]");
+                                            $1 = emit_iftableitem($1);
+                                            tmp = newexpr(tableitem_e);
+                                            tmp->sym = $1->sym;
+                                            tmp->index = $3;
+                                            $$ = tmp;
                                             }
                     | call DOT IDENTIFIER               
                     | call LEFTBRACKET expr RIGHTBRACKET

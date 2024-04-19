@@ -187,3 +187,27 @@ void patchlabel(unsigned int quadNo, unsigned int label){
     assert(quadNo < currQuad);
     quads[quadNo].label = label;
 }
+
+expr* newexpr_conststring(char* s){
+    expr* e = newexpr(conststring_e);
+    e->strConst = strdup(s);
+    return e;
+}
+
+expr* emit_iftableitem(expr* e){
+    if(e->type != tableitem_e) return e;
+    else{
+        expr* result = newexpr(var_e);
+        result->sym = newtemp();
+        emit(tablegetelem, e, e->index, result, 0, yylineno);
+        return result;
+    }
+}
+
+expr* member_item(expr* lv, char* name){
+    lv = emit_iftableitem(lv);
+    expr* ti = newexpr(tableitem_e);
+    ti->sym = lv->sym;
+    ti->index = newexpr_conststring(name);
+    return ti;
+}

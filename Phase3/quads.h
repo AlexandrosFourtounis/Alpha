@@ -42,16 +42,7 @@ typedef struct symbol {
 */
 
 
-scopespace_t currscopespace(void);
-unsigned int currscopeoffset(void);
-void inccurrscopeoffset(void);
-void enterscopespace(void);
-void exitscopespace(void);
-void resetformalargsoffset();
-void resetfunctionlocalsoffset();
-void restorecurrscopeoffset(unsigned int n);
-unsigned nextquadlabel();
-void patchlabel(unsigned int quadNo, unsigned int label);
+
 
 typedef enum iopcode
 {
@@ -92,6 +83,7 @@ typedef struct expr{
     struct expr *next;
 }expr;
 
+
 typedef struct quad{
     iopcode op;
     expr *result;
@@ -116,3 +108,18 @@ expr *newexpr(expr_t t);
 char *newtempname();
 void resettemp();
 SymbolTableEntry *newtemp();
+expr* emit_iftableitem(expr* e);
+expr* newexpr_conststring(char* s);
+expr* member_item(expr* lv, char* name);
+
+scopespace_t currscopespace(void);
+unsigned int currscopeoffset(void);
+void inccurrscopeoffset(void);
+void enterscopespace(void);
+void exitscopespace(void);
+void resetformalargsoffset();
+void resetfunctionlocalsoffset();
+void restorecurrscopeoffset(unsigned int n);
+unsigned nextquadlabel();
+void patchlabel(unsigned int quadNo, unsigned int label);
+

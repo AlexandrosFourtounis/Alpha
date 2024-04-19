@@ -158,8 +158,9 @@ union YYSTYPE
     struct SymbolTableEntry *sym;
     struct expr *expression;
     unsigned int unsignedv;
+    //struct expr *index;
 
-#line 163 "parser.h"
+#line 164 "parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
