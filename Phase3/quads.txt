@@ -1,0 +1,7 @@
+0       ASSIGN          2                      
+1       ASSIGN          2                      
+2       ASSIGN          3                      
+3       ASSIGN          3                      
+4       ASSIGN          4                      
+5       ASSIGN          4                      
+6       ASSIGN          0                      

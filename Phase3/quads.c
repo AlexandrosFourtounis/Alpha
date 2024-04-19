@@ -86,9 +86,9 @@ extern int yylineno;
 
 char *newtempname()
 {
-    char buffer[50];
-    sprintf(buffer, "_t%d", tempcounter);
-    return buffer;
+    char temp[20]; // Buffer to hold the resulting string
+    sprintf(temp, "_t%d", tempcounter);
+    return strdup(temp);
 }
 void resettemp()
 {
@@ -234,7 +234,7 @@ void print_expression(expr *expr, FILE *f){
             fprintf(f, "%-16s", expr->strConst);
             break;
         default :
-            fprintf(f, "%-16s", expr->sym->value.varVal->name);
+            fprintf(f, "%-16s", "default");
             break;
     }
 }
@@ -245,10 +245,10 @@ void print_quads(){
 
     while(i <= currQuad ){
         if(quads[i].op == assign){
-            fprintf(f, "%-8d%-16s", i, "ASSIGN");
-            print_expression(quads[i].result, f);
-            print_expression(quads[i].arg1, f);
-            fprintf(f, "               ");
+            fprintf(f, "%-8d%-16s%-8d", i, "ASSIGN",quads[i].line);
+            //print_expression(quads[i].result, f);
+            //print_expression(quads[i].arg1, f);
+            fprintf(f, "               \n");
         }
         i++;
 
