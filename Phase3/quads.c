@@ -8,9 +8,9 @@
 #define BOLD_RED "\033[1;31m"
 #define RESET "\033[0m"
 
- quad *quads = (quad *)0;
- unsigned total =0;
- unsigned int currQuad = 0;
+quad *quads = (quad *)0;
+unsigned int total =0;
+unsigned int currQuad = 0;
 
 unsigned int programVarOffset = 0;
 unsigned int functionLocalOffset = 0;
@@ -179,7 +179,7 @@ void restorecurrscopeoffset(unsigned int n){
     }
 }
 
-unsigned nextquadlabel(){
+unsigned int nextquadlabel(){
     return currQuad;
 }
 
@@ -210,4 +210,48 @@ expr* member_item(expr* lv, char* name){
     ti->sym = lv->sym;
     ti->index = newexpr_conststring(name);
     return ti;
+}
+
+void print_expression(expr *expr, FILE *f){
+     if(!expr) {
+        fprintf(f, "%-16s", "");
+        return;
+    }
+    else if(expr->type == nil_e) {
+
+        fprintf(f, "%-16s", "NIL");
+        return;
+    }
+    
+    switch(expr->type) {
+        case constbool_e :
+            fprintf(f, "%-16s", expr->boolConst ? "TRUE" : "FALSE");
+            break;
+        case constnum_e :
+            fprintf(f, "%-16lf", expr->numConst);
+            break;
+        case conststring_e :
+            fprintf(f, "%-16s", expr->strConst);
+            break;
+        default :
+            fprintf(f, "%-16s", expr->sym->value.varVal->name);
+            break;
+    }
+}
+
+void print_quads(){
+    unsigned int i = 0U;
+    FILE *f = fopen("quads.txt", "w");
+
+    while(i <= currQuad ){
+        if(quads[i].op == assign){
+            fprintf(f, "%-8d%-16s", i, "ASSIGN");
+            print_expression(quads[i].result, f);
+            print_expression(quads[i].arg1, f);
+            fprintf(f, "               ");
+        }
+        i++;
+
+    }
+    
 }

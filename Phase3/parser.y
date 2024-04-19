@@ -156,12 +156,12 @@ assignexpr:         lvalue  '=' {
 
 } expr {
     if($1->type == tableitem_e){
-        emit(tablesetelem, $1, $1->index, $3, 0U, yylineno);
+        emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
         $$ = emit_iftableitem($1);
         $$->type = assignexpr_e;
     }
     else{
-        emit(assign, $3, NULL, $1, 0U, yylineno);
+        emit(assign, $4, NULL, $1, 0U, yylineno);
         $$ = newexpr(assignexpr_e);
         $$->sym = newtemp();
         emit(assign, $1, NULL, $$, 0U, yylineno);
@@ -488,6 +488,10 @@ int main(int argc,char **argv){
 
     printf("PRINTING SYMBOL TABLE \n");
     print_scope_links();
+
+    printf("PRINTING QUADS\n");
+    print_quads();
+
     SymTable_free(symTable);
     free_scope_links();
     return 0;

@@ -89,12 +89,12 @@ typedef struct quad{
     expr *result;
     expr *arg1;
     expr *arg2;
-    unsigned label;
-    unsigned line;
+    unsigned int label;
+    unsigned int line;
 }quad;
 
 extern quad *quads;
-extern unsigned total;
+extern unsigned int total;
 extern unsigned int currQuad;
 
 
@@ -120,6 +120,8 @@ void exitscopespace(void);
 void resetformalargsoffset();
 void resetfunctionlocalsoffset();
 void restorecurrscopeoffset(unsigned int n);
-unsigned nextquadlabel();
+unsigned int nextquadlabel();
 void patchlabel(unsigned int quadNo, unsigned int label);
+void print_quads();
+
 

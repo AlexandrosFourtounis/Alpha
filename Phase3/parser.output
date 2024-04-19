@@ -218,13 +218,13 @@ Nonterminals, with rules where they appear
     stmt <stringv> (53)
         on left: 4 5 6 7 8 9 10 11 12 13 14
         on right: 2 3 73 93 94 95 96
-    expr <stringv> (54)
+    expr <expression> (54)
         on left: 15 16 17 18 19 20 21 22 23 24 25 26 27 28
         on right: 4 15 16 17 18 19 20 21 22 23 24 25 26 29 30 31 38 50 52 62 63 70 93 94 95 96 98
     term <expression> (55)
         on left: 29 30 31 32 33 34 35 36
         on right: 28
-    assignexpr <stringv> (56)
+    assignexpr <expression> (56)
         on left: 38
         on right: 27
     $@1 (57)
@@ -236,7 +236,7 @@ Nonterminals, with rules where they appear
     lvalue <expression> (59)
         on left: 44 45 46 47 48
         on right: 32 33 34 35 38 39 49 50
-    member <stringv> (60)
+    member <expression> (60)
         on left: 49 50 51 52
         on right: 48
     call <stringv> (61)
