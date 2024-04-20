@@ -4,18 +4,19 @@
 #include <stdio.h>
 #include "quads.h"
 
-
 #define BOLD_RED "\033[1;31m"
 #define RESET "\033[0m"
 
 quad *quads = (quad *)0;
 unsigned int total =0;
 unsigned int currQuad = 0;
-
 unsigned int programVarOffset = 0;
 unsigned int functionLocalOffset = 0;
 unsigned int formalArgOffset = 0;
 unsigned int scopeSpaceCounter = 1;
+int tempcounter = 0;
+extern int scope;
+extern int yylineno;
 
 void expand(void){
     assert(total == currQuad);
@@ -42,15 +43,9 @@ void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, 
 }
 
 scopespace_t currscopespace(void){
-    if(scopeSpaceCounter == 1){
-        return programVar;
-    }
-    else if(scopeSpaceCounter % 2 == 0){
-        return formalArg;
-    }
-    else{
-        return functionLocal;
-    }
+    if(scopeSpaceCounter == 1) return programVar;   
+    else if(scopeSpaceCounter % 2 == 0) return formalArg;   
+    else return functionLocal;
 }
 
 unsigned int currscopeoffset(void){
@@ -80,22 +75,17 @@ void exitscopespace(void){
     --scopeSpaceCounter;
 }
 
-int tempcounter = 0;
-extern int scope;
-extern int yylineno;
-
-char *newtempname()
-{
+const char *newtempname(){
     char temp[20]; // Buffer to hold the resulting string
     sprintf(temp, "_t%d", tempcounter);
     return strdup(temp);
 }
-void resettemp()
-{
+
+void resettemp(){
     tempcounter = 0;
 }
-void check_arith(expr *e, const char *context)
-{
+
+void check_arith(expr *e, const char *context){
     if (e->type == constbool_e ||
         e->type == conststring_e ||
         e->type == nil_e ||
@@ -109,23 +99,20 @@ void check_arith(expr *e, const char *context)
     }
 }
 
-expr *newexpr(expr_t t)
-{
+expr *newexpr(expr_t t){
     expr *e = (expr *)malloc(sizeof(expr));
     memset(e, 0, sizeof(expr));
     e->type = t;
     return e;
 }
 
-expr *lvalue_expr(SymbolTableEntry *sym)
-{
+expr *lvalue_expr(SymbolTableEntry *sym){
     assert(sym);
     expr *e = (expr *)malloc(sizeof(expr));
     memset(e, 0, sizeof(expr));
     e->next = (expr *)0;
     e->sym = sym;
-    switch (sym->type)
-    {
+    switch (sym->type){
     case GLOBAL:
     case LOCAL:
     case FORMAL:
@@ -140,14 +127,10 @@ expr *lvalue_expr(SymbolTableEntry *sym)
     default:
         assert(0);
     }
-
     return e;
 }
 
-
-
-SymbolTableEntry *newtemp()
-{
+SymbolTableEntry *newtemp(){
     char *name = newtempname();
     SymbolTableEntry *entry = lookup_in_scope(name, scope);
     if (entry == NULL)
@@ -244,14 +227,12 @@ const char* opcode_to_string(iopcode opcode) {
     }
 }
 
-
 void print_expression(expr *expr, FILE *f){
      if(!expr) {
         fprintf(f, "%-16s", "");
         return;
     }
     else if(expr->type == nil_e) {
-
         fprintf(f, "%-16s", "NIL");
         return;
     }
@@ -279,6 +260,7 @@ void print_quads(){
     unsigned int i = 0U;
     FILE *f = fopen("quads.txt", "w");
     fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "QUAD", "OP", "RESULT", "ARG1", "ARG2", "LABEL", "LINE");
+
     while(i < currQuad ){
         if(quads[i].op == assign || quads[i].op == uminus || quads[i].op == not){
             fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
