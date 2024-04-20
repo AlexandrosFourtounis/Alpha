@@ -97,7 +97,7 @@ stmt:               expr SEMICOLON
                     | error SEMICOLON   { yyerrok; }
                     ;
 
-expr:                 expr '+' expr           
+expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr '*' expr       
                     | expr '/' expr 
                     | expr '%' expr     

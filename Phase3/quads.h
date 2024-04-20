@@ -132,3 +132,4 @@ void print_quads();
 expr *newexpr_bool(char *s);
 expr *newexpr_nil(char *s);
 expr *newexpr_constnum(double x);
+expr *Manage_operations(expr *arg1, iopcode op, expr *arg2);
