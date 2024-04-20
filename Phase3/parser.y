@@ -55,11 +55,12 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt primary call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk const number idlist ifstmt whilestmt forstmt returnstmt
-%type <expression> term lvalue assignexpr expr member
+%type <stringv> program parsing stmt call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk number idlist ifstmt whilestmt forstmt returnstmt
+%type <expression> term lvalue assignexpr expr primary  member const 
 %type <stringv> funcname
 %type <unsignedv> funcbody
-%type <sym> funcprefix funcdef
+%type <sym> funcprefix funcdef 
+
 
 %right '='
 %left KEYWORD_OR
@@ -132,7 +133,8 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
                     | lvalue DECREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
                     | primary 
 
-assignexpr:         lvalue  '=' {
+assignexpr:         lvalue  '='
+ {
     if( entry == NULL ){
         if(scope > 0 )
         entry = lookup_hidden($1,scope);
@@ -154,19 +156,24 @@ assignexpr:         lvalue  '=' {
     }
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
 
-} expr {
+} 
+expr {
     if($1->type == tableitem_e){
         emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
         $$ = emit_iftableitem($1);
         $$->type = assignexpr_e;
     }
     else{
+        expr *temp = $4;
         emit(assign, $4, NULL, $1, 0U, yylineno);
         $$ = newexpr(assignexpr_e);
         $$->sym = newtemp();
         emit(assign, $1, NULL, $$, 0U, yylineno);
     }
 } 
+
+
+
                     
 
 primary:             lvalue {$$ = emit_iftableitem($1);}
@@ -193,7 +200,9 @@ lvalue:             IDENTIFIER          {
                                                     inccurrscopeoffset();
                                                 }
                                                 $$->sym = entry;
-                                                $$ = lvalue_expr(entry);                                               
+                                                $$ = lvalue_expr(entry);
+                                                $$->strConst = yylval.stringv;
+                                            
                                         }   
 
                     | KEYWORD_LOCAL IDENTIFIER {  
@@ -305,7 +314,8 @@ exprlist:           exprlist  COMMA expr
                     ;
              
 
-objectdef:          LEFTBRACKET  obj RIGHTBRACKET 
+objectdef:          LEFTBRACKET  elist RIGHTBRACKET
+                    | LEFTBRACKET indexed RIGHTBRACKET
                     | LEFTBRACKET RIGHTBRACKET
                     ;
 
@@ -313,8 +323,8 @@ obj:                elist
                     | indexed 
                     ;
                     
-indexed:            indexedelem  COMMA indexed  
-                    | indexedelem
+indexed:            indexedelem 
+                    | indexedelem COMMA indexed
                     ;
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
@@ -407,10 +417,16 @@ funcdef:   funcprefix funcargs funcbody  {
 }                         
            ;
 
-const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
+const:              number                  
+                    | STRING                { $$ = newexpr_conststring(yylval.stringv); }
+                    | KEYWORD_NIL           { $$ = newexpr_nil(yylval.stringv);  }
+                    | KEYWORD_TRUE          { 
+                                              $$ = newexpr_bool(yylval.stringv);
+                                            }
+                    | KEYWORD_FALSE         { $$ = newexpr_bool(yylval.stringv); }
 
-number:             INTEGER 
-                    | REAL 
+number:             INTEGER                 { $$ = newexpr_constnum(yylval.intv); }
+                    | REAL                  { $$ = newexpr_constnum(yylval.floatv); }
                     ;
 
 
