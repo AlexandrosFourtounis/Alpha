@@ -278,7 +278,7 @@ void print_expression(expr *expr, FILE *f){
 void print_quads(){
     unsigned int i = 0U;
     FILE *f = fopen("quads.txt", "w");
-    fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "Quad", "Op", "Result", "Arg1", "Arg2", "Label", "Line");
+    fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "QUAD", "OP", "RESULT", "ARG1", "ARG2", "LABEL", "LINE");
     while(i < currQuad ){
         if(quads[i].op == assign || quads[i].op == uminus || quads[i].op == not){
             fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
