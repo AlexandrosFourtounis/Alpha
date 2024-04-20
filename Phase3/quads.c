@@ -304,16 +304,17 @@ void print_quads(){
     }    
 }
 
-expr* Manage_operations(expr* arg1, iopcode op, expr* arg2){
+expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
+{
     assert(arg1);
     assert(arg2);
 
-    check_arith(arg1, (const char*)"Manage_operations");
-    check_arith(arg2, (const char*)"Manage_operations");
+    check_arith(arg1, (const char *)"Manage_operations");
+    check_arith(arg2, (const char *)"Manage_operations");
 
-    expr *  result = NULL;
+    expr *result = NULL;
     SymbolTableEntry *temp;
-
+    /*
     if (arg1->sym && arg1->sym->type<2 && arg1->sym->value.varVal->name[0]=='_') // in case of tmp
     {
         temp = arg1->sym;
@@ -321,31 +322,30 @@ expr* Manage_operations(expr* arg1, iopcode op, expr* arg2){
         temp = arg2->sym;
     }else{
         temp = newtemp(); // create new tmp variable
-    }
-
+    }*/
+    temp = newtemp();
     result = lvalue_expr(temp);
 
-
-    switch(op){
-        case add:
-            emit(add, arg1, arg2, result, -1, yylineno);
-            break;
-        case sub:
-            emit(sub, arg1, arg2, result, -1, yylineno);
-            break;
-        case mul:
-            emit(mul, arg1, arg2, result, -1, yylineno);
-            break;
-        case divv:
-            emit(divv, arg1, arg2, result, -1, yylineno);
-            break;
-        case mod:
-            emit(mod, arg1, arg2, result, -1, yylineno);
-            break;
-        default:
-            printf("Invalid operation\n");
-            exit(-1);
+    switch (op)
+    {
+    case add:
+        emit(add, arg1, arg2, result, -1, yylineno);
+        break;
+    case sub:
+        emit(sub, arg1, arg2, result, -1, yylineno);
+        break;
+    case mul:
+        emit(mul, arg1, arg2, result, -1, yylineno);
+        break;
+    case divv:
+        emit(divv, arg1, arg2, result, -1, yylineno);
+        break;
+    case mod:
+        emit(mod, arg1, arg2, result, -1, yylineno);
+        break;
+    default:
+        printf("Invalid operation\n");
+        exit(-1);
     }
     return result;
-    
 }
