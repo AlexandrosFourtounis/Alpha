@@ -1,3 +1,7 @@
-Quad    Op              Result  Arg1    Arg2    Label   Line    
-1       ASSIGN          var     default                 0       1       
-2       ASSIGN          default var                     0       1       
+QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
+1       assign          var                             2       
+2       assign          default                         2       
+3       assign          var                             3       
+4       assign          default                         3       
+5       assign          var                             4       
+6       assign          default                         4       
