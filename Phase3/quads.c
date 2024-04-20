@@ -177,13 +177,21 @@ expr* newexpr_conststring(char* s){
     return e;
 }
 
+expr* newexpr_constnum(double x){
+    expr *e = newexpr(constnum_e);
+    e->numConst = x;
+    return e;
+
+}
+
+
 expr *newexpr_bool(char *s)
 {
     expr *e = newexpr(boolexpr_e);
     if(strcmp(s,"true") == 0 || strcmp(s,"TRUE") == 0)
-        e->boolConst = 't';
+        e->boolConst = "TRUE";
     else if(strcmp(s,"false") == 0 || strcmp(s,"FALSE") == 0)
-        e->boolConst = 'f';
+        e->boolConst = "FALSE";
     else
         assert(0);
     return e;
@@ -257,21 +265,24 @@ void print_expression(expr *expr, FILE *f){
     }
     
     switch(expr->type) {
-        case constbool_e :
-            fprintf(f, "%-16s", expr->boolConst ? "TRUE" : "FALSE");
-            break;
-        case constnum_e :
-            fprintf(f, "%-16lf", expr->numConst);
-            break;
-        case conststring_e :
-            fprintf(f, "%-16s", expr->strConst);
-            break;
-        case var_e :
-            fprintf(f, "%-8s","var");
-            break;
-        default :
-            fprintf(f, "%-8s", "default");
-            break;
+    case boolexpr_e:
+        if(expr->boolConst == "TRUE")
+            fprintf(f, "%-8s", "TRUE");
+        else
+            fprintf(f, "%-8s", "FALSE");
+        break;
+    case constnum_e:
+        fprintf(f, "%-16lf", expr->numConst);
+        break;
+    case conststring_e:
+        fprintf(f, "%-16s", expr->strConst);
+        break;
+    case var_e:
+        fprintf(f, "%-8s", "var");
+        break;
+    default:
+        fprintf(f, "%-8s", expr->strConst);
+        break;
     }
 }
 
@@ -284,34 +295,10 @@ void print_quads(){
         if(quads[i].op == assign || quads[i].op == uminus || quads[i].op == not){
             fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
-            //print_expression(quads[i].arg1, f);          
-            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
-        }
-        else if(quads[i].op == jump){
-            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));         
-            fprintf(f, "%-8s%-8s%-8d%-8d\n", "", "", quads[i].label, quads[i].line);
-        }
-        else if(quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend || quads[i].op == ret || quads[i].op == tablecreate){
-            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].result, f);                    
-            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
-        }
-        else if(quads[i].op == if_eq || quads[i].op == if_greater || quads[i].op == if_greatereq || quads[i].op == if_less || quads[i].op == if_lesseq || quads[i].op == if_noteq || quads[i].op == and || quads[i].op == or) {
-            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
-            //print_expression(quads[i].arg1, f);
-            //print_expression(quads[i].arg2, f);          
-            fprintf(f, "%-8s%-8s%-8d%-8d\n", "", "", quads[i].label, quads[i].line);
-        }
-        else if(quads[i].op ==  add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem || quads[i].op == tablesetelem) {
-            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
-            //print_expression(quads[i].arg1, f);
-            //print_expression(quads[i].arg2, f);          
-            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);       
-        }
-        else if(quads[i].op == param || quads[i].op == call){
-            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
-            //print_expression(quads[i].arg1, f);          
-            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
+            print_expression(quads[i].arg1, f);
+            fprintf(f, "%-8s", "no arg");
+            fprintf(f,"%-8d%-8d", quads[i].label, quads[i].line);
+            fprintf(f, "\n");
         }
         i++;
     }    

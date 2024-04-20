@@ -605,13 +605,13 @@ static const yytype_int16 yyrline[] =
       92,    93,    94,    95,    96,    97,   100,   101,   102,   103,
      104,   105,   106,   107,   108,   109,   110,   111,   112,   113,
      117,   118,   124,   130,   131,   132,   133,   134,   137,   136,
-     182,   183,   184,   185,   186,   189,   210,   253,   260,   268,
-     270,   275,   285,   286,   289,   290,   300,   303,   304,   306,
-     308,   310,   311,   314,   315,   319,   320,   321,   328,   329,
-     332,   334,   334,   337,   338,   341,   372,   388,   400,   405,
-     411,   422,   423,   424,   425,   433,   435,   436,   440,   451,
-     454,   454,   466,   469,   470,   472,   474,   476,   476,   477,
-     477
+     179,   180,   181,   182,   183,   186,   208,   251,   258,   266,
+     268,   273,   283,   284,   287,   288,   298,   301,   302,   304,
+     306,   308,   309,   312,   313,   317,   318,   319,   326,   327,
+     330,   332,   332,   335,   336,   339,   370,   386,   398,   403,
+     409,   420,   421,   422,   423,   426,   428,   429,   433,   444,
+     447,   447,   459,   462,   463,   465,   467,   469,   469,   470,
+     470
 };
 #endif
 
@@ -1755,26 +1755,23 @@ yyreduce:
     }
     else{
         expr *temp = (yyvsp[0].expression);
-        if(temp->type == 5){
-            printf("constnum_e\n");
-        }
         emit(assign, (yyvsp[0].expression), NULL, (yyvsp[-3].expression), 0U, yylineno);
         (yyval.expression) = newexpr(assignexpr_e);
         (yyval.expression)->sym = newtemp();
         emit(assign, (yyvsp[-3].expression), NULL, (yyval.expression), 0U, yylineno);
     }
 }
-#line 1768 "parser.c"
+#line 1765 "parser.c"
     break;
 
   case 40: /* primary: lvalue  */
-#line 182 "parser.y"
+#line 179 "parser.y"
                             {(yyval.expression) = emit_iftableitem((yyvsp[0].expression));}
-#line 1774 "parser.c"
+#line 1771 "parser.c"
     break;
 
   case 45: /* lvalue: IDENTIFIER  */
-#line 189 "parser.y"
+#line 186 "parser.y"
                                         {    
                                                 entry = lookup_in_scope((yyvsp[0].stringv), scope);                                                                                                // else if(entry->type == LIBFUNC) {
                                                 //     yyerror("Cannot assign to a library function");
@@ -1793,13 +1790,14 @@ yyreduce:
                                                 }
                                                 (yyval.expression)->sym = entry;
                                                 (yyval.expression) = lvalue_expr(entry);
+                                                (yyval.expression)->strConst = yylval.stringv;
                                             
                                         }
-#line 1799 "parser.c"
+#line 1797 "parser.c"
     break;
 
   case 46: /* lvalue: KEYWORD_LOCAL IDENTIFIER  */
-#line 210 "parser.y"
+#line 208 "parser.y"
                                                {  
                                                     int flag = 0;                                               
                                                     entry = lookup((yyvsp[0].stringv), scope);
@@ -1840,21 +1838,21 @@ yyreduce:
                                                     (yyval.expression) = lvalue_expr(sym);                                                                                                                                      
                                                     
                                                 }
-#line 1844 "parser.c"
+#line 1842 "parser.c"
     break;
 
   case 47: /* lvalue: DOUBLECOLON IDENTIFIER callsuffix  */
-#line 253 "parser.y"
+#line 251 "parser.y"
                                                         {
                                                             entry = lookup_in_scope((yyvsp[-1].stringv), 0); 
                                                             if(entry == NULL) yyerror("global identifier not found");
                                                             
                                                         }
-#line 1854 "parser.c"
+#line 1852 "parser.c"
     break;
 
   case 48: /* lvalue: DOUBLECOLON IDENTIFIER  */
-#line 260 "parser.y"
+#line 258 "parser.y"
                                                {
                                                     entry = lookup_in_scope((yyvsp[0].stringv), 0); 
                                             
@@ -1863,27 +1861,27 @@ yyreduce:
                                                         if (entry == NULL || !entry->isActive) yyerror(error_message);
 
                                                 }
-#line 1867 "parser.c"
+#line 1865 "parser.c"
     break;
 
   case 49: /* lvalue: member  */
-#line 268 "parser.y"
+#line 266 "parser.y"
                              {(yyval.expression) = (yyvsp[0].expression);}
-#line 1873 "parser.c"
+#line 1871 "parser.c"
     break;
 
   case 50: /* member: lvalue DOT IDENTIFIER  */
-#line 270 "parser.y"
+#line 268 "parser.y"
                                             { 
                                             if (entry == NULL || !entry->isActive) yyerror("member error" );
                                             else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue.id");
                                             (yyval.expression) = member_item((yyvsp[-2].expression), (yyvsp[0].stringv));
                                             }
-#line 1883 "parser.c"
+#line 1881 "parser.c"
     break;
 
   case 51: /* member: lvalue LEFTBRACKET expr RIGHTBRACKET  */
-#line 275 "parser.y"
+#line 273 "parser.y"
                                                            { 
                                             expr* tmp;
                                             if (entry == NULL || !entry->isActive) yyerror("member error");
@@ -1894,11 +1892,11 @@ yyreduce:
                                             tmp->index = (yyvsp[-1].expression);
                                             (yyval.expression) = tmp;
                                             }
-#line 1898 "parser.c"
+#line 1896 "parser.c"
     break;
 
   case 55: /* call: IDENTIFIER callsuffix  */
-#line 290 "parser.y"
+#line 288 "parser.y"
                                             {
                                                 // int temp = scope-1;
                                                 // while(temp >= 0){
@@ -1909,41 +1907,41 @@ yyreduce:
                                                 // if(entry == NULL) yyerror("Cannot call function");
                                                 // else if(entry->type != LIBFUNC || entry->type != USERFUNC) yyerror("not a function");
                     }
-#line 1913 "parser.c"
+#line 1911 "parser.c"
     break;
 
   case 56: /* call: LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS  */
-#line 300 "parser.y"
+#line 298 "parser.y"
                                                                                                       {printf("call -> (funcdef)(elist)");}
-#line 1919 "parser.c"
+#line 1917 "parser.c"
     break;
 
   case 62: /* elist: %empty  */
-#line 311 "parser.y"
+#line 309 "parser.y"
                                         {}
-#line 1925 "parser.c"
+#line 1923 "parser.c"
     break;
 
   case 71: /* $@2: %empty  */
-#line 334 "parser.y"
+#line 332 "parser.y"
                                { scope++; }
-#line 1931 "parser.c"
+#line 1929 "parser.c"
     break;
 
   case 72: /* block: LEFTBRACE $@2 blockk RIGHTBRACE  */
-#line 334 "parser.y"
+#line 332 "parser.y"
                                                                { scope--; }
-#line 1937 "parser.c"
+#line 1935 "parser.c"
     break;
 
   case 74: /* blockk: %empty  */
-#line 338 "parser.y"
+#line 336 "parser.y"
                                         {}
-#line 1943 "parser.c"
+#line 1941 "parser.c"
     break;
 
   case 75: /* funcname: IDENTIFIER  */
-#line 341 "parser.y"
+#line 339 "parser.y"
                      {
                         
                         if(scope < 0) scope = 0;
@@ -1974,11 +1972,11 @@ yyreduce:
 
                         (yyval.stringv) = entry->value.funcVal;
                     }
-#line 1978 "parser.c"
+#line 1976 "parser.c"
     break;
 
   case 76: /* funcname: %empty  */
-#line 372 "parser.y"
+#line 370 "parser.y"
                   { 
                         int temp = scope;
                         printf("scope %d\n", scope);
@@ -1994,11 +1992,11 @@ yyreduce:
 
                         (yyval.stringv) = entry;
                     }
-#line 1998 "parser.c"
+#line 1996 "parser.c"
     break;
 
   case 77: /* funcprefix: KEYWORD_FUNCTION funcname  */
-#line 388 "parser.y"
+#line 386 "parser.y"
                                       {
                                         (yyval.sym) = insert((yyvsp[0].stringv), USERFUNC, scope, yylineno);
                                         (yyval.sym)->iaddress = nextquadlabel();
@@ -2007,31 +2005,31 @@ yyreduce:
                                         enterscopespace();
                                         resetformalargsoffset();
                                        }
-#line 2011 "parser.c"
+#line 2009 "parser.c"
     break;
 
   case 78: /* funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS  */
-#line 400 "parser.y"
+#line 398 "parser.y"
                                                   {
                                                      scope--;
                                                      enterscopespace();
                                                      resetfunctionlocalsoffset();
                                                   }
-#line 2021 "parser.c"
+#line 2019 "parser.c"
     break;
 
   case 79: /* funcbody: block  */
-#line 405 "parser.y"
+#line 403 "parser.y"
                 {
                  (yyval.unsignedv) = currscopeoffset();
                  exitscopespace();
                  //slide 6 mathima 10
                 }
-#line 2031 "parser.c"
+#line 2029 "parser.c"
     break;
 
   case 80: /* funcdef: funcprefix funcargs funcbody  */
-#line 411 "parser.y"
+#line 409 "parser.y"
                                          {
                                             exitscopespace();
                                             (yyval.sym)->totalLocals = (yyvsp[0].unsignedv);
@@ -2041,42 +2039,49 @@ yyreduce:
                                             emit(funcend, lvalue_expr((yyvsp[-2].sym)), NULL, NULL, (yyvsp[-2].sym)->iaddress + yylineno, yylineno);
 
 }
-#line 2045 "parser.c"
+#line 2043 "parser.c"
     break;
 
   case 82: /* const: STRING  */
-#line 423 "parser.y"
+#line 421 "parser.y"
                                             { (yyval.expression) = newexpr_conststring(yylval.stringv); }
-#line 2051 "parser.c"
+#line 2049 "parser.c"
     break;
 
   case 83: /* const: KEYWORD_NIL  */
-#line 424 "parser.y"
+#line 422 "parser.y"
                                             { (yyval.expression) = newexpr_nil(yylval.stringv);  }
-#line 2057 "parser.c"
+#line 2055 "parser.c"
     break;
 
   case 84: /* const: KEYWORD_TRUE  */
-#line 425 "parser.y"
+#line 423 "parser.y"
                                             { 
-                                            printf("true\n");
-
-                                            (yyval.expression) = newexpr_bool(yylval.stringv);
-                                            if((yyval.expression)->type == 5){
-                                                printf("works\n");
+                                              (yyval.expression) = newexpr_bool(yylval.stringv);
                                             }
-                                             }
-#line 2070 "parser.c"
+#line 2063 "parser.c"
     break;
 
   case 85: /* const: KEYWORD_FALSE  */
-#line 433 "parser.y"
+#line 426 "parser.y"
                                             { (yyval.expression) = newexpr_bool(yylval.stringv); }
-#line 2076 "parser.c"
+#line 2069 "parser.c"
+    break;
+
+  case 86: /* number: "integer constant"  */
+#line 428 "parser.y"
+                                            { (yyval.stringv) = newexpr_constnum(yylval.intv); }
+#line 2075 "parser.c"
+    break;
+
+  case 87: /* number: "real contstant"  */
+#line 429 "parser.y"
+                                            { (yyval.stringv) = newexpr_constnum(yylval.floatv); }
+#line 2081 "parser.c"
     break;
 
   case 88: /* idlist: IDENTIFIER ids  */
-#line 440 "parser.y"
+#line 433 "parser.y"
                                      {  
                                     
                                     entry = lookup((yyvsp[-1].stringv), scope); //lookup in function scope
@@ -2088,17 +2093,17 @@ yyreduce:
                                         entry = insert((yyvsp[-1].stringv),FORMAL,scope,yylineno);     
                                     }
                                 }
-#line 2092 "parser.c"
+#line 2097 "parser.c"
     break;
 
   case 89: /* idlist: %empty  */
-#line 451 "parser.y"
+#line 444 "parser.y"
                                              {}
-#line 2098 "parser.c"
+#line 2103 "parser.c"
     break;
 
   case 90: /* $@3: %empty  */
-#line 454 "parser.y"
+#line 447 "parser.y"
                                       {  
                                     entry = lookup((yyvsp[0].stringv), scope); //lookup in function scope
                                     if(entry != NULL) {
@@ -2111,29 +2116,29 @@ yyreduce:
                                         entry = insert((yyvsp[0].stringv),FORMAL,scope,yylineno);     
                                     }
                                 }
-#line 2115 "parser.c"
+#line 2120 "parser.c"
     break;
 
   case 92: /* ids: %empty  */
-#line 466 "parser.y"
+#line 459 "parser.y"
                                              {}
-#line 2121 "parser.c"
+#line 2126 "parser.c"
     break;
 
   case 97: /* $@4: %empty  */
-#line 476 "parser.y"
+#line 469 "parser.y"
                                    {if(scope == 0) yyerror("Use of 'return' while not in a loop\n");}
-#line 2127 "parser.c"
+#line 2132 "parser.c"
     break;
 
   case 99: /* $@5: %empty  */
-#line 477 "parser.y"
+#line 470 "parser.y"
                                      {if(scope == 0) yyerror("Use of 'return' while not in a loop\n");}
-#line 2133 "parser.c"
+#line 2138 "parser.c"
     break;
 
 
-#line 2137 "parser.c"
+#line 2142 "parser.c"
 
       default: break;
     }
@@ -2357,7 +2362,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 479 "parser.y"
+#line 472 "parser.y"
 
 int yyerror (char* yaccProvidedMessage) {
     fprintf(stderr, "%s: at line %d, before token: %s\n",yaccProvidedMessage,yylineno,yytext);

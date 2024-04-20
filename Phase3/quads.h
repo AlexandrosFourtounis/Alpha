@@ -118,3 +118,17 @@ expr* member_item(expr* lv, char* name);
 expr *lvalue_expr(SymbolTableEntry *sym);
 SymbolTableEntry *newtemp();
 scopespace_t currscopespace(void);
+unsigned int currscopeoffset(void);
+void inccurrscopeoffset(void);
+void enterscopespace(void);
+void exitscopespace(void);
+void resetformalargsoffset();
+void resetfunctionlocalsoffset();
+void restorecurrscopeoffset(unsigned int n);
+unsigned int nextquadlabel();
+void patchlabel(unsigned int quadNo, unsigned int label);
+void print_quads();
+
+expr *newexpr_bool(char *s);
+expr *newexpr_nil(char *s);
+expr *newexpr_constnum(double x);

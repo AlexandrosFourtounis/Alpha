@@ -165,9 +165,6 @@ expr {
     }
     else{
         expr *temp = $4;
-        if(temp->type == 5){
-            printf("constnum_e\n");
-        }
         emit(assign, $4, NULL, $1, 0U, yylineno);
         $$ = newexpr(assignexpr_e);
         $$->sym = newtemp();
@@ -204,6 +201,7 @@ lvalue:             IDENTIFIER          {
                                                 }
                                                 $$->sym = entry;
                                                 $$ = lvalue_expr(entry);
+                                                $$->strConst = yylval.stringv;
                                             
                                         }   
 
@@ -423,12 +421,12 @@ const:              number
                     | STRING                { $$ = newexpr_conststring(yylval.stringv); }
                     | KEYWORD_NIL           { $$ = newexpr_nil(yylval.stringv);  }
                     | KEYWORD_TRUE          { 
-                                            $$ = newexpr_bool(yylval.stringv);
+                                              $$ = newexpr_bool(yylval.stringv);
                                             }
                     | KEYWORD_FALSE         { $$ = newexpr_bool(yylval.stringv); }
 
-number:             INTEGER 
-                    | REAL 
+number:             INTEGER                 { $$ = newexpr_constnum(yylval.intv); }
+                    | REAL                  { $$ = newexpr_constnum(yylval.floatv); }
                     ;
 
 
