@@ -43,6 +43,8 @@ typedef struct SymbolTableEntry{
     SymbolType type;
     unsigned int offset;
     scopespace_t space;
+    unsigned int iaddress;
+    int totalLocals;
 
 }SymbolTableEntry;
 

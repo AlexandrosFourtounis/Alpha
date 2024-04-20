@@ -1,12 +1,20 @@
 %{
     #include <stdio.h>
-    #define YYDEBUG 1
-    //#define YYLEX alpha_yylex
     #include "quads.h"
+    #include "stack.h"
+
+    #define YYDEBUG 1
+    #define BOLD_RED "\033[1;31m"
+    #define RESET "\033[0m"
+
+    Stack *scopeoffsetstack;
+
     extern int yydebug;
     int yyerror (char* yaccProvidedMessage);
     int alpha_yylex(void* yylval);
     SymbolTableEntry *entry;
+    SymbolTableEntry *sym;
+
     extern int yylineno;
     extern char* yytext;
     extern FILE* yyin;
@@ -25,6 +33,8 @@
     float floatv;
     struct SymbolTableEntry *sym;
     struct expr *expression;
+    unsigned int unsignedv;
+    //struct expr *index;
 }
 
 %define parse.error verbose
@@ -45,8 +55,11 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt expr  assignexpr primary lvalue member call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk funcdef const number idlist ifstmt whilestmt forstmt returnstmt
-%type<expression> term
+%type <stringv> program parsing stmt primary call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk const number idlist ifstmt whilestmt forstmt returnstmt
+%type <expression> term lvalue assignexpr expr member
+%type <stringv> funcname
+%type <unsignedv> funcbody
+%type <sym> funcprefix funcdef
 
 %right '='
 %left KEYWORD_OR
@@ -140,10 +153,23 @@ assignexpr:         lvalue  '=' {
         
     }
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
-} expr 
+
+} expr {
+    if($1->type == tableitem_e){
+        emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
+        $$ = emit_iftableitem($1);
+        $$->type = assignexpr_e;
+    }
+    else{
+        emit(assign, $4, NULL, $1, 0U, yylineno);
+        $$ = newexpr(assignexpr_e);
+        $$->sym = newtemp();
+        emit(assign, $1, NULL, $$, 0U, yylineno);
+    }
+} 
                     
 
-primary:             lvalue
+primary:             lvalue {$$ = emit_iftableitem($1);}
                     | call 
                     | objectdef 
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  
@@ -151,29 +177,30 @@ primary:             lvalue
                     ;
 
 lvalue:             IDENTIFIER          {    
-                                                
-                                                entry = lookup_in_scope($1, scope);
-                                                if(entry == NULL) {                                                
-                                                }
-                                                // else if(entry->type == LIBFUNC) {
+                                                entry = lookup_in_scope($1, scope);                                                                                                // else if(entry->type == LIBFUNC) {
                                                 //     yyerror("Cannot assign to a library function");
                                                 // }
                                                 // else if(entry->type == USERFUNC) {
                                                 //     yyerror("Cannot assign to a user function");
                                                 // }
-                                                
+
+                                                //phase3                                               
+                                                //sym = lookup($1, scope);
+                                                if(entry == NULL) {
+                                                    entry = (scope == 0) ? insert($1, GLOBAL, 0, yylineno) : insert($1, LOCAL, scope, yylineno); 
+                                                    entry->space = currscopespace();
+                                                    entry->offset = currscopeoffset();
+                                                    inccurrscopeoffset();
+                                                }
+                                                $$->sym = entry;
+                                                $$ = lvalue_expr(entry);                                               
                                         }   
 
                     | KEYWORD_LOCAL IDENTIFIER {  
-                                                int flag = 0;
-                                                
+                                                    int flag = 0;                                               
                                                     entry = lookup($2, scope);
-
                                                     if(entry != NULL){
-                                                        if(entry->type == LIBFUNC){
-                                                            yyerror("Cannot shadow a library function");
-                                    
-                                                        }
+                                                        if(entry->type == LIBFUNC) yyerror("Cannot shadow a library function");                                                                      
                                                         // else if(scope == 0){
                                                         //     yyerror("Cannot shadow a global variable");
                                                         // }
@@ -186,19 +213,27 @@ lvalue:             IDENTIFIER          {
                                                         goto end;
                                                     }
                                                 
-                                                
-                                                    
-                                                       end:
-                                                       if(flag == 1) {
-                                                            entry = lookup_in_scope($2, scope);
-                                                            if(entry == NULL) {
-                                                                entry = insert($2, LOCAL, scope, yylineno);
-                                                            }
-                                                            else {
-                                                                yyerror("Cannot shadow a local variable");
-                                                            }
-                                                       }                                                                                    
-                                                        
+                                                    end:
+                                                    if(flag == 1) {
+                                                        entry = lookup_in_scope($2, scope);
+                                                        if(entry == NULL) entry = insert($2, LOCAL, scope, yylineno);                                                   
+                                                        else yyerror("Cannot shadow a local variable"); 
+                                                    }
+
+                                                    //phase 3
+                                                    sym = lookup_in_scope($2, scope);
+                                                    if (sym == NULL){
+                                                        sym = (scope == 0) ? insert($2, GLOBAL, 0, yylineno) : insert($2, LOCAL, scope, yylineno); 
+                                                        sym->space = currscopespace();
+                                                        sym->offset = currscopeoffset();
+                                                        inccurrscopeoffset();
+                                                    } else {
+                                                        if(sym->type == USERFUNC || sym->type == LIBFUNC ){
+                                                            printf(BOLD_RED"sym is a function\n"RESET);
+                                                        }
+
+                                                    }
+                                                    $$ = lvalue_expr(sym);                                                                                                                                      
                                                     
                                                 }
                                             
@@ -219,16 +254,22 @@ lvalue:             IDENTIFIER          {
                                                         if (entry == NULL || !entry->isActive) yyerror(error_message);
 
                                                 }
-                    | member
+                    | member {$$ = $1;}
 
 member:             lvalue DOT IDENTIFIER   { 
                                             if (entry == NULL || !entry->isActive) yyerror("member error" );
                                             else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue.id");
-
+                                            $$ = member_item($1, $3);
                                             }            
                     | lvalue LEFTBRACKET expr RIGHTBRACKET { 
+                                            expr* tmp;
                                             if (entry == NULL || !entry->isActive) yyerror("member error");
                                             else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue[expr]");
+                                            $1 = emit_iftableitem($1);
+                                            tmp = newexpr(tableitem_e);
+                                            tmp->sym = $1->sym;
+                                            tmp->index = $3;
+                                            $$ = tmp;
                                             }
                     | call DOT IDENTIFIER               
                     | call LEFTBRACKET expr RIGHTBRACKET
@@ -285,11 +326,10 @@ blockk:              stmt blockk
                     | %empty            {}
                     ;
 
-funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
+funcname: IDENTIFIER {
                         
-
                         if(scope < 0) scope = 0;
-                        entry = lookup_in_scope($2, scope); 
+                        entry = lookup_in_scope($1, scope); 
 
                         int temp = scope;
                         while(temp >= 0){
@@ -309,13 +349,15 @@ funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
                             //entry = lookup_in_scope_hidden($<stringv>2, scope);
                             //if(!entry) yyerror("variable already defined"); 
                             //else{ 
-                                entry = insert($2, USERFUNC, scope, yylineno);
+                                entry = insert($1, USERFUNC, scope, yylineno);
                                 scope++;
                             //} 
                         }
+
+                        $$ = entry->value.funcVal;
                     } 
-                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; }  block  
-                    | KEYWORD_FUNCTION  { 
+
+funcname: %empty  { 
                         int temp = scope;
                         printf("scope %d\n", scope);
                         while(temp != 0){
@@ -327,9 +369,43 @@ funcdef:            KEYWORD_FUNCTION   IDENTIFIER {
                         sprintf(str, "_%d", anonymousCounter++); 
                         entry = insert(str, USERFUNC, scope, yylineno); 
                         scope++; // increment scope here
+
+                        $$ = entry;
                     } 
-                    LEFTPARENTHESIS idlist RIGHTPARENTHESIS { scope--; } block
-                    ;
+
+funcprefix: KEYWORD_FUNCTION funcname {
+                                        $$ = insert($2, USERFUNC, scope, yylineno);
+                                        $$->iaddress = nextquadlabel();
+                                        emit(funcstart, lvalue_expr($$), NULL, NULL, $$->iaddress, yylineno);
+                                        push(scopeoffsetstack, currscopeoffset());
+                                        enterscopespace();
+                                        resetformalargsoffset();
+                                       }  
+
+
+
+
+funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS {
+                                                     scope--;
+                                                     enterscopespace();
+                                                     resetfunctionlocalsoffset();
+                                                  } 
+funcbody: block {
+                 $$ = currscopeoffset();
+                 exitscopespace();
+                 //slide 6 mathima 10
+                }
+
+funcdef:   funcprefix funcargs funcbody  {
+                                            exitscopespace();
+                                            $$->totalLocals = $3;
+                                            int offset = pop(scopeoffsetstack);
+                                            restorecurrscopeoffset(offset);
+                                            $$ = $1;
+                                            emit(funcend, lvalue_expr($1), NULL, NULL, $1->iaddress + yylineno, yylineno);
+
+}                         
+           ;
 
 const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
 
@@ -393,6 +469,13 @@ int main(int argc,char **argv){
     insert_libfuncs();
     char *libfuncs[12] = {"print", "input", "objectmemberkeys", "objecttotalmembers", "objectcopy", "totalarguments", "argument", "typeof", "strtonum", "sqrt", "cos", "sin"};
     
+    scopeoffsetstack = malloc(sizeof(Stack));
+    if (scopeoffsetstack == NULL) {
+        fprintf(stderr, "Failed to allocate memory for scopeoffsetstack\n");
+        return 1;
+    }
+    initialize(scopeoffsetstack);
+
     if(argc > 1){
         if(!(yyin = fopen(argv[1],"r"))){
             fprintf(stderr,"Cannot open file\n");
@@ -405,6 +488,10 @@ int main(int argc,char **argv){
 
     printf("PRINTING SYMBOL TABLE \n");
     print_scope_links();
+
+    printf("PRINTING QUADS\n");
+    print_quads();
+
     SymTable_free(symTable);
     free_scope_links();
     return 0;

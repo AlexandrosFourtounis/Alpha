@@ -42,11 +42,7 @@ typedef struct symbol {
 */
 
 
-scopespace_t currscopespace(void);
-unsigned int currscopeoffset(void);
-void inccurrscopeoffset(void);
-void enterscopespace(void);
-void exitscopespace(void);
+
 
 typedef enum iopcode
 {
@@ -87,22 +83,23 @@ typedef struct expr{
     struct expr *next;
 }expr;
 
+
 typedef struct quad{
     iopcode op;
     expr *result;
     expr *arg1;
     expr *arg2;
-    unsigned label;
-    unsigned line;
+    unsigned int label;
+    unsigned int line;
 }quad;
 
 extern quad *quads;
-extern unsigned total;
+extern unsigned int total;
 extern unsigned int currQuad;
 
 
 void expand(void);
-void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned label, unsigned line);
+void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, unsigned int line);
 
 //UTILS
 void check_arith(expr *e, const char *context);
@@ -111,3 +108,20 @@ expr *newexpr(expr_t t);
 char *newtempname();
 void resettemp();
 SymbolTableEntry *newtemp();
+expr* emit_iftableitem(expr* e);
+expr* newexpr_conststring(char* s);
+expr* member_item(expr* lv, char* name);
+
+scopespace_t currscopespace(void);
+unsigned int currscopeoffset(void);
+void inccurrscopeoffset(void);
+void enterscopespace(void);
+void exitscopespace(void);
+void resetformalargsoffset();
+void resetfunctionlocalsoffset();
+void restorecurrscopeoffset(unsigned int n);
+unsigned int nextquadlabel();
+void patchlabel(unsigned int quadNo, unsigned int label);
+void print_quads();
+
+

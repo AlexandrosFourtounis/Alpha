@@ -4,9 +4,13 @@
 #include <stdio.h>
 #include "quads.h"
 
- quad *quads = (quad *)0;
- unsigned total =0;
- unsigned int currQuad = 0;
+
+#define BOLD_RED "\033[1;31m"
+#define RESET "\033[0m"
+
+quad *quads = (quad *)0;
+unsigned int total =0;
+unsigned int currQuad = 0;
 
 unsigned int programVarOffset = 0;
 unsigned int functionLocalOffset = 0;
@@ -24,7 +28,7 @@ void expand(void){
     total += EXPAND_SIZE;
 }
 
-void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned label, unsigned line){
+void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, unsigned int line){
     if(currQuad == total){
         expand();
     }
@@ -82,9 +86,9 @@ extern int yylineno;
 
 char *newtempname()
 {
-    char buffer[50];
-    sprintf(buffer, "_t%d", tempcounter);
-    return buffer;
+    char temp[20]; // Buffer to hold the resulting string
+    sprintf(temp, "_t%d", tempcounter);
+    return strdup(temp);
 }
 void resettemp()
 {
@@ -100,7 +104,7 @@ void check_arith(expr *e, const char *context)
         e->type == libraryfunc_e ||
         e->type == boolexpr_e)
     {
-        printf("Illegal expr used in %s!", context);
+        printf(BOLD_RED"Illegal expr used in %s!"RESET, context);
         exit(-1);
     }
 }
@@ -122,13 +126,15 @@ expr *lvalue_expr(SymbolTableEntry *sym)
     e->sym = sym;
     switch (sym->type)
     {
-    case (GLOBAL ||  LOCAL ||  FORMAL):
+    case GLOBAL:
+    case LOCAL:
+    case FORMAL:
         e = newexpr(var_e);
         break;
-    case ( USERFUNC):
+    case USERFUNC:
         e = newexpr(programfunc_e);
         break;
-    case (LIBFUNC):
+    case LIBFUNC:
         e = newexpr(libraryfunc_e);
         break;
     default:
@@ -154,4 +160,103 @@ SymbolTableEntry *newtemp()
     {
         return entry;
     }
+}
+
+void resetformalargsoffset(){
+    formalArgOffset = 0;
+}
+
+void resetfunctionlocalsoffset(){
+    functionLocalOffset = 0;
+}
+
+void restorecurrscopeoffset(unsigned int n){
+    switch (currscopespace()){
+        case programVar    : programVarOffset = n; break;
+        case functionLocal : functionLocalOffset = n; break;
+        case formalArg     : formalArgOffset = n; break;
+        default: assert(0);
+    }
+}
+
+unsigned int nextquadlabel(){
+    return currQuad;
+}
+
+void patchlabel(unsigned int quadNo, unsigned int label){
+    assert(quadNo < currQuad);
+    quads[quadNo].label = label;
+}
+
+expr* newexpr_conststring(char* s){
+    expr* e = newexpr(conststring_e);
+    e->strConst = strdup(s);
+    return e;
+}
+
+expr* emit_iftableitem(expr* e){
+    if(e->type != tableitem_e) return e;
+    else{
+        expr* result = newexpr(var_e);
+        result->sym = newtemp();
+        emit(tablegetelem, e, e->index, result, 0, yylineno);
+        return result;
+    }
+}
+
+expr* member_item(expr* lv, char* name){
+    lv = emit_iftableitem(lv);
+    expr* ti = newexpr(tableitem_e);
+    ti->sym = lv->sym;
+    ti->index = newexpr_conststring(name);
+    return ti;
+}
+
+void print_expression(expr *expr, FILE *f){
+     if(!expr) {
+        fprintf(f, "%-16s", "");
+        return;
+    }
+    else if(expr->type == nil_e) {
+
+        fprintf(f, "%-16s", "NIL");
+        return;
+    }
+    
+    switch(expr->type) {
+        case constbool_e :
+            fprintf(f, "%-16s", expr->boolConst ? "TRUE" : "FALSE");
+            break;
+        case constnum_e :
+            fprintf(f, "%-16lf", expr->numConst);
+            break;
+        case conststring_e :
+            fprintf(f, "%-16s", expr->strConst);
+            break;
+        case var_e :
+            fprintf(f, "%-8s","var");
+            break;
+        default :
+            fprintf(f, "%-8s", "default");
+            break;
+    }
+}
+
+void print_quads(){
+    unsigned int i = 0U;
+    FILE *f = fopen("quads.txt", "w");
+    fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "Quad", "Op", "Result", "Arg1", "Arg2", "Label", "Line");
+    while(i < currQuad ){
+        if(quads[i].op == assign){
+            fprintf(f, "%-8d%-16s", i+1, "ASSIGN");
+            print_expression(quads[i].result, f);
+            //print_expression(quads[i].arg1, f);
+            fprintf(f, "%-8s", "");
+            fprintf(f,"%-8s%-8d%-8d", "", quads[i].label, quads[i].line);
+            fprintf(f, "\n");
+        }
+        i++;
+
+    }
+    
 }
