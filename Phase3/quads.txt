@@ -1,0 +1,7 @@
+Quad    Op              Result  Arg1    Arg2    Label   Line    
+1       ASSIGN          var                     0       2       
+2       ASSIGN          default                 0       2       
+3       ASSIGN          var                     0       3       
+4       ASSIGN          default                 0       3       
+5       ASSIGN          var                     0       4       
+6       ASSIGN          default                 0       4       
