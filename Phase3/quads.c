@@ -292,11 +292,12 @@ void print_quads(){
     fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "QUAD", "OP", "RESULT", "ARG1", "ARG2", "LABEL", "LINE");
 
     while(i < currQuad ){
-        if(quads[i].op == assign || quads[i].op == uminus || quads[i].op == not){
+        if(quads[i].op == assign || quads[i].op == add || quads[i].op == not){
             fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
-            fprintf(f, "%-8s", "no arg");
+            print_expression(quads[i].arg2, f);
+            //fprintf(f, "%-8s", "no arg");
             fprintf(f,"%-8d%-8d", quads[i].label, quads[i].line);
             fprintf(f, "\n");
         }
@@ -314,7 +315,7 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
 
     expr *result = NULL;
     SymbolTableEntry *temp;
-    /*
+    
     if (arg1->sym && arg1->sym->type<2 && arg1->sym->value.varVal->name[0]=='_') // in case of tmp
     {
         temp = arg1->sym;
@@ -322,13 +323,13 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
         temp = arg2->sym;
     }else{
         temp = newtemp(); // create new tmp variable
-    }*/
+    }
     temp = newtemp();
     result = lvalue_expr(temp);
 
     switch (op)
     {
-    case add:
+    case add: 
         emit(add, arg1, arg2, result, -1, yylineno);
         break;
     case sub:
