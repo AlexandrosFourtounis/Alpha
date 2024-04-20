@@ -75,7 +75,7 @@ void exitscopespace(void){
     --scopeSpaceCounter;
 }
 
-const char *newtempname(){
+char *newtempname(){
     char temp[20]; // Buffer to hold the resulting string
     sprintf(temp, "_t%d", tempcounter);
     return strdup(temp);

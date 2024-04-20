@@ -107,7 +107,7 @@ void resetfunctionlocalsoffset();
 void restorecurrscopeoffset(unsigned int n);
 void check_arith(expr *e, const char *context);
 void patchlabel(unsigned int quadNo, unsigned int label);
-const char *newtempname();
+char *newtempname();
 const char* opcode_to_string(iopcode opcode);
 unsigned int nextquadlabel();
 unsigned int currscopeoffset(void);
