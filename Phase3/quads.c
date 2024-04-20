@@ -194,6 +194,25 @@ expr* newexpr_conststring(char* s){
     return e;
 }
 
+expr *newexpr_bool(char *s)
+{
+    expr *e = newexpr(boolexpr_e);
+    if(strcmp(s,"true") == 0 || strcmp(s,"TRUE") == 0)
+        e->boolConst = 't';
+    else if(strcmp(s,"false") == 0 || strcmp(s,"FALSE") == 0)
+        e->boolConst = 'f';
+    else
+        assert(0);
+    return e;
+}
+
+expr *newexpr_nil(char *s){
+    expr *e = newexpr(nil_e);
+    e->strConst = strdup(s);
+
+    return e;
+}
+
 expr* emit_iftableitem(expr* e){
     if(e->type != tableitem_e) return e;
     else{
@@ -250,7 +269,7 @@ void print_quads(){
         if(quads[i].op == assign){
             fprintf(f, "%-8d%-16s", i+1, "ASSIGN");
             print_expression(quads[i].result, f);
-            //print_expression(quads[i].arg1, f);
+            print_expression(quads[i].arg1, f);
             fprintf(f, "%-8s", "");
             fprintf(f,"%-8s%-8d%-8d", "", quads[i].label, quads[i].line);
             fprintf(f, "\n");

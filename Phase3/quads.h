@@ -124,4 +124,5 @@ unsigned int nextquadlabel();
 void patchlabel(unsigned int quadNo, unsigned int label);
 void print_quads();
 
-
+expr *newexpr_bool(char *s);
+expr *newexpr_nil(char *s);
