@@ -123,5 +123,5 @@ void restorecurrscopeoffset(unsigned int n);
 unsigned int nextquadlabel();
 void patchlabel(unsigned int quadNo, unsigned int label);
 void print_quads();
-
+expr* Manage_operations(expr *arg1, iopcode op, expr *arg2);
 
