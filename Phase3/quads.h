@@ -46,31 +46,32 @@ typedef struct symbol {
 
 typedef enum iopcode
 {
-    assign,
-    add,
-    sub,
-    mul,
-    divv,
-    mod,
-    uminus,
-    and,
-    or,
-    not,
-    if_eq,
-    if_noteq,
-    if_lesseq,
-    if_greatereq,
-    if_less,
-    if_greater,
-    call,
-    param,
-    ret,
-    getretval,
-    funcstart,
-    funcend,
-    tablecreate,
-    tablegetelem,
-    tablesetelem
+    assign,//
+    jump,//
+    add,//
+    sub,//
+    mul,//
+    divv,//
+    mod,//
+    uminus,//
+    and,//
+    or,//
+    not,//
+    if_eq,//
+    if_noteq,//
+    if_lesseq,//
+    if_greatereq,//
+    if_less,//
+    if_greater,//
+    call,//
+    param,//
+    ret,//
+    getretval,//
+    funcstart,//
+    funcend,//
+    tablecreate,//
+    tablegetelem,//
+    tablesetelem//
 }iopcode;
 
 typedef struct expr{
@@ -123,5 +124,6 @@ void restorecurrscopeoffset(unsigned int n);
 unsigned int nextquadlabel();
 void patchlabel(unsigned int quadNo, unsigned int label);
 void print_quads();
+const char* opcode_to_string(iopcode opcode);
 
 

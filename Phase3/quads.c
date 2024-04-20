@@ -212,6 +212,39 @@ expr* member_item(expr* lv, char* name){
     return ti;
 }
 
+const char* opcode_to_string(iopcode opcode) {
+    switch (opcode) {
+        case assign: return "assign";
+        case jump: return "jump";
+        case add: return "add";
+        case sub: return "sub";
+        case mul: return "mul";
+        case divv: return "divv";
+        case mod: return "mod";
+        case uminus: return "uminus";
+        case and: return "and";
+        case or: return "or";
+        case not: return "not";
+        case if_eq: return "if_eq";
+        case if_noteq: return "if_noteq";
+        case if_lesseq: return "if_lesseq";
+        case if_greatereq: return "if_greatereq";
+        case if_less: return "if_less";
+        case if_greater: return "if_greater";
+        case call: return "call";
+        case param: return "param";
+        case ret: return "ret";
+        case getretval: return "getretval";
+        case funcstart: return "funcstart";
+        case funcend: return "funcend";
+        case tablecreate: return "tablecreate";
+        case tablegetelem: return "tablegetelem";
+        case tablesetelem: return "tablesetelem";
+        default: return "unknown opcode";
+    }
+}
+
+
 void print_expression(expr *expr, FILE *f){
      if(!expr) {
         fprintf(f, "%-16s", "");
@@ -247,16 +280,38 @@ void print_quads(){
     FILE *f = fopen("quads.txt", "w");
     fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "Quad", "Op", "Result", "Arg1", "Arg2", "Label", "Line");
     while(i < currQuad ){
-        if(quads[i].op == assign){
-            fprintf(f, "%-8d%-16s", i+1, "ASSIGN");
+        if(quads[i].op == assign || quads[i].op == uminus || quads[i].op == not){
+            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
+            //print_expression(quads[i].arg1, f);          
+            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
+        }
+        else if(quads[i].op == jump){
+            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));         
+            fprintf(f, "%-8s%-8s%-8d%-8d\n", "", "", quads[i].label, quads[i].line);
+        }
+        else if(quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend || quads[i].op == ret || quads[i].op == tablecreate){
+            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
+            print_expression(quads[i].result, f);                    
+            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
+        }
+        else if(quads[i].op == if_eq || quads[i].op == if_greater || quads[i].op == if_greatereq || quads[i].op == if_less || quads[i].op == if_lesseq || quads[i].op == if_noteq || quads[i].op == and || quads[i].op == or) {
+            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
             //print_expression(quads[i].arg1, f);
-            fprintf(f, "%-8s", "");
-            fprintf(f,"%-8s%-8d%-8d", "", quads[i].label, quads[i].line);
-            fprintf(f, "\n");
+            //print_expression(quads[i].arg2, f);          
+            fprintf(f, "%-8s%-8s%-8d%-8d\n", "", "", quads[i].label, quads[i].line);
+        }
+        else if(quads[i].op ==  add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem || quads[i].op == tablesetelem) {
+            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
+            //print_expression(quads[i].arg1, f);
+            //print_expression(quads[i].arg2, f);          
+            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);       
+        }
+        else if(quads[i].op == param || quads[i].op == call){
+            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
+            //print_expression(quads[i].arg1, f);          
+            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
         }
         i++;
-
-    }
-    
+    }    
 }
