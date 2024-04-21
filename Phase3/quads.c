@@ -298,7 +298,7 @@ void print_quads(){
     fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "QUAD", "OP", "RESULT", "ARG1", "ARG2", "LABEL", "LINE");
 
     while(i < currQuad ){
-        if(quads[i].op == assign || quads[i].op == add || quads[i].op == not){
+        if(quads[i].op == assign || quads[i].op == add || quads[i].op == if_greater || quads[i].op == jump){
             fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
@@ -348,23 +348,70 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
     switch (op)
     {
     case add: 
-        emit(add, arg1, arg2, result, -1, yylineno);
+        emit(add, arg1, arg2, result, 0, yylineno);
         break;
     case sub:
-        emit(sub, arg1, arg2, result, -1, yylineno);
+        emit(sub, arg1, arg2, result, 0, yylineno);
         break;
     case mul:
-        emit(mul, arg1, arg2, result, -1, yylineno);
+        emit(mul, arg1, arg2, result, 0, yylineno);
         break;
     case divv:
-        emit(divv, arg1, arg2, result, -1, yylineno);
+        emit(divv, arg1, arg2, result, 0, yylineno);
         break;
     case mod:
-        emit(mod, arg1, arg2, result, -1, yylineno);
+        emit(mod, arg1, arg2, result, 0, yylineno);
         break;
     default:
         printf("Invalid operation\n");
         exit(-1);
     }
     return result;
+}
+
+expr *Manage_comparisonopers(expr* arg1, char* op, expr* arg2){
+    assert(arg1);
+    assert(arg2);
+
+    expr* tmp = newexpr(boolexpr_e);
+    //tmp->sym = newtemp();
+
+    //ta lines prepei na diorthothoun gia na exoun to currQuad
+    switch(op[0]){
+        case '=':
+            tmp->type = boolexpr_e;
+            emit(if_eq, arg1, arg2, NULL, 0, yylineno);
+            emit(jump, NULL, NULL, NULL, 0, yylineno);
+            break;
+        case '!':
+            emit(if_noteq, arg1, arg2, NULL, 0, yylineno);
+            emit(jump, NULL, NULL, NULL, 0, yylineno);
+            break;
+        case '<':
+            tmp->type = boolexpr_e;
+            if(strcmp(op, "<") == 0){
+                emit(if_less, arg1, arg2, NULL, 0, yylineno);
+                emit(jump, NULL, NULL, NULL, 0, yylineno);
+            }
+            else if(strcmp(op, "<=") == 0){
+                emit(if_lesseq, arg1, arg2, NULL, 0, yylineno);
+                emit(jump, NULL, NULL, NULL, 0, yylineno);
+            }
+            break;
+        case '>':
+            tmp->type = boolexpr_e;
+            if(strcmp(op, ">") == 0){
+                emit(if_greater, arg1, arg2, NULL, 0, yylineno);
+                emit(jump, NULL, NULL, NULL, 0, yylineno);
+            }
+            else if(strcmp(op, ">=") == 0){
+                emit(if_greatereq, arg1, arg2, NULL, 0, yylineno);
+                emit(jump, NULL, NULL, NULL, 0, yylineno);
+            }
+            break;
+        default:
+            printf("Invalid comparison operator\n");
+            exit(-1);
+    }
+    return tmp;
 }

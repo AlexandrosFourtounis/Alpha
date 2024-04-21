@@ -98,15 +98,15 @@ stmt:               expr SEMICOLON
                     ;
 
 expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
-                    | expr '*' expr       
-                    | expr '/' expr 
-                    | expr '%' expr     
-                    | expr GREATER expr   
-                    | expr GREATER_EQUAL expr 
-                    | expr LESS expr
-                    | expr LESS_EQUAL expr   
-                    | expr EQUALS expr        
-                    | expr NOT_EQUAL expr 
+                    | expr '*' expr   {$$ = Manage_operations($1,mul,$3);}   
+                    | expr '/' expr   {$$ = Manage_operations($1,divv,$3);}
+                    | expr '%' expr   {$$ = Manage_operations($1,mod,$3);}  
+                    | expr GREATER expr   {$$ = Manage_comparisonopers($1, ">",$3);}
+                    | expr GREATER_EQUAL expr {$$ = Manage_comparisonopers($1, ">=",$3);}
+                    | expr LESS expr  {$$ = Manage_comparisonopers($1, "<",$3);}
+                    | expr LESS_EQUAL expr   {$$ = Manage_comparisonopers($1, "<=",$3);}
+                    | expr EQUALS expr  {$$ = Manage_comparisonopers($1, "==",$3);}      
+                    | expr NOT_EQUAL expr {$$ = Manage_comparisonopers($1, "!=",$3);}
                     | expr KEYWORD_AND expr 
                     | expr KEYWORD_OR expr   
                     | assignexpr            
