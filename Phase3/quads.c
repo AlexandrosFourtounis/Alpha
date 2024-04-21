@@ -174,20 +174,22 @@ void patchlabel(unsigned int quadNo, unsigned int label){
 expr* newexpr_conststring(char* s){
     expr* e = newexpr(conststring_e);
     e->strConst = strdup(s);
+    e->sym = NULL;
     return e;
 }
 
 expr* newexpr_constnum(double x){
     expr *e = newexpr(constnum_e);
+    e->sym = NULL;
     e->numConst = x;
     return e;
-
 }
 
 
 expr *newexpr_bool(char *s)
 {
     expr *e = newexpr(boolexpr_e);
+    e->sym = NULL;
     if(strcmp(s,"true") == 0 || strcmp(s,"TRUE") == 0)
         e->boolConst = "TRUE";
     else if(strcmp(s,"false") == 0 || strcmp(s,"FALSE") == 0)
@@ -200,7 +202,7 @@ expr *newexpr_bool(char *s)
 expr *newexpr_nil(char *s){
     expr *e = newexpr(nil_e);
     e->strConst = strdup(s);
-
+    e->sym = NULL;
     return e;
 }
 
@@ -278,7 +280,11 @@ void print_expression(expr *expr, FILE *f){
         fprintf(f, "%-16s", expr->strConst);
         break;
     case var_e:
-        fprintf(f, "%-8s", "var");
+        if(expr->sym && expr->sym->value.varVal) {
+            fprintf(f, "%-8s", expr->sym->value.varVal->name);
+        } else {
+            fprintf(f, "%-8s", "var");
+        }
         break;
     default:
         fprintf(f, "%-8s", expr->strConst);
@@ -315,6 +321,18 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
 
     expr *result = NULL;
     SymbolTableEntry *temp;
+
+    if (arg1->sym && arg1->sym->value.varVal && arg1->sym->value.varVal->name) {
+        printf("arg1: %s\n", arg1->sym->value.varVal->name);
+    } else {
+        printf("arg1: %s\n", "NULL");
+    }
+
+    if (arg2->sym && arg2->sym->value.varVal && arg2->sym->value.varVal->name) {
+        printf("arg2: %s\n", arg2->sym->value.varVal->name);
+    } else {
+        printf("arg2: %s\n", "NULL");
+    }
     
     if (arg1->sym && arg1->sym->type<2 && arg1->sym->value.varVal->name[0]=='_') // in case of tmp
     {
@@ -324,7 +342,7 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
     }else{
         temp = newtemp(); // create new tmp variable
     }
-    temp = newtemp();
+
     result = lvalue_expr(temp);
 
     switch (op)
