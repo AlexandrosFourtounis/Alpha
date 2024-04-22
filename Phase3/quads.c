@@ -240,7 +240,6 @@ expr *newexpr_bool(char *s)
     if (strcmp(s, "true") == 0)
     {
         e->boolConst ="true";
-        printf("set bool to true");
     }
     else if (strcmp(s, "false") == 0)
         e->boolConst = "false";
@@ -362,7 +361,7 @@ void print_expression(expr *expr, FILE *f)
             fprintf(f, "%-8s", "false");
         break;
     case constnum_e:
-        fprintf(f, "%-8lf", expr->numConst);
+        fprintf(f, "%-8.2f", expr->numConst);
         break;
     case conststring_e:
         fprintf(f, "%-8s", expr->strConst);
@@ -401,15 +400,47 @@ void print_quads()
 
     while (i < currQuad)
     {
-        if (quads[i].op == assign || quads[i].op == add || quads[i].op == if_greater || quads[i].op == jump)
+        if (quads[i].op == assign || quads[i].op == uminus || quads[i].op == not )
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
             //print_expression(quads[i].arg2, f);
-             fprintf(f, "%-8s", "no arg");
+             fprintf(f, "%-8s", "");
             fprintf(f, "%-8d%-8d", quads[i].label, quads[i].line);
             fprintf(f, "\n");
+        }
+        else if (quads[i].op == jump)
+        {
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            fprintf(f, "%-8s%-8s%-8d%-8d\n", "", "", quads[i].label, quads[i].line);
+        }
+        else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend || quads[i].op == ret || quads[i].op == tablecreate)
+        {
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            print_expression(quads[i].result, f);
+            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
+        }
+        else if (quads[i].op == if_eq || quads[i].op == if_greater || quads[i].op == if_greatereq || quads[i].op == if_less || quads[i].op == if_lesseq || quads[i].op == if_noteq || quads[i].op == and || quads[i].op == or)
+        {
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            print_expression(quads[i].arg1, f);
+            print_expression(quads[i].arg2, f);
+            fprintf(f, "%-8s%-8s%-8d%-8d\n", "", "", quads[i].label, quads[i].line);
+        }
+        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem || quads[i].op == tablesetelem)
+        {
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            print_expression(quads[i].result, f);
+            print_expression(quads[i].arg1, f);
+            print_expression(quads[i].arg2, f);
+            fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
+        }
+        else if (quads[i].op == param || quads[i].op == call)
+        {
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            // print_expression(quads[i].arg1, f);
+            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
         }
         i++;
     }
@@ -426,23 +457,23 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
     expr *result = NULL;
     SymbolTableEntry *temp;
 
-    if (arg1->sym && arg1->sym->value.varVal && arg1->sym->value.varVal->name)
-    {
-        printf("arg1: %s\n", arg1->sym->value.varVal->name);
-    }
-    else
-    {
-        printf("arg1: %s\n", "NULL");
-    }
+    // if (arg1->sym && arg1->sym->value.varVal && arg1->sym->value.varVal->name)
+    // {
+    //     printf("arg1: %s\n", arg1->sym->value.varVal->name);
+    // }
+    // else
+    // {
+    //     printf("arg1: %s\n", "NULL");
+    // }
 
-    if (arg2->sym && arg2->sym->value.varVal && arg2->sym->value.varVal->name)
-    {
-        printf("arg2: %s\n", arg2->sym->value.varVal->name);
-    }
-    else
-    {
-        printf("arg2: %s\n", "NULL");
-    }
+    // if (arg2->sym && arg2->sym->value.varVal && arg2->sym->value.varVal->name)
+    // {
+    //     printf("arg2: %s\n", arg2->sym->value.varVal->name);
+    // }
+    // else
+    // {
+    //     printf("arg2: %s\n", "NULL");
+    // }
 
     if (arg1->sym && arg1->sym->type < 2 && arg1->sym->value.varVal->name[0] == '_') // in case of tmp
     {

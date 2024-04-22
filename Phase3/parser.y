@@ -369,7 +369,6 @@ funcname: IDENTIFIER {
 
 funcname: %empty  { 
                         int temp = scope;
-                        printf("scope %d\n", scope);
                         while(temp != 0){
                         hide_scope(temp);
                         temp--;
@@ -423,7 +422,6 @@ const:              number
                     | KEYWORD_TRUE          { 
                                               expr *temp = newexpr_bool(yylval.stringv);
                                               $$ = temp;
-                                              printf("TRUE\n");
                     
                                             }
                     | KEYWORD_FALSE         { $$ = newexpr_bool(yylval.stringv); }
