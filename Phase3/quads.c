@@ -424,9 +424,11 @@ void print_quads()
         else if (quads[i].op == if_eq || quads[i].op == if_greater || quads[i].op == if_greatereq || quads[i].op == if_less || quads[i].op == if_lesseq || quads[i].op == if_noteq || quads[i].op == and || quads[i].op == or)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            fprintf(f,"%-8s", "");
             print_expression(quads[i].arg1, f);
             print_expression(quads[i].arg2, f);
-            fprintf(f, "%-8s%-8s%-8d%-8d\n", "", "", quads[i].label, quads[i].line);
+            fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
+            
         }
         else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem || quads[i].op == tablesetelem)
         {
