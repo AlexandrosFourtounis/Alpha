@@ -55,11 +55,12 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt primary call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk const number idlist ifstmt whilestmt forstmt returnstmt
-%type <expression> term lvalue assignexpr expr member
+%type <stringv> program parsing stmt call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk number idlist ifstmt whilestmt forstmt returnstmt
+%type <expression> term lvalue assignexpr expr primary  member const 
 %type <stringv> funcname
 %type <unsignedv> funcbody
-%type <sym> funcprefix funcdef
+%type <sym> funcprefix funcdef 
+
 
 %right '='
 %left KEYWORD_OR
@@ -96,20 +97,20 @@ stmt:               expr SEMICOLON
                     | error SEMICOLON   { yyerrok; }
                     ;
 
-expr:                 expr '+' expr           
-                    | expr '*' expr       
-                    | expr '/' expr 
-                    | expr '%' expr     
-                    | expr GREATER expr   
-                    | expr GREATER_EQUAL expr 
-                    | expr LESS expr
-                    | expr LESS_EQUAL expr   
-                    | expr EQUALS expr        
-                    | expr NOT_EQUAL expr 
+expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
+                    | expr '*' expr   {$$ = Manage_operations($1,mul,$3);}   
+                    | expr '/' expr   {$$ = Manage_operations($1,divv,$3);}
+                    | expr '%' expr   {$$ = Manage_operations($1,mod,$3);}  
+                    | expr GREATER expr   {$$ = Manage_comparisonopers($1, ">",$3);}
+                    | expr GREATER_EQUAL expr {$$ = Manage_comparisonopers($1, ">=",$3);}
+                    | expr LESS expr  {$$ = Manage_comparisonopers($1, "<",$3);}
+                    | expr LESS_EQUAL expr   {$$ = Manage_comparisonopers($1, "<=",$3);}
+                    | expr EQUALS expr  {$$ = Manage_comparisonopers($1, "==",$3);}      
+                    | expr NOT_EQUAL expr {$$ = Manage_comparisonopers($1, "!=",$3);}
                     | expr KEYWORD_AND expr 
                     | expr KEYWORD_OR expr   
-                    | assignexpr            
-                    | term 
+                    | assignexpr { $$ = $1;}        
+                    | term  { $$ = emit_iftableitem($1);}
                     ;
 
 
@@ -130,9 +131,10 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
                     | lvalue INCREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
                     | DECREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
                     | lvalue DECREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
-                    | primary 
+                    | primary { $$ = $1; }
 
-assignexpr:         lvalue  '=' {
+assignexpr:         lvalue  '='
+ {
     if( entry == NULL ){
         if(scope > 0 )
         entry = lookup_hidden($1,scope);
@@ -154,26 +156,32 @@ assignexpr:         lvalue  '=' {
     }
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
 
-} expr {
+} 
+expr {
     if($1->type == tableitem_e){
         emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
         $$ = emit_iftableitem($1);
         $$->type = assignexpr_e;
     }
     else{
+        expr *temp = $4;
         emit(assign, $4, NULL, $1, 0U, yylineno);
         $$ = newexpr(assignexpr_e);
         $$->sym = newtemp();
-        emit(assign, $1, NULL, $$, 0U, yylineno);
+        emit(assign, $1, NULL,$$, 0U, yylineno);
+        resettemp();
     }
 } 
+
+
+
                     
 
 primary:             lvalue {$$ = emit_iftableitem($1);}
                     | call 
                     | objectdef 
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  
-                    | const
+                    | const {$$ = $1;}
                     ;
 
 lvalue:             IDENTIFIER          {    
@@ -192,8 +200,9 @@ lvalue:             IDENTIFIER          {
                                                     entry->offset = currscopeoffset();
                                                     inccurrscopeoffset();
                                                 }
+                                                $$ = lvalue_expr(entry);
                                                 $$->sym = entry;
-                                                $$ = lvalue_expr(entry);                                               
+
                                         }   
 
                     | KEYWORD_LOCAL IDENTIFIER {  
@@ -305,7 +314,8 @@ exprlist:           exprlist  COMMA expr
                     ;
              
 
-objectdef:          LEFTBRACKET  obj RIGHTBRACKET 
+objectdef:          LEFTBRACKET  elist RIGHTBRACKET
+                    | LEFTBRACKET indexed RIGHTBRACKET
                     | LEFTBRACKET RIGHTBRACKET
                     ;
 
@@ -313,8 +323,8 @@ obj:                elist
                     | indexed 
                     ;
                     
-indexed:            indexedelem  COMMA indexed  
-                    | indexedelem
+indexed:            indexedelem 
+                    | indexedelem COMMA indexed
                     ;
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
@@ -359,7 +369,6 @@ funcname: IDENTIFIER {
 
 funcname: %empty  { 
                         int temp = scope;
-                        printf("scope %d\n", scope);
                         while(temp != 0){
                         hide_scope(temp);
                         temp--;
@@ -407,10 +416,18 @@ funcdef:   funcprefix funcargs funcbody  {
 }                         
            ;
 
-const:              number | STRING | KEYWORD_NIL | KEYWORD_TRUE | KEYWORD_FALSE
+const:              number                  
+                    | STRING                { $$ = newexpr_conststring(yylval.stringv); }
+                    | KEYWORD_NIL           { $$ = newexpr_nil(yylval.stringv);  }
+                    | KEYWORD_TRUE          { 
+                                              expr *temp = newexpr_bool(yylval.stringv);
+                                              $$ = temp;
+                    
+                                            }
+                    | KEYWORD_FALSE         { $$ = newexpr_bool(yylval.stringv); }
 
-number:             INTEGER 
-                    | REAL 
+number:             INTEGER                 { $$ = newexpr_constnum(yylval.intv); }
+                    | REAL                  { $$ = newexpr_constnum(yylval.floatv); }
                     ;
 
 

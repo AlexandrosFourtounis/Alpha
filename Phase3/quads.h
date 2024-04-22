@@ -28,7 +28,6 @@ typedef enum symbol_t
     libraryfunc_s
 } symbol_t;
 
-
 typedef struct symbol {
     char *name;
     enum symbol_t type;
@@ -41,12 +40,10 @@ typedef struct symbol {
 } symbol;
 */
 
-
-
-
 typedef enum iopcode
 {
     assign,
+    jump,
     add,
     sub,
     mul,
@@ -79,10 +76,9 @@ typedef struct expr{
     struct expr *index;
     double numConst;
     char *strConst;
-    unsigned char boolConst;
+    char *boolConst;
     struct expr *next;
 }expr;
-
 
 typedef struct quad{
     iopcode op;
@@ -97,21 +93,30 @@ extern quad *quads;
 extern unsigned int total;
 extern unsigned int currQuad;
 
-
 void expand(void);
 void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, unsigned int line);
 
 //UTILS
-void check_arith(expr *e, const char *context);
-expr *lvalue_expr(SymbolTableEntry *sym);
-expr *newexpr(expr_t t);
-char *newtempname();
 void resettemp();
-SymbolTableEntry *newtemp();
+void print_quads();
+void exitscopespace();
+void enterscopespace();
+void inccurrscopeoffset();
+void resetformalargsoffset();
+void resetfunctionlocalsoffset();
+void restorecurrscopeoffset(unsigned int n);
+void check_arith(expr *e, const char *context);
+void patchlabel(unsigned int quadNo, unsigned int label);
+char *newtempname();
+const char* opcode_to_string(iopcode opcode);
+unsigned int nextquadlabel();
+unsigned int currscopeoffset(void);
+expr *newexpr(expr_t t);
 expr* emit_iftableitem(expr* e);
 expr* newexpr_conststring(char* s);
 expr* member_item(expr* lv, char* name);
-
+expr *lvalue_expr(SymbolTableEntry *sym);
+SymbolTableEntry *newtemp();
 scopespace_t currscopespace(void);
 unsigned int currscopeoffset(void);
 void inccurrscopeoffset(void);
@@ -123,5 +128,11 @@ void restorecurrscopeoffset(unsigned int n);
 unsigned int nextquadlabel();
 void patchlabel(unsigned int quadNo, unsigned int label);
 void print_quads();
+expr* Manage_operations(expr *arg1, iopcode op, expr *arg2);
 
 
+expr *newexpr_bool(char *s);
+expr *newexpr_nil(char *s);
+expr *newexpr_constnum(double x);
+expr *Manage_operations(expr *arg1, iopcode op, expr *arg2);
+expr *Manage_comparisonopers(expr* arg1, char* op, expr* arg2);
