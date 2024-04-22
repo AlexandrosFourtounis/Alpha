@@ -255,7 +255,8 @@ const char* opcode_to_string(iopcode opcode) {
 }
 
 void print_expression(expr *expr, FILE *f){
-     if(!expr) {
+    if (!expr)
+    {
         fprintf(f, "%-16s", "");
         return;
     }
@@ -266,19 +267,19 @@ void print_expression(expr *expr, FILE *f){
     
     switch(expr->type) {
     case boolexpr_e:
-        if(expr->boolConst == "TRUE")
+        if(expr->boolConst == "TRUE" || expr->boolConst == "true")
             fprintf(f, "%-8s", "TRUE");
         else
             fprintf(f, "%-8s", "FALSE");
         break;
     case constnum_e:
-        fprintf(f, "%-16lf", expr->numConst);
+        fprintf(f, "%-8lf", expr->numConst);
         break;
     case conststring_e:
-        fprintf(f, "%-16s", expr->strConst);
+        fprintf(f, "%-8s", expr->strConst);
         break;
     case var_e:
-        fprintf(f, "%-8s", "var");
+        fprintf(f, "%-8s", expr->strConst);
         break;
     default:
         fprintf(f, "%-8s", expr->strConst);
@@ -292,7 +293,7 @@ void print_quads(){
     fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "QUAD", "OP", "RESULT", "ARG1", "ARG2", "LABEL", "LINE");
 
     while(i < currQuad ){
-        if(quads[i].op == assign || quads[i].op == uminus || quads[i].op == not){
+        if(quads[i].op == assign || quads[i].op == add || quads[i].op == not){
             fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
@@ -314,7 +315,7 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
 
     expr *result = NULL;
     SymbolTableEntry *temp;
-    /*
+    
     if (arg1->sym && arg1->sym->type<2 && arg1->sym->value.varVal->name[0]=='_') // in case of tmp
     {
         temp = arg1->sym;
@@ -322,14 +323,14 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
         temp = arg2->sym;
     }else{
         temp = newtemp(); // create new tmp variable
-    }*/
+    }
     temp = newtemp();
     result = lvalue_expr(temp);
 
     switch (op)
     {
     case add:
-        emit(add, arg1, arg2, result, -1, yylineno);
+        emit(add, arg1, arg2, result, 0, yylineno);
         break;
     case sub:
         emit(sub, arg1, arg2, result, -1, yylineno);
