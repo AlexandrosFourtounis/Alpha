@@ -109,8 +109,8 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr NOT_EQUAL expr {$$ = Manage_comparisonopers($1, "!=",$3);}
                     | expr KEYWORD_AND expr 
                     | expr KEYWORD_OR expr   
-                    | assignexpr            
-                    | term 
+                    | assignexpr { $$ = $1;}        
+                    | term  { $$ = emit_iftableitem($1);}
                     ;
 
 
@@ -131,7 +131,7 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS
                     | lvalue INCREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
                     | DECREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
                     | lvalue DECREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
-                    | primary 
+                    | primary { $$ = $1; }
 
 assignexpr:         lvalue  '='
  {
@@ -168,7 +168,8 @@ expr {
         emit(assign, $4, NULL, $1, 0U, yylineno);
         $$ = newexpr(assignexpr_e);
         $$->sym = newtemp();
-        emit(assign, $1, NULL, $$, 0U, yylineno);
+        emit(assign, $1, NULL,$$, 0U, yylineno);
+        resettemp();
     }
 } 
 
@@ -180,7 +181,7 @@ primary:             lvalue {$$ = emit_iftableitem($1);}
                     | call 
                     | objectdef 
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  
-                    | const
+                    | const {$$ = $1;}
                     ;
 
 lvalue:             IDENTIFIER          {    
@@ -199,10 +200,9 @@ lvalue:             IDENTIFIER          {
                                                     entry->offset = currscopeoffset();
                                                     inccurrscopeoffset();
                                                 }
-                                                $$->sym = entry;
                                                 $$ = lvalue_expr(entry);
-                                                $$->strConst = yylval.stringv;
-                                            
+                                                $$->sym = entry;
+
                                         }   
 
                     | KEYWORD_LOCAL IDENTIFIER {  
@@ -421,7 +421,10 @@ const:              number
                     | STRING                { $$ = newexpr_conststring(yylval.stringv); }
                     | KEYWORD_NIL           { $$ = newexpr_nil(yylval.stringv);  }
                     | KEYWORD_TRUE          { 
-                                              $$ = newexpr_bool(yylval.stringv);
+                                              expr *temp = newexpr_bool(yylval.stringv);
+                                              $$ = temp;
+                                              printf("TRUE\n");
+                    
                                             }
                     | KEYWORD_FALSE         { $$ = newexpr_bool(yylval.stringv); }
 

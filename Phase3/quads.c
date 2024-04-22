@@ -8,7 +8,7 @@
 #define RESET "\033[0m"
 
 quad *quads = (quad *)0;
-unsigned int total =0;
+unsigned int total = 0;
 unsigned int currQuad = 0;
 unsigned int programVarOffset = 0;
 unsigned int functionLocalOffset = 0;
@@ -18,22 +18,26 @@ int tempcounter = 0;
 extern int scope;
 extern int yylineno;
 
-void expand(void){
+void expand(void)
+{
     assert(total == currQuad);
-    quad* p=(quad*)malloc(NEW_SIZE);
-    if(quads){
-        memcpy(p,quads,CURR_SIZE);
+    quad *p = (quad *)malloc(NEW_SIZE);
+    if (quads)
+    {
+        memcpy(p, quads, CURR_SIZE);
         free(quads);
     }
-    quads=p;
+    quads = p;
     total += EXPAND_SIZE;
 }
 
-void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, unsigned int line){
-    if(currQuad == total){
+void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, unsigned int line)
+{
+    if (currQuad == total)
+    {
         expand();
     }
-    quad* p = quads + currQuad++;
+    quad *p = quads + currQuad++;
     p->op = op;
     p->arg1 = arg1;
     p->arg2 = arg2;
@@ -42,50 +46,74 @@ void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, 
     p->line = line;
 }
 
-scopespace_t currscopespace(void){
-    if(scopeSpaceCounter == 1) return programVar;   
-    else if(scopeSpaceCounter % 2 == 0) return formalArg;   
-    else return functionLocal;
+scopespace_t currscopespace(void)
+{
+    if (scopeSpaceCounter == 1)
+        return programVar;
+    else if (scopeSpaceCounter % 2 == 0)
+        return formalArg;
+    else
+        return functionLocal;
 }
 
-unsigned int currscopeoffset(void){
-    switch(currscopespace()){
-        case programVar: return programVarOffset;
-        case functionLocal: return functionLocalOffset;
-        case formalArg: return formalArgOffset;
-        default: assert(0);
+unsigned int currscopeoffset(void)
+{
+    switch (currscopespace())
+    {
+    case programVar:
+        return programVarOffset;
+    case functionLocal:
+        return functionLocalOffset;
+    case formalArg:
+        return formalArgOffset;
+    default:
+        assert(0);
     }
 }
 
-void inccurrscopeoffset(void){
-    switch(currscopespace()){
-        case programVar: ++programVarOffset; break;
-        case functionLocal: ++functionLocalOffset; break;
-        case formalArg: ++formalArgOffset; break;
-        default: assert(0);
+void inccurrscopeoffset(void)
+{
+    switch (currscopespace())
+    {
+    case programVar:
+        ++programVarOffset;
+        break;
+    case functionLocal:
+        ++functionLocalOffset;
+        break;
+    case formalArg:
+        ++formalArgOffset;
+        break;
+    default:
+        assert(0);
     }
 }
 
-void enterscopespace(void){
+void enterscopespace(void)
+{
     ++scopeSpaceCounter;
 }
 
-void exitscopespace(void){
+void exitscopespace(void)
+{
     assert(scopeSpaceCounter > 1);
     --scopeSpaceCounter;
 }
 
-char *newtempname(){
+char *newtempname()
+{
     char temp[20]; // Buffer to hold the resulting string
-    sprintf(temp, "_t%d", tempcounter);
+    sprintf(temp, "_t%d", tempcounter++);
     return strdup(temp);
 }
 
-void resettemp(){
+void resettemp()
+{
     tempcounter = 0;
 }
 
-void check_arith(expr *e, const char *context){
+void check_arith(expr *e, const char *context)
+{
     if (e->type == constbool_e ||
         e->type == conststring_e ||
         e->type == nil_e ||
@@ -94,25 +122,28 @@ void check_arith(expr *e, const char *context){
         e->type == libraryfunc_e ||
         e->type == boolexpr_e)
     {
-        printf(BOLD_RED"Illegal expr used in %s!"RESET, context);
+        printf(BOLD_RED "Illegal expr used in %s!" RESET, context);
         exit(-1);
     }
 }
 
-expr *newexpr(expr_t t){
+expr *newexpr(expr_t t)
+{
     expr *e = (expr *)malloc(sizeof(expr));
     memset(e, 0, sizeof(expr));
     e->type = t;
     return e;
 }
 
-expr *lvalue_expr(SymbolTableEntry *sym){
+expr *lvalue_expr(SymbolTableEntry *sym)
+{
     assert(sym);
     expr *e = (expr *)malloc(sizeof(expr));
     memset(e, 0, sizeof(expr));
     e->next = (expr *)0;
     e->sym = sym;
-    switch (sym->type){
+    switch (sym->type)
+    {
     case GLOBAL:
     case LOCAL:
     case FORMAL:
@@ -130,7 +161,8 @@ expr *lvalue_expr(SymbolTableEntry *sym){
     return e;
 }
 
-SymbolTableEntry *newtemp(){
+SymbolTableEntry *newtemp()
+{
     char *name = newtempname();
     SymbolTableEntry *entry = lookup_in_scope(name, scope);
     if (entry == NULL)
@@ -145,134 +177,189 @@ SymbolTableEntry *newtemp(){
     }
 }
 
-void resetformalargsoffset(){
+void resetformalargsoffset()
+{
     formalArgOffset = 0;
 }
 
-void resetfunctionlocalsoffset(){
+void resetfunctionlocalsoffset()
+{
     functionLocalOffset = 0;
 }
 
-void restorecurrscopeoffset(unsigned int n){
-    switch (currscopespace()){
-        case programVar    : programVarOffset = n; break;
-        case functionLocal : functionLocalOffset = n; break;
-        case formalArg     : formalArgOffset = n; break;
-        default: assert(0);
+void restorecurrscopeoffset(unsigned int n)
+{
+    switch (currscopespace())
+    {
+    case programVar:
+        programVarOffset = n;
+        break;
+    case functionLocal:
+        functionLocalOffset = n;
+        break;
+    case formalArg:
+        formalArgOffset = n;
+        break;
+    default:
+        assert(0);
     }
 }
 
-unsigned int nextquadlabel(){
+unsigned int nextquadlabel()
+{
     return currQuad;
 }
 
-void patchlabel(unsigned int quadNo, unsigned int label){
+void patchlabel(unsigned int quadNo, unsigned int label)
+{
     assert(quadNo < currQuad);
     quads[quadNo].label = label;
 }
 
-expr* newexpr_conststring(char* s){
-    expr* e = newexpr(conststring_e);
+expr *newexpr_conststring(char *s)
+{
+    expr *e = newexpr(conststring_e);
     e->strConst = strdup(s);
     e->sym = NULL;
     return e;
 }
 
-expr* newexpr_constnum(double x){
+expr *newexpr_constnum(double x)
+{
     expr *e = newexpr(constnum_e);
     e->sym = NULL;
     e->numConst = x;
     return e;
 }
 
-
 expr *newexpr_bool(char *s)
 {
     expr *e = newexpr(boolexpr_e);
     e->sym = NULL;
-    if(strcmp(s,"true") == 0 || strcmp(s,"TRUE") == 0)
-        e->boolConst = "TRUE";
-    else if(strcmp(s,"false") == 0 || strcmp(s,"FALSE") == 0)
-        e->boolConst = "FALSE";
+    printf("s: %s\n", s);
+    if (strcmp(s, "true") == 0)
+    {
+        e->boolConst ="true";
+        printf("set bool to true");
+    }
+    else if (strcmp(s, "false") == 0)
+        e->boolConst = "false";
     else
         assert(0);
     return e;
 }
 
-expr *newexpr_nil(char *s){
+expr *newexpr_nil(char *s)
+{
     expr *e = newexpr(nil_e);
     e->strConst = strdup(s);
     e->sym = NULL;
     return e;
 }
 
-expr* emit_iftableitem(expr* e){
-    if(e->type != tableitem_e) return e;
-    else{
-        expr* result = newexpr(var_e);
+expr *emit_iftableitem(expr *e)
+{
+    if (e->type != tableitem_e)
+        return e;
+    else
+    {
+        expr *result = newexpr(var_e);
         result->sym = newtemp();
         emit(tablegetelem, e, e->index, result, 0, yylineno);
         return result;
     }
 }
 
-expr* member_item(expr* lv, char* name){
+expr *member_item(expr *lv, char *name)
+{
     lv = emit_iftableitem(lv);
-    expr* ti = newexpr(tableitem_e);
+    expr *ti = newexpr(tableitem_e);
     ti->sym = lv->sym;
     ti->index = newexpr_conststring(name);
     return ti;
 }
 
-const char* opcode_to_string(iopcode opcode) {
-    switch (opcode) {
-        case assign: return "assign";
-        case jump: return "jump";
-        case add: return "add";
-        case sub: return "sub";
-        case mul: return "mul";
-        case divv: return "divv";
-        case mod: return "mod";
-        case uminus: return "uminus";
-        case and: return "and";
-        case or: return "or";
-        case not: return "not";
-        case if_eq: return "if_eq";
-        case if_noteq: return "if_noteq";
-        case if_lesseq: return "if_lesseq";
-        case if_greatereq: return "if_greatereq";
-        case if_less: return "if_less";
-        case if_greater: return "if_greater";
-        case call: return "call";
-        case param: return "param";
-        case ret: return "ret";
-        case getretval: return "getretval";
-        case funcstart: return "funcstart";
-        case funcend: return "funcend";
-        case tablecreate: return "tablecreate";
-        case tablegetelem: return "tablegetelem";
-        case tablesetelem: return "tablesetelem";
-        default: return "unknown opcode";
+const char *opcode_to_string(iopcode opcode)
+{
+    switch (opcode)
+    {
+    case assign:
+        return "assign";
+    case jump:
+        return "jump";
+    case add:
+        return "add";
+    case sub:
+        return "sub";
+    case mul:
+        return "mul";
+    case divv:
+        return "divv";
+    case mod:
+        return "mod";
+    case uminus:
+        return "uminus";
+    case and:
+        return "and";
+    case or:
+        return "or";
+    case not:
+        return "not";
+    case if_eq:
+        return "if_eq";
+    case if_noteq:
+        return "if_noteq";
+    case if_lesseq:
+        return "if_lesseq";
+    case if_greatereq:
+        return "if_greatereq";
+    case if_less:
+        return "if_less";
+    case if_greater:
+        return "if_greater";
+    case call:
+        return "call";
+    case param:
+        return "param";
+    case ret:
+        return "ret";
+    case getretval:
+        return "getretval";
+    case funcstart:
+        return "funcstart";
+    case funcend:
+        return "funcend";
+    case tablecreate:
+        return "tablecreate";
+    case tablegetelem:
+        return "tablegetelem";
+    case tablesetelem:
+        return "tablesetelem";
+    default:
+        return "unknown opcode";
     }
 }
 
-void print_expression(expr *expr, FILE *f){
+void print_expression(expr *expr, FILE *f)
+{
     if (!expr)
     {
         fprintf(f, "%-16s", "");
         return;
     }
-    else if(expr->type == nil_e) {
+    else if (expr->type == nil_e)
+    {
         fprintf(f, "%-16s", "NIL");
         return;
     }
-    
-    switch(expr->type) {
+
+    switch (expr->type)
+    {
     case boolexpr_e:
-        if(expr->boolConst == "TRUE" || expr->boolConst == "true")
-            fprintf(f, "%-8s", "TRUE");
+        if (strcmp(expr->boolConst, "true") == 0)
+            fprintf(f, "%-8s", expr->boolConst);
         else
-            fprintf(f, "%-8s", "FALSE");
+            fprintf(f, "%-8s", "false");
         break;
     case constnum_e:
         fprintf(f, "%-8lf", expr->numConst);
@@ -280,10 +367,23 @@ void print_expression(expr *expr, FILE *f){
     case conststring_e:
         fprintf(f, "%-8s", expr->strConst);
         break;
-    case var_e:
-        if(expr->sym && expr->sym->value.varVal) {
+    case assignexpr_e:
+        if(expr->sym->value.varVal)
+        {
             fprintf(f, "%-8s", expr->sym->value.varVal->name);
-        } else {
+        }
+        else
+        {
+            fprintf(f, "%-8s", "var");
+        }
+        break;
+    case var_e:
+        if (expr->sym && expr->sym->value.varVal)
+        {
+            fprintf(f, "%-8s", expr->sym->value.varVal->name);
+        }
+        else
+        {
             fprintf(f, "%-8s", "var");
         }
         break;
@@ -293,23 +393,26 @@ void print_expression(expr *expr, FILE *f){
     }
 }
 
-void print_quads(){
+void print_quads()
+{
     unsigned int i = 0U;
     FILE *f = fopen("quads.txt", "w");
     fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "QUAD", "OP", "RESULT", "ARG1", "ARG2", "LABEL", "LINE");
 
-    while(i < currQuad ){
-        if(quads[i].op == assign || quads[i].op == add || quads[i].op == if_greater || quads[i].op == jump){
-            fprintf(f, "%-8d%-16s", i+1, opcode_to_string(quads[i].op));
+    while (i < currQuad)
+    {
+        if (quads[i].op == assign || quads[i].op == add || quads[i].op == if_greater || quads[i].op == jump)
+        {
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
-            print_expression(quads[i].arg2, f);
-            //fprintf(f, "%-8s", "no arg");
-            fprintf(f,"%-8d%-8d", quads[i].label, quads[i].line);
+            //print_expression(quads[i].arg2, f);
+             fprintf(f, "%-8s", "no arg");
+            fprintf(f, "%-8d%-8d", quads[i].label, quads[i].line);
             fprintf(f, "\n");
         }
         i++;
-    }    
+    }
 }
 
 expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
@@ -323,32 +426,43 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
     expr *result = NULL;
     SymbolTableEntry *temp;
 
-    if (arg1->sym && arg1->sym->value.varVal && arg1->sym->value.varVal->name) {
+    if (arg1->sym && arg1->sym->value.varVal && arg1->sym->value.varVal->name)
+    {
         printf("arg1: %s\n", arg1->sym->value.varVal->name);
-    } else {
+    }
+    else
+    {
         printf("arg1: %s\n", "NULL");
     }
 
-    if (arg2->sym && arg2->sym->value.varVal && arg2->sym->value.varVal->name) {
+    if (arg2->sym && arg2->sym->value.varVal && arg2->sym->value.varVal->name)
+    {
         printf("arg2: %s\n", arg2->sym->value.varVal->name);
-    } else {
+    }
+    else
+    {
         printf("arg2: %s\n", "NULL");
     }
-    
-    if (arg1->sym && arg1->sym->type<2 && arg1->sym->value.varVal->name[0]=='_') // in case of tmp
+
+    if (arg1->sym && arg1->sym->type < 2 && arg1->sym->value.varVal->name[0] == '_') // in case of tmp
     {
         temp = arg1->sym;
-    }else if(arg2->sym && arg2->sym->type<2 && arg2->sym->value.varVal->name[0]=='_'){
+    }
+    else if (arg2->sym && arg2->sym->type < 2 && arg2->sym->value.varVal->name[0] == '_')
+    {
         temp = arg2->sym;
-    }else{
+    }
+    else
+    {
         temp = newtemp(); // create new tmp variable
     }
 
     result = lvalue_expr(temp);
+    result->sym = temp;
 
     switch (op)
     {
-    case add: 
+    case add:
         emit(add, arg1, arg2, result, 0, yylineno);
         break;
     case sub:
@@ -370,49 +484,55 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
     return result;
 }
 
-expr *Manage_comparisonopers(expr* arg1, char* op, expr* arg2){
+expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
+{
     assert(arg1);
     assert(arg2);
 
-    expr* tmp = newexpr(boolexpr_e);
-    //tmp->sym = newtemp();
+    expr *tmp = newexpr(boolexpr_e);
+    // tmp->sym = newtemp();
 
-    //ta lines prepei na diorthothoun gia na exoun to currQuad
-    switch(op[0]){
-        case '=':
-            tmp->type = boolexpr_e;
-            emit(if_eq, arg1, arg2, NULL, 0, yylineno);
+    // ta lines prepei na diorthothoun gia na exoun to currQuad
+    switch (op[0])
+    {
+    case '=':
+        tmp->type = boolexpr_e;
+        emit(if_eq, arg1, arg2, NULL, 0, yylineno);
+        emit(jump, NULL, NULL, NULL, 0, yylineno);
+        break;
+    case '!':
+        emit(if_noteq, arg1, arg2, NULL, 0, yylineno);
+        emit(jump, NULL, NULL, NULL, 0, yylineno);
+        break;
+    case '<':
+        tmp->type = boolexpr_e;
+        if (strcmp(op, "<") == 0)
+        {
+            emit(if_less, arg1, arg2, NULL, 0, yylineno);
             emit(jump, NULL, NULL, NULL, 0, yylineno);
-            break;
-        case '!':
-            emit(if_noteq, arg1, arg2, NULL, 0, yylineno);
+        }
+        else if (strcmp(op, "<=") == 0)
+        {
+            emit(if_lesseq, arg1, arg2, NULL, 0, yylineno);
             emit(jump, NULL, NULL, NULL, 0, yylineno);
-            break;
-        case '<':
-            tmp->type = boolexpr_e;
-            if(strcmp(op, "<") == 0){
-                emit(if_less, arg1, arg2, NULL, 0, yylineno);
-                emit(jump, NULL, NULL, NULL, 0, yylineno);
-            }
-            else if(strcmp(op, "<=") == 0){
-                emit(if_lesseq, arg1, arg2, NULL, 0, yylineno);
-                emit(jump, NULL, NULL, NULL, 0, yylineno);
-            }
-            break;
-        case '>':
-            tmp->type = boolexpr_e;
-            if(strcmp(op, ">") == 0){
-                emit(if_greater, arg1, arg2, NULL, 0, yylineno);
-                emit(jump, NULL, NULL, NULL, 0, yylineno);
-            }
-            else if(strcmp(op, ">=") == 0){
-                emit(if_greatereq, arg1, arg2, NULL, 0, yylineno);
-                emit(jump, NULL, NULL, NULL, 0, yylineno);
-            }
-            break;
-        default:
-            printf("Invalid comparison operator\n");
-            exit(-1);
+        }
+        break;
+    case '>':
+        tmp->type = boolexpr_e;
+        if (strcmp(op, ">") == 0)
+        {
+            emit(if_greater, arg1, arg2, NULL, 0, yylineno);
+            emit(jump, NULL, NULL, NULL, 0, yylineno);
+        }
+        else if (strcmp(op, ">=") == 0)
+        {
+            emit(if_greatereq, arg1, arg2, NULL, 0, yylineno);
+            emit(jump, NULL, NULL, NULL, 0, yylineno);
+        }
+        break;
+    default:
+        printf("Invalid comparison operator\n");
+        exit(-1);
     }
     return tmp;
 }

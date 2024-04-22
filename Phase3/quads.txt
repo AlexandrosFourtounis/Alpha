@@ -1,5 +1,7 @@
 QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
-1       assign          =       5.000000no arg  0       1       
-2       assign          (null)  =       no arg  0       1       
-3       assign          =       FALSE   no arg  0       3       
-4       assign          (null)  =       no arg  0       3       
+1       add             _t0     1.000000no arg  0       1       
+2       assign          z       _t0     no arg  0       1       
+3       assign          _t1     z       no arg  0       1       
+4       add             _t0     5.000000no arg  0       2       
+5       assign          a       _t0     no arg  0       2       
+6       assign          _t1     a       no arg  0       2       

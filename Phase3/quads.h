@@ -76,7 +76,7 @@ typedef struct expr{
     struct expr *index;
     double numConst;
     char *strConst;
-    unsigned char boolConst;
+    char *boolConst;
     struct expr *next;
 }expr;
 
