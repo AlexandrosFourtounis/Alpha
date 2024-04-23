@@ -55,50 +55,50 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem block blockk number idlist ifstmt whilestmt forstmt returnstmt
+%type <stringv> program parsing stmt call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
 %type <expression> term lvalue assignexpr expr primary  member const 
-%type <stringv> funcname
-%type <unsignedv> funcbody
-%type <sym> funcprefix funcdef 
+%type <unsignedv> funcbody block blockk
+%type <sym> funcprefix funcdef funcname idlist ids funcargs
+
 
 
 %right '='
 %left KEYWORD_OR
 %left KEYWORD_AND
+%nonassoc EQUALS NOT_EQUAL
+%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
 %left '+' '-'
 %left '*' '/' '%'
-%right KEYWORD_NOT INCREMENT DECREMENT 
+%right KEYWORD_NOT INCREMENT DECREMENT UMINUS
 %left DOT DOUBLEDOT
 %left LEFTBRACKET RIGHTBRACKET
 %left LEFTPARENTHESIS RIGHTPARENTHESIS 
 
-%nonassoc EQUALS NOT_EQUAL
-%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
-%nonassoc UMINUS
 
 %%
 
 program:            parsing      
                     ;
 parsing:            stmt parsing 
-                    | stmt 
+                    | %empty            {} 
                     ;
 
-stmt:               expr SEMICOLON 
-                    | ifstmt 
-                    | whilestmt
-                    | forstmt 
-                    | returnstmt 
-                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");}
-                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");}
-                    | block 
-                    | funcdef 
-                    | SEMICOLON 
-                    | error SEMICOLON   { yyerrok; }
+stmt:               expr SEMICOLON  {resettemp();}
+                    | ifstmt        {resettemp();}
+                    | whilestmt     {resettemp();}
+                    | forstmt       {resettemp();}
+                    | returnstmt    {resettemp();}
+                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");resettemp();}
+                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");resettemp();}
+                    | block { $$ = $1;   resettemp();}
+                    | funcdef { resettemp();}
+                    | SEMICOLON {resettemp();}
+                    | error SEMICOLON   { yyerrok;resettemp(); }
                     ;
 
 expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr '*' expr   {$$ = Manage_operations($1,mul,$3);}   
+                    | expr '-' expr   {$$ = Manage_operations($1,sub,$3);}   
                     | expr '/' expr   {$$ = Manage_operations($1,divv,$3);}
                     | expr '%' expr   {$$ = Manage_operations($1,mod,$3);}  
                     | expr GREATER expr   {$$ = Manage_comparisonopers($1, ">",$3);}
@@ -114,7 +114,7 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     ;
 
 
-term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
+term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                     | '-' expr %prec UMINUS  {
                                                 check_arith($2,(const char*)"- expr");
                                                 $$ = newexpr(arithexpr_e);
@@ -169,7 +169,7 @@ expr {
         $$ = newexpr(assignexpr_e);
         $$->sym = newtemp();
         emit(assign, $1, NULL,$$, 0U, yylineno);
-        resettemp();
+        
     }
 } 
 
@@ -363,8 +363,9 @@ funcname: IDENTIFIER {
                                 scope++;
                             //} 
                         }
-
-                        $$ = entry->value.funcVal;
+                        printf("funcname");
+                        $$ = entry;
+                        $$->value.funcVal->name = entry->value.funcVal->name;
                     } 
 
 funcname: %empty  { 
@@ -380,10 +381,12 @@ funcname: %empty  {
                         scope++; // increment scope here
 
                         $$ = entry;
+                        $$->value.funcVal->name = str;
+
                     } 
 
 funcprefix: KEYWORD_FUNCTION funcname {
-                                        $$ = insert($2, USERFUNC, scope, yylineno);
+                                        $$ = $2;
                                         $$->iaddress = nextquadlabel();
                                         emit(funcstart, lvalue_expr($$), NULL, NULL, $$->iaddress, yylineno);
                                         push(scopeoffsetstack, currscopeoffset());
@@ -398,6 +401,7 @@ funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS {
                                                      scope--;
                                                      enterscopespace();
                                                      resetfunctionlocalsoffset();
+                                                      $$ = $2;
                                                   } 
 funcbody: block {
                  $$ = currscopeoffset();
@@ -411,6 +415,9 @@ funcdef:   funcprefix funcargs funcbody  {
                                             int offset = pop(scopeoffsetstack);
                                             restorecurrscopeoffset(offset);
                                             $$ = $1;
+                                            SymbolTableEntry *temp = $1;
+
+                                            printf("funcname is %s\n",temp->value.funcVal);
                                             emit(funcend, lvalue_expr($1), NULL, NULL, $1->iaddress + yylineno, yylineno);
 
 }                         
@@ -432,8 +439,7 @@ number:             INTEGER                 { $$ = newexpr_constnum(yylval.intv)
 
 
 idlist:              IDENTIFIER ids  {  
-                                    
-                                    entry = lookup($<stringv>1, scope); //lookup in function scope
+                                    entry = lookup($1, scope); //lookup in function scope
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
                                             yyerror("library function collision");
@@ -441,12 +447,16 @@ idlist:              IDENTIFIER ids  {
                                     } else {  
                                         entry = insert($<stringv>1,FORMAL,scope,yylineno);     
                                     }
+                                    $$ = $1;
+
                                 }
                     | %empty                 {}
                     ;
 
 ids:                COMMA IDENTIFIER  {  
-                                    entry = lookup($<stringv>2, scope); //lookup in function scope
+                                    printf("scope is %d\n", scope);
+
+                                    entry = lookup(yylval.stringv, scope); //lookup in function scope
                                     if(entry != NULL) {
                                         if (entry->type == LIBFUNC) {
                                             yyerror("library function collision");

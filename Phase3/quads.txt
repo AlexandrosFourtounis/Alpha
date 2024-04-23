@@ -1,0 +1,5 @@
+QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
+1       funcstart       foo                             1       
+2       assign          x       1.00            0       2       
+3       assign          _t0     x               0       2       
+4       funcend         foo                             3       
