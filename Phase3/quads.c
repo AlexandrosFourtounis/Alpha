@@ -148,12 +148,15 @@ expr *lvalue_expr(SymbolTableEntry *sym)
     case LOCAL:
     case FORMAL:
         e = newexpr(var_e);
+        e->sym = sym;
         break;
     case USERFUNC:
         e = newexpr(programfunc_e);
+        e->sym = sym;
         break;
     case LIBFUNC:
         e = newexpr(libraryfunc_e);
+        e->sym = sym;
         break;
     default:
         assert(0);
@@ -231,6 +234,8 @@ expr *newexpr_constnum(double x)
     e->numConst = x;
     return e;
 }
+
+
 
 expr *newexpr_bool(char *s)
 {
@@ -366,6 +371,12 @@ void print_expression(expr *expr, FILE *f)
     case conststring_e:
         fprintf(f, "%-8s", expr->strConst);
         break;
+    case programfunc_e:
+        fprintf(f, "%-8s", expr->sym->value.funcVal->name);
+        break;
+    case libraryfunc_e:
+        fprintf(f, "%-8s", expr->sym->value.funcVal->name);
+        break;
     case assignexpr_e:
         if(expr->sym->value.varVal)
         {
@@ -418,7 +429,7 @@ void print_quads()
         else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend || quads[i].op == ret || quads[i].op == tablecreate)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].result, f);
+            print_expression(quads[i].arg1, f);
             fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
         }
         else if (quads[i].op == if_eq || quads[i].op == if_greater || quads[i].op == if_greatereq || quads[i].op == if_less || quads[i].op == if_lesseq || quads[i].op == if_noteq || quads[i].op == and || quads[i].op == or)

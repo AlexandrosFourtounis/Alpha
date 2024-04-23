@@ -5,7 +5,7 @@
 #include "symtablehash.h"
 
 #define IS_FUNCTION(entry) (entry->type == USERFUNC || entry->type == LIBFUNC)
-#define MAX_SCOPE 5
+#define MAX_SCOPE 50
 
 extern char *entry_types[];
 extern char *libfuncs[12];
