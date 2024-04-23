@@ -65,40 +65,40 @@
 %right '='
 %left KEYWORD_OR
 %left KEYWORD_AND
+%nonassoc EQUALS NOT_EQUAL
+%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
 %left '+' '-'
 %left '*' '/' '%'
-%right KEYWORD_NOT INCREMENT DECREMENT 
+%right KEYWORD_NOT INCREMENT DECREMENT UMINUS
 %left DOT DOUBLEDOT
 %left LEFTBRACKET RIGHTBRACKET
 %left LEFTPARENTHESIS RIGHTPARENTHESIS 
 
-%nonassoc EQUALS NOT_EQUAL
-%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
-%nonassoc UMINUS
 
 %%
 
 program:            parsing      
                     ;
 parsing:            stmt parsing 
-                    | stmt 
+                    | %empty            {} 
                     ;
 
-stmt:               expr SEMICOLON 
-                    | ifstmt 
-                    | whilestmt
-                    | forstmt 
-                    | returnstmt 
-                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");}
-                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");}
-                    | block 
-                    | funcdef 
-                    | SEMICOLON 
-                    | error SEMICOLON   { yyerrok; }
+stmt:               expr SEMICOLON  {resettemp();}
+                    | ifstmt        {resettemp();}
+                    | whilestmt     {resettemp();}
+                    | forstmt       {resettemp();}
+                    | returnstmt    {resettemp();}
+                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");resettemp();}
+                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");resettemp();}
+                    | block {resettemp();}
+                    | funcdef {resettemp();}
+                    | SEMICOLON {resettemp();}
+                    | error SEMICOLON   { yyerrok;resettemp(); }
                     ;
 
 expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr '*' expr   {$$ = Manage_operations($1,mul,$3);}   
+                    | expr '-' expr   {$$ = Manage_operations($1,sub,$3);}   
                     | expr '/' expr   {$$ = Manage_operations($1,divv,$3);}
                     | expr '%' expr   {$$ = Manage_operations($1,mod,$3);}  
                     | expr GREATER expr   {$$ = Manage_comparisonopers($1, ">",$3);}
@@ -114,7 +114,7 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     ;
 
 
-term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS 
+term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                     | '-' expr %prec UMINUS  {
                                                 check_arith($2,(const char*)"- expr");
                                                 $$ = newexpr(arithexpr_e);
@@ -169,7 +169,7 @@ expr {
         $$ = newexpr(assignexpr_e);
         $$->sym = newtemp();
         emit(assign, $1, NULL,$$, 0U, yylineno);
-        resettemp();
+        
     }
 } 
 

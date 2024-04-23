@@ -1,0 +1,6 @@
+QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
+1       add             _t0     x       y       0       1       
+2       add             _t1     a       b       0       1       
+3       mul             _t0     _t0     _t1     0       1       
+4       assign          z       _t0             0       1       
+5       assign          _t2     z               0       1       
