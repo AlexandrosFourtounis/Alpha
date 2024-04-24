@@ -83,7 +83,7 @@ parsing:            stmt parsing
                     | %empty            {} 
                     ;
 
-stmt:               expr SEMICOLON  {resettemp();}
+stmt:               expr SEMICOLON  {printf("reset\n");resettemp();}
                     | ifstmt        {resettemp();}
                     | whilestmt     {resettemp();}
                     | forstmt       {resettemp();}
@@ -92,8 +92,8 @@ stmt:               expr SEMICOLON  {resettemp();}
                     | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");resettemp();}
                     | block { $$ = $1;   resettemp();}
                     | funcdef { resettemp();}
-                    | SEMICOLON {resettemp();}
-                    | error SEMICOLON   { yyerrok;resettemp(); }
+                    | SEMICOLON {}
+                    | error SEMICOLON   { yyerrok; }
                     ;
 
 expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
@@ -119,6 +119,7 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                                                 check_arith($2,(const char*)"- expr");
                                                 $$ = newexpr(arithexpr_e);
                                                 $$->sym = newtemp();
+                                    
                                                 emit(uminus,$2,NULL,$$,0,yylineno);
                                              }
                     | KEYWORD_NOT expr {
@@ -363,7 +364,6 @@ funcname: IDENTIFIER {
                                 scope++;
                             //} 
                         }
-                        printf("funcname");
                         $$ = entry;
                         $$->value.funcVal->name = entry->value.funcVal->name;
                     } 
@@ -381,15 +381,18 @@ funcname: %empty  {
                         scope++; // increment scope here
 
                         $$ = entry;
-                        $$->value.funcVal->name = str;
+                        $$->value.funcVal->name = entry->value.funcVal->name;
 
                     } 
 
 funcprefix: KEYWORD_FUNCTION funcname {
                                         $$ = $2;
                                         $$->iaddress = nextquadlabel();
-                                        emit(funcstart, lvalue_expr($$), NULL, NULL, $$->iaddress, yylineno);
+
+                                        emit(jump, NULL, NULL, NULL, 0, yylineno);
+                                        emit(funcstart, lvalue_expr($$), NULL, NULL,0, yylineno);
                                         push(scopeoffsetstack, currscopeoffset());
+                                        print(scopeoffsetstack);
                                         enterscopespace();
                                         resetformalargsoffset();
                                        }  
@@ -412,13 +415,15 @@ funcbody: block {
 funcdef:   funcprefix funcargs funcbody  {
                                             exitscopespace();
                                             $$->totalLocals = $3;
+                                            print(scopeoffsetstack);
                                             int offset = pop(scopeoffsetstack);
                                             restorecurrscopeoffset(offset);
                                             $$ = $1;
                                             SymbolTableEntry *temp = $1;
 
-                                            printf("funcname is %s\n",temp->value.funcVal);
-                                            emit(funcend, lvalue_expr($1), NULL, NULL, $1->iaddress + yylineno, yylineno);
+                                            emit(funcend, lvalue_expr($1), NULL, NULL, 0U, yylineno);
+                                            patchlabel($1->iaddress, nextquadlabel()+1);
+
 
 }                         
            ;

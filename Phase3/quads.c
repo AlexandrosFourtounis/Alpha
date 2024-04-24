@@ -377,6 +377,16 @@ void print_expression(expr *expr, FILE *f)
     case libraryfunc_e:
         fprintf(f, "%-8s", expr->sym->value.funcVal->name);
         break;
+    case arithexpr_e:
+        if(expr->sym->value.varVal)
+        {
+            fprintf(f, "%-8s", expr->sym->value.varVal->name);
+        }
+        else
+        {
+            fprintf(f, "%-8s", "var");
+        }
+        break;
     case assignexpr_e:
         if(expr->sym->value.varVal)
         {
@@ -424,7 +434,7 @@ void print_quads()
         else if (quads[i].op == jump)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            fprintf(f, "%-8s%-8s%-8d%-8d\n", "", "", quads[i].label, quads[i].line);
+            fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
         }
         else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend || quads[i].op == ret || quads[i].op == tablecreate)
         {
