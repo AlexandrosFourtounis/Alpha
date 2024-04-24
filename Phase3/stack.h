@@ -11,4 +11,4 @@ int isFull(Stack *stack);
 void push(Stack *stack, int value);
 int pop(Stack *stack);
 int top(Stack *stack);
-
+void print(Stack *stack);
