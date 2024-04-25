@@ -128,10 +128,64 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                                             emit(not,$2,NULL,$$,0,yylineno);
                                             
                                         }
-                    | INCREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
-                    | lvalue INCREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
-                    | DECREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
-                    | lvalue DECREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
+                    | INCREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");
+                                        check_arith($2,(const char*)"lvalue++");
+                                        if($2->type == tableitem_e){
+                                            $$ = emit_iftableitem($2);
+                                            emit(add, $$, newexpr_constnum(1), $$, 0U, yylineno);
+                                            emit(tablesetelem, $2->index, $$, $2, 0U, yylineno);
+                                        }else{
+                                            expr *temp = newexpr(arithexpr_e);
+                                            temp->sym = newtemp();
+                                            emit(add, $2, newexpr_constnum(1), $2, 0U, yylineno);
+                                            emit(assign, $2, NULL, temp, 0U, yylineno);
+                                        }
+                                        }
+                    | lvalue INCREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");
+                                        check_arith($1,(const char*)"++lvalue");
+                                        expr *tmp = NULL;
+                                        tmp = newexpr(arithexpr_e);
+                                        tmp->sym = newtemp();
+                                        if($1->type == tableitem_e){
+                                            expr *v = emit_iftableitem($1);
+                                            emit(assign, v, NULL, tmp, 0U, yylineno);
+                                            emit(add, v, newexpr_constnum(1), v, 0U, yylineno);
+                                            emit(tablesetelem, $1->index, v, $1, 0U, yylineno);
+                                        }else {
+                                            emit(assign, $1, NULL, tmp, 0U, yylineno);
+                                            emit(add, $1, newexpr_constnum(1), $1, 0U, yylineno);
+                                        }
+
+                                        }
+                    | DECREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");
+                                        check_arith($2,(const char*)"lvalue--");
+                                        if($2->type == tableitem_e){
+                                            $$ = emit_iftableitem($2);
+                                            emit(sub, $$, newexpr_constnum(1), $$, 0U, yylineno);
+                                            emit(tablesetelem, $2->index, $$, $2, 0U, yylineno);
+                                        } else {
+                                            expr *temp = newexpr(arithexpr_e);
+                                            temp->sym = newtemp();
+                                            emit(sub, $2, newexpr_constnum(1), $2, 0U, yylineno);
+                                            emit(assign, $2, NULL, temp, 0U, yylineno);
+                                        }
+                                        }
+                    | lvalue DECREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");
+                                        check_arith($1,(const char*)"--lvalue");
+                                        expr *tmp = NULL;
+                                        tmp = newexpr(arithexpr_e);
+                                        tmp->sym = newtemp();
+                                        if($1->type == tableitem_e){
+                                            expr *v = emit_iftableitem($1);
+                                            emit(assign, v, NULL, tmp, 0U, yylineno);
+                                            emit(sub, v, newexpr_constnum(1), v, 0U, yylineno);
+                                            emit(tablesetelem, $1->index, v, $1, 0U, yylineno);
+                                        }
+                                        else {
+                                            emit(assign, $1, NULL, tmp, 0U, yylineno);
+                                            emit(sub, $1, newexpr_constnum(1), $1, 0U, yylineno);                   }
+                                        
+                                        }
                     | primary { $$ = $1; }
 
 assignexpr:         lvalue  '='
