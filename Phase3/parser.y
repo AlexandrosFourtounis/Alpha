@@ -404,7 +404,7 @@ funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS {
                                                      scope--;
                                                      enterscopespace();
                                                      resetfunctionlocalsoffset();
-                                                      $$ = $2;
+                                                     $$ = $2;
                                                   } 
 funcbody: block {
                  $$ = currscopeoffset();
@@ -482,8 +482,20 @@ whilestmt:          KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt
 
 forstmt:            KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt 
 
-returnstmt:         KEYWORD_RETURN {if(scope == 0) yyerror("Use of 'return' while not in a loop\n");} expr  SEMICOLON 
-                    | KEYWORD_RETURN {if(scope == 0) yyerror("Use of 'return' while not in a loop\n");} SEMICOLON 
+returnstmt:         KEYWORD_RETURN expr  SEMICOLON {
+                                                    if(scope == 0) yyerror("Use of 'return' while not in a function\n");
+                                                    emit(ret, NULL, NULL, $2, 0, yylineno);
+                                                    emit(jump, NULL, NULL, NULL, 0, yylineno);//to discuss: cant patch label because there is nowhere 
+                                                                                            //to save the index - maybe change grammar rules
+                                                  
+                                                    }
+                    | KEYWORD_RETURN SEMICOLON {
+                                                if(scope == 0) yyerror("Use of 'return' while not in a fucntion\n");
+                                                emit(ret, NULL, NULL, NULL, 0, yylineno);
+                                                emit(jump, NULL, NULL, NULL, 0, yylineno);//to discuss: cant patch label because there is nowhere 
+                                                                                        //to save the index - maybe change grammar rules
+
+                                                }
 
 %%
 int yyerror (char* yaccProvidedMessage) {
