@@ -35,6 +35,8 @@
     struct expr *expression;
     unsigned int unsignedv;
     //struct expr *index;
+    struct reversed_list *call_list;
+    struct call *calls;
 }
 
 %define parse.error verbose
@@ -55,11 +57,11 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
-%type <expression> term lvalue assignexpr expr primary  member const 
+%type <stringv> program parsing stmt  elist exprlist objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
+%type <expression> term lvalue assignexpr expr primary  member const call
 %type <unsignedv> funcbody block blockk
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
-
+%type <calls> callsuffix normcall methodcall
 
 
 %right '='
@@ -248,12 +250,13 @@ lvalue:             IDENTIFIER          {
                                                 }
                                             
 
-                    /*WORKS FOR ::f() BUT NOT FOR :f(f()) or (functiondef)(elist)*/
-                    | DOUBLECOLON IDENTIFIER callsuffix {
-                                                            entry = lookup_in_scope($2, 0); 
-                                                            if(entry == NULL) yyerror("global identifier not found");
+                    // /*WORKS FOR ::f() BUT NOT FOR :f(f()) or (functiondef)(elist)*/
+                    // BIG PROBLEM IF UNCOMMENTED ABOVE ISSUE IS FIXED , BUT 4 SHIFT/REDUCe CONFLICTS
+                    // | DOUBLECOLON IDENTIFIER callsuffix {
+                    //                                         entry = lookup_in_scope($2, 0); 
+                    //                                         if(entry == NULL) yyerror("global identifier not found");
                                                             
-                                                        }
+                    //                                     }
                     
                     
                     | DOUBLECOLON IDENTIFIER   {
@@ -285,26 +288,43 @@ member:             lvalue DOT IDENTIFIER   {
                     | call LEFTBRACKET expr RIGHTBRACKET
                     ;
 
-call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS 
-                    | IDENTIFIER callsuffix {
-                                                // int temp = scope-1;
-                                                // while(temp >= 0){
-                                                //     entry = lookup_in_scope($1, temp);
-                                                //     if(entry != NULL) break;
-                                                //     temp--;
-                                                // }
-                                                // if(entry == NULL) yyerror("Cannot call function");
-                                                // else if(entry->type != LIBFUNC || entry->type != USERFUNC) yyerror("not a function");
-                    }
-                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
+call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS  { $$ =  make_call($1,$3);}
+                    | lvalue callsuffix 
+                                            {
+                                                $1 = emit_iftableitem($1);
+                                                if($2->method){
+                                                    reversed_list *temp = get_last($2->elist);
+                                                    reversed_list *temp2 = createExprNode($1);
+                                                    addToExprList(temp->next,temp2);
+                                                    $1 = emit_iftableitem(member_item($1,$2->name));
+                                                }
+                                                $$ = make_call($1,$2->elist);
+                                            }
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+                                                                                                            { 
+                                                                                                                expr* func = newexpr(programfunc_e);
+                                                                                                                func->sym = $2;
+                                                                                                                $$ = make_call(func,$5);
+                                                                                                            }
                     ;
 
-callsuffix:         normcall 
-                    | methodcall
 
-normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+callsuffix:         normcall  { $$ = $1;}
+                    | methodcall {$$ = $1;}
 
-methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS  
+                                                            {
+                                                                $$->elist = $2;
+                                                                $$->method = 0;
+                                                                $$->name = NULL;
+                                                            }
+
+methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS  
+                                                                                {
+                                                                                    $$->elist = $4;
+                                                                                    $$->method = 1;
+                                                                                    $$->name = strdup($2);
+                                                                                }
 
 elist:              exprlist 
                     | %empty            {}

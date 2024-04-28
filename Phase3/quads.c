@@ -590,3 +590,41 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
     }
     return tmp;
 }
+
+expr *make_call(expr *lv, expr *reversed_elist){
+    expr *func = emit_iftableitem(lv);
+    while(reversed_elist){
+        emit(param, reversed_elist, NULL, NULL,0U,yylineno);
+        reversed_elist = reversed_elist->next;  
+    }
+    emit(call, func, NULL, NULL, 0U, yylineno);
+    expr *result = newexpr(var_e);
+    result->sym = newtemp();
+    emit(getretval, NULL, NULL, result, 0U, yylineno);
+    return result;
+}
+
+reversed_list *createExprNode(expr *item){
+    reversed_list *node = malloc(sizeof(reversed_list));
+    node->item = item;
+    node->next = NULL;
+    return node;
+}
+void addToExprList(reversed_list **head, expr *item){
+    reversed_list *node = createExprNode(item);
+    node->next = *head;
+    *head = node;
+}
+
+reversed_list *get_last(reversed_list *head)
+{
+    if (head == NULL)
+    {
+        return NULL;
+    }
+    while (head->next != NULL)
+    {
+        head = head->next;
+    }
+    return head;
+}

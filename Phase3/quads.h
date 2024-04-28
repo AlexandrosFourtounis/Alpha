@@ -136,3 +136,20 @@ expr *newexpr_nil(char *s);
 expr *newexpr_constnum(double x);
 expr *Manage_operations(expr *arg1, iopcode op, expr *arg2);
 expr *Manage_comparisonopers(expr* arg1, char* op, expr* arg2);
+expr *make_call(expr *lv, expr *reversed_elist);
+
+typedef struct call
+{
+    expr* elist;
+    int method;
+    char *name;
+}calls;
+
+typedef struct reversed_list{
+    expr *item;
+    struct reversed_list *next;
+} reversed_list;
+
+reversed_list *createExprNode(expr *item);
+void addToExprList(reversed_list **head, expr *item);
+reversed_list *get_last(reversed_list *head);
