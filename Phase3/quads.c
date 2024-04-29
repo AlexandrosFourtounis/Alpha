@@ -436,7 +436,7 @@ void print_quads()
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
         }
-        else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend || quads[i].op == ret || quads[i].op == tablecreate)
+        else if ( quads[i].op == funcstart || quads[i].op == funcend || quads[i].op == ret || quads[i].op == tablecreate)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].arg1, f);
@@ -462,8 +462,13 @@ void print_quads()
         else if (quads[i].op == param || quads[i].op == call)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            // print_expression(quads[i].arg1, f);
-            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
+            print_expression(quads[i].arg1, f);
+            fprintf(f, "%-8s%-8s%-8d\n", "", "", quads[i].line);
+        }
+        else if (quads[i].op == getretval ){
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            print_expression(quads[i].result, f);
+            fprintf(f, "%-8s%-8s%-8d\n", "", "", quads[i].line);
         }
         i++;
     }

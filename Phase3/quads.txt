@@ -1,9 +1,9 @@
 QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
-1       call                                    1       
-2       getretval                                               1       
-3       param                                   1       
-4       param                                   1       
-5       call                                    1       
-6       getretval                                               1       
+1       call            f                       1       
+2       getretval       _t0                     1       
+3       param           a                       1       
+4       param           (null)                  1       
+5       call            _t0                     1       
+6       getretval       _t1                     1       
 7       assign          x       _t1             0       1       
 8       assign          _t2     x               0       1       

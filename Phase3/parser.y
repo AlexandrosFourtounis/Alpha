@@ -58,11 +58,10 @@
 
 
 %type <stringv> program parsing stmt  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
-%type <expression> term lvalue assignexpr expr primary  member const call elist exprlist
+%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  
 %type <unsignedv> funcbody block blockk
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
-%type <calls> callsuffix normcall methodcall
-
+%type <calls> callsuffix normcall methodcall 
 
 %right '='
 %left KEYWORD_OR
@@ -332,7 +331,7 @@ methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
                                                                                     $$->name = strdup($2);
                                                                                 }
 
-elist:              exprlist  
+elist:              exprlist  {$$ = $1;}
                     | %empty            {}
                     ;
 
