@@ -1,7 +1,9 @@
 QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
-1       uminus          _t0     5.00            0       1       
-2       assign          a       _t0             0       1       
-3       assign          _t1     a               0       1       
-4       uminus          _t0     a               0       3       
-5       assign          g       _t0             0       3       
-6       assign          _t1     g               0       3       
+1       call                                    1       
+2       getretval                                               1       
+3       param                                   1       
+4       param                                   1       
+5       call                                    1       
+6       getretval                                               1       
+7       assign          x       _t1             0       1       
+8       assign          _t2     x               0       1       

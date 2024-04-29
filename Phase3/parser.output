@@ -260,10 +260,10 @@ Nonterminals, with rules where they appear
     methodcall <calls> (64)
         on left: 59
         on right: 57
-    elist <stringv> (65)
+    elist <expression> (65)
         on left: 60 61
         on right: 53 55 58 59 64 95
-    exprlist <stringv> (66)
+    exprlist <expression> (66)
         on left: 62 63
         on right: 60 62
     objectdef <stringv> (67)

@@ -14,7 +14,7 @@
     int alpha_yylex(void* yylval);
     SymbolTableEntry *entry;
     SymbolTableEntry *sym;
-
+    reversed_list *rev_list = NULL;
     extern int yylineno;
     extern char* yytext;
     extern FILE* yyin;
@@ -57,8 +57,8 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt  elist exprlist objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
-%type <expression> term lvalue assignexpr expr primary  member const call
+%type <stringv> program parsing stmt  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
+%type <expression> term lvalue assignexpr expr primary  member const call elist exprlist
 %type <unsignedv> funcbody block blockk
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall
@@ -291,11 +291,16 @@ member:             lvalue DOT IDENTIFIER   {
 call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS  { $$ =  make_call($1,$3);}
                     | lvalue callsuffix 
                                             {
+                                                $2->elist = NULL;
                                                 $1 = emit_iftableitem($1);
-                                                if($2->method){
-                                                    reversed_list *temp = get_last($2->elist);
-                                                    reversed_list *temp2 = createExprNode($1);
-                                                    addToExprList(temp->next,temp2);
+                                                if($2->method && $2){
+                                                    expr *last = get_last($2->elist);
+                                                    if (last == NULL) {
+                                                        addToExprList(&$2->elist , $1);
+
+                                                    } else {
+                                                        addToExprList(&last->next,$1);
+                                                    }
                                                     $1 = emit_iftableitem(member_item($1,$2->name));
                                                 }
                                                 $$ = make_call($1,$2->elist);
@@ -314,6 +319,7 @@ callsuffix:         normcall  { $$ = $1;}
 
 normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS  
                                                             {
+                                                                $$ = malloc(sizeof(calls));
                                                                 $$->elist = $2;
                                                                 $$->method = 0;
                                                                 $$->name = NULL;
@@ -326,12 +332,12 @@ methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
                                                                                     $$->name = strdup($2);
                                                                                 }
 
-elist:              exprlist 
+elist:              exprlist  
                     | %empty            {}
                     ;
 
-exprlist:           exprlist  COMMA expr 
-                    | expr 
+exprlist:           exprlist  COMMA expr {   addToExprList(&$$->next,$3) ; }
+                    | expr {$$ = $1;}
                     ;
              
 
