@@ -37,6 +37,8 @@
     //struct expr *index;
     struct reversed_list *call_list;
     struct call *calls;
+    struct for_struct *for_stmt;
+    struct stmt_struct *stmt_structt;
 }
 
 %define parse.error verbose
@@ -57,11 +59,13 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
-%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  
-%type <unsignedv> funcbody block blockk
+%type <stringv> program parsing  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt 
+%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  returnstmt
+%type <unsignedv> funcbody block blockk whilestart whilecond N M
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
+%type <for_stmt> forprefix
+%type <stmt_structt> stmt
 
 %right '='
 %left KEYWORD_OR
@@ -349,6 +353,7 @@ call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS  { $$ =  make_ca
                                                 if($2->method && $2){
                                                     expr *last = get_last($2->elist);
                                                     if (last == NULL) {
+                                                        expr *temp = $1;
                                                         addToExprList(&$2->elist , $1);
 
                                                     } else {
@@ -557,9 +562,52 @@ ids:                COMMA IDENTIFIER  {
 ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt 
                     | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt 
 
-whilestmt:          KEYWORD_WHILE LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt 
+whilestart: KEYWORD_WHILE 
+                            {
+                              $$ = nextquadlabel();  
+                            }
+            ;
 
-forstmt:            KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHTPARENTHESIS stmt 
+whilecond: LEFTPARENTHESIS expr RIGHTPARENTHESIS
+                                                    {
+                                                        emit(if_eq,$2,newexpr_constbool(1),NULL,nextquadlabel()+2,yylineno);
+                                                        $$ = nextquadlabel();
+                                                        emit(jump,NULL,NULL,NULL,0U,yylineno);
+                                                    }
+            ;
+
+whilestmt:          whilestart whilecond stmt 
+                                                {
+                                                    $3 = malloc(sizeof(struct stmt_struct));
+                                                    emit(jump,NULL,NULL,$1,0U,yylineno);
+                                                    patchlabel($2, nextquadlabel());
+                                                    patchlist($3->breaklist, nextquadlabel());
+                                                    patchlist($3->contlist, $1);
+                                                                
+                                                }
+                    ;
+
+N: %empty {$$ = nextquadlabel(); emit(jump,NULL,NULL,NULL,0U,yylineno);}
+M: %empty {$$ = nextquadlabel();}
+
+forprefix:  KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON M expr SEMICOLON
+            {
+                $$->test = $5;
+                $$->enter = nextquadlabel();
+                emit(if_eq,$6,newexpr_constbool(1),NULL,0U,yylineno);
+            }
+            ;
+forstmt:            forprefix N elist RIGHTPARENTHESIS N stmt N 
+                    {
+                        // $6 = malloc(sizeof(stmt_struct));
+                        patchlabel($1->enter, $5+1); //true jump
+                        patchlabel($2, nextquadlabel()); // false jump
+                        patchlabel($5, $1->test); // loop jump
+                        patchlabel($7, $2+1); // closure jump
+                        patchlist($6->breaklist, nextquadlabel());
+                        patchlist($6->contlist, $2+1);
+                    }
+                    ;
 
 returnstmt:         KEYWORD_RETURN expr  SEMICOLON {
                                                     if(scope == 0) yyerror("Use of 'return' while not in a function\n");

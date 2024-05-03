@@ -10,3 +10,5 @@ Phase3/parser.c
 Phase3/parser.h
 Phase3/parser.output
 Phase3/scanner.c
+Phase3/test.asc
+Phase3/quads.txt

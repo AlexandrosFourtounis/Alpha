@@ -368,6 +368,12 @@ void print_expression(expr *expr, FILE *f)
     case constnum_e:
         fprintf(f, "%-8.2f", expr->numConst);
         break;
+    case constbool_e:
+        if (strcmp(expr->boolConst, "true") == 0)
+            fprintf(f, "%-8s", expr->boolConst);
+        else
+            fprintf(f, "%-8s", "false");
+        break;
     case conststring_e:
         fprintf(f, "%-8s", expr->strConst);
         break;
@@ -387,6 +393,7 @@ void print_expression(expr *expr, FILE *f)
             fprintf(f, "%-8s", "var");
         }
         break;
+    
     case assignexpr_e:
         if(expr->sym->value.varVal)
         {
@@ -607,7 +614,7 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
 expr *make_call(expr *lv, expr *reversed_elist){
     expr *func = emit_iftableitem(lv);
     while(reversed_elist){
-        emit(param, reversed_elist, NULL, NULL,0U,yylineno);
+        emit(param, reversed_elist, NULL, NULL, 0U, yylineno);
         reversed_elist = reversed_elist->next;  
     }
     emit(call, func, NULL, NULL, 0U, yylineno);
@@ -640,4 +647,31 @@ reversed_list *get_last(reversed_list *head)
         head = head->next;
     }
     return head;
+}
+
+
+void patchlist(int list, int label)
+{
+    while (list != 0 && list < currQuad)
+    {
+        int next = quads[list].label;
+        quads[list].label = label;
+        list = next;
+    }
+}
+
+
+expr *newexpr_constbool(char *val)
+{
+    expr *temp = newexpr(constbool_e);
+    temp->sym = NULL;
+    if (strcmp(val, "true") == 0)
+    {
+        temp->boolConst = "true";
+    }
+    else if (strcmp(val, "false") == 0)
+        temp->boolConst = "false";
+    else
+        assert(0);
+    return temp;
 }

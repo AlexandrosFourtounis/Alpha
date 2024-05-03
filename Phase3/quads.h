@@ -98,19 +98,9 @@ void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, 
 
 //UTILS
 void resettemp();
-void print_quads();
-void exitscopespace();
-void enterscopespace();
-void inccurrscopeoffset();
-void resetformalargsoffset();
-void resetfunctionlocalsoffset();
-void restorecurrscopeoffset(unsigned int n);
 void check_arith(expr *e, const char *context);
-void patchlabel(unsigned int quadNo, unsigned int label);
 char *newtempname();
 const char* opcode_to_string(iopcode opcode);
-unsigned int nextquadlabel();
-unsigned int currscopeoffset(void);
 expr *newexpr(expr_t t);
 expr* emit_iftableitem(expr* e);
 expr* newexpr_conststring(char* s);
@@ -150,6 +140,20 @@ typedef struct reversed_list{
     struct reversed_list *next;
 } reversed_list;
 
-reversed_list *createExprNode(expr *item);
+typedef struct for_struct{
+    unsigned int test;
+    unsigned int enter;
+} for_struct;
+
+typedef struct stmt_struct{
+    int breaklist;
+    int contlist;
+} stmt_struct;
+
+    reversed_list *
+    createExprNode(expr *item);
 void addToExprList(reversed_list **head, expr *item);
 reversed_list *get_last(reversed_list *head);
+void patchlist(int list, int label);
+
+expr *newexpr_constbool(char *val);
