@@ -78,6 +78,8 @@ typedef struct expr{
     char *strConst;
     char *boolConst;
     struct expr *next;
+    int truelist;
+    int falselist;
 }expr;
 
 typedef struct quad{
@@ -157,3 +159,4 @@ reversed_list *get_last(reversed_list *head);
 void patchlist(int list, int label);
 
 expr *newexpr_constbool(char *val);
+int newlist(int i);

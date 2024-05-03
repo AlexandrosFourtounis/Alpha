@@ -573,10 +573,15 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
         tmp->type = boolexpr_e;
         emit(if_eq, arg1, arg2, NULL, 0, yylineno);
         emit(jump, NULL, NULL, NULL, 0, yylineno);
+        tmp->truelist = newlist(nextquadlabel()-2);
+        tmp->falselist = newlist(nextquadlabel()-1);
         break;
     case '!':
+        tmp->type = boolexpr_e;
         emit(if_noteq, arg1, arg2, NULL, 0, yylineno);
         emit(jump, NULL, NULL, NULL, 0, yylineno);
+        tmp->truelist = newlist(nextquadlabel()-2);
+        tmp->falselist = newlist(nextquadlabel()-1);
         break;
     case '<':
         tmp->type = boolexpr_e;
@@ -590,6 +595,8 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
             emit(if_lesseq, arg1, arg2, NULL, 0, yylineno);
             emit(jump, NULL, NULL, NULL, 0, yylineno);
         }
+        tmp->truelist = newlist(nextquadlabel()-2);
+        tmp->falselist = newlist(nextquadlabel()-1);
         break;
     case '>':
         tmp->type = boolexpr_e;
@@ -603,6 +610,8 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
             emit(if_greatereq, arg1, arg2, NULL, 0, yylineno);
             emit(jump, NULL, NULL, NULL, 0, yylineno);
         }
+        tmp->truelist = newlist(nextquadlabel()-2);
+        tmp->falselist = newlist(nextquadlabel()-1);
         break;
     default:
         printf("Invalid comparison operator\n");
@@ -674,4 +683,9 @@ expr *newexpr_constbool(char *val)
     else
         assert(0);
     return temp;
+}
+
+int newlist(int i){
+    quads[i].label = 0; 
+    return i; 
 }
