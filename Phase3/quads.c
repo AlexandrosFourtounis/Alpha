@@ -326,7 +326,7 @@ const char *opcode_to_string(iopcode opcode)
     case param:
         return "param";
     case ret:
-        return "ret";
+        return "return";
     case getretval:
         return "getretval";
     case funcstart:
@@ -431,12 +431,20 @@ void print_quads()
             fprintf(f, "%-8d%-8d", quads[i].label, quads[i].line);
             fprintf(f, "\n");
         }
-        else if (quads[i].op == jump)
+        else if (quads[i].op == jump )
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
         }
-        else if ( quads[i].op == funcstart || quads[i].op == funcend || quads[i].op == ret || quads[i].op == tablecreate)
+
+        else if(quads[i].op == ret){
+            
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            print_expression(quads[i].result, f);
+            fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
+        }
+        else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend  || quads[i].op == tablecreate)
+
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].arg1, f);
