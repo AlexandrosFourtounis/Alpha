@@ -436,6 +436,7 @@ void print_quads()
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
         }
+
         else if(quads[i].op == ret){
             
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
@@ -443,6 +444,7 @@ void print_quads()
             fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
         }
         else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend  || quads[i].op == tablecreate)
+
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].arg1, f);
@@ -468,8 +470,13 @@ void print_quads()
         else if (quads[i].op == param || quads[i].op == call)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            // print_expression(quads[i].arg1, f);
-            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
+            print_expression(quads[i].arg1, f);
+            fprintf(f, "%-8s%-8s%-8d\n", "", "", quads[i].line);
+        }
+        else if (quads[i].op == getretval ){
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            print_expression(quads[i].result, f);
+            fprintf(f, "%-8s%-8s%-8d\n", "", "", quads[i].line);
         }
         i++;
     }
@@ -595,4 +602,42 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
         exit(-1);
     }
     return tmp;
+}
+
+expr *make_call(expr *lv, expr *reversed_elist){
+    expr *func = emit_iftableitem(lv);
+    while(reversed_elist){
+        emit(param, reversed_elist, NULL, NULL,0U,yylineno);
+        reversed_elist = reversed_elist->next;  
+    }
+    emit(call, func, NULL, NULL, 0U, yylineno);
+    expr *result = newexpr(var_e);
+    result->sym = newtemp();
+    emit(getretval, NULL, NULL, result, 0U, yylineno);
+    return result;
+}
+
+reversed_list *createExprNode(expr *item){
+    reversed_list *node = malloc(sizeof(reversed_list));
+    node->item = item;
+    node->next = NULL;
+    return node;
+}
+void addToExprList(reversed_list **head, expr *item){
+    reversed_list *node = createExprNode(item);
+    node->next = *head;
+    *head = node;
+}
+
+reversed_list *get_last(reversed_list *head)
+{
+    if (head == NULL)
+    {
+        return NULL;
+    }
+    while (head->next != NULL)
+    {
+        head = head->next;
+    }
+    return head;
 }

@@ -1,7 +1,0 @@
-QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
-1       jump                                    7       1       
-2       funcstart       iamafunction                        1       
-3       add             _t0     a       b       0       2       
-4       return                                                  3       
-5       jump                                    0       3       
-6       funcend         iamafunction                        4       

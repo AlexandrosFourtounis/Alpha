@@ -14,7 +14,7 @@
     int alpha_yylex(void* yylval);
     SymbolTableEntry *entry;
     SymbolTableEntry *sym;
-
+    reversed_list *rev_list = NULL;
     extern int yylineno;
     extern char* yytext;
     extern FILE* yyin;
@@ -35,6 +35,8 @@
     struct expr *expression;
     unsigned int unsignedv;
     //struct expr *index;
+    struct reversed_list *call_list;
+    struct call *calls;
 }
 
 %define parse.error verbose
@@ -55,12 +57,11 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt call callsuffix normcall methodcall elist exprlist objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
-%type <expression> term lvalue assignexpr expr primary  member const 
+%type <stringv> program parsing stmt  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
+%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  
 %type <unsignedv> funcbody block blockk
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
-
-
+%type <calls> callsuffix normcall methodcall 
 
 %right '='
 %left KEYWORD_OR
@@ -128,10 +129,64 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                                             emit(not,$2,NULL,$$,0,yylineno);
                                             
                                         }
-                    | INCREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
-                    | lvalue INCREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");}
-                    | DECREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
-                    | lvalue DECREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");}
+                    | INCREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");
+                                        check_arith($2,(const char*)"lvalue++");
+                                        if($2->type == tableitem_e){
+                                            $$ = emit_iftableitem($2);
+                                            emit(add, $$, newexpr_constnum(1), $$, 0U, yylineno);
+                                            emit(tablesetelem, $2->index, $$, $2, 0U, yylineno);
+                                        }else{
+                                            expr *temp = newexpr(arithexpr_e);
+                                            temp->sym = newtemp();
+                                            emit(add, $2, newexpr_constnum(1), $2, 0U, yylineno);
+                                            emit(assign, $2, NULL, temp, 0U, yylineno);
+                                        }
+                                        }
+                    | lvalue INCREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");
+                                        check_arith($1,(const char*)"++lvalue");
+                                        expr *tmp = NULL;
+                                        tmp = newexpr(arithexpr_e);
+                                        tmp->sym = newtemp();
+                                        if($1->type == tableitem_e){
+                                            expr *v = emit_iftableitem($1);
+                                            emit(assign, v, NULL, tmp, 0U, yylineno);
+                                            emit(add, v, newexpr_constnum(1), v, 0U, yylineno);
+                                            emit(tablesetelem, $1->index, v, $1, 0U, yylineno);
+                                        }else {
+                                            emit(assign, $1, NULL, tmp, 0U, yylineno);
+                                            emit(add, $1, newexpr_constnum(1), $1, 0U, yylineno);
+                                        }
+
+                                        }
+                    | DECREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");
+                                        check_arith($2,(const char*)"lvalue--");
+                                        if($2->type == tableitem_e){
+                                            $$ = emit_iftableitem($2);
+                                            emit(sub, $$, newexpr_constnum(1), $$, 0U, yylineno);
+                                            emit(tablesetelem, $2->index, $$, $2, 0U, yylineno);
+                                        } else {
+                                            expr *temp = newexpr(arithexpr_e);
+                                            temp->sym = newtemp();
+                                            emit(sub, $2, newexpr_constnum(1), $2, 0U, yylineno);
+                                            emit(assign, $2, NULL, temp, 0U, yylineno);
+                                        }
+                                        }
+                    | lvalue DECREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");
+                                        check_arith($1,(const char*)"--lvalue");
+                                        expr *tmp = NULL;
+                                        tmp = newexpr(arithexpr_e);
+                                        tmp->sym = newtemp();
+                                        if($1->type == tableitem_e){
+                                            expr *v = emit_iftableitem($1);
+                                            emit(assign, v, NULL, tmp, 0U, yylineno);
+                                            emit(sub, v, newexpr_constnum(1), v, 0U, yylineno);
+                                            emit(tablesetelem, $1->index, v, $1, 0U, yylineno);
+                                        }
+                                        else {
+                                            emit(assign, $1, NULL, tmp, 0U, yylineno);
+                                            emit(sub, $1, newexpr_constnum(1), $1, 0U, yylineno);                   }
+                                        
+                                        }
                     | primary { $$ = $1; }
 
 assignexpr:         lvalue  '='
@@ -248,12 +303,13 @@ lvalue:             IDENTIFIER          {
                                                 }
                                             
 
-                    /*WORKS FOR ::f() BUT NOT FOR :f(f()) or (functiondef)(elist)*/
-                    | DOUBLECOLON IDENTIFIER callsuffix {
-                                                            entry = lookup_in_scope($2, 0); 
-                                                            if(entry == NULL) yyerror("global identifier not found");
+                    // /*WORKS FOR ::f() BUT NOT FOR :f(f()) or (functiondef)(elist)*/
+                    // BIG PROBLEM IF UNCOMMENTED ABOVE ISSUE IS FIXED , BUT 4 SHIFT/REDUCe CONFLICTS
+                    // | DOUBLECOLON IDENTIFIER callsuffix {
+                    //                                         entry = lookup_in_scope($2, 0); 
+                    //                                         if(entry == NULL) yyerror("global identifier not found");
                                                             
-                                                        }
+                    //                                     }
                     
                     
                     | DOUBLECOLON IDENTIFIER   {
@@ -285,33 +341,56 @@ member:             lvalue DOT IDENTIFIER   {
                     | call LEFTBRACKET expr RIGHTBRACKET
                     ;
 
-call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS 
-                    | IDENTIFIER callsuffix {
-                                                // int temp = scope-1;
-                                                // while(temp >= 0){
-                                                //     entry = lookup_in_scope($1, temp);
-                                                //     if(entry != NULL) break;
-                                                //     temp--;
-                                                // }
-                                                // if(entry == NULL) yyerror("Cannot call function");
-                                                // else if(entry->type != LIBFUNC || entry->type != USERFUNC) yyerror("not a function");
-                    }
-                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS {printf("call -> (funcdef)(elist)");}
+call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS  { $$ =  make_call($1,$3);}
+                    | lvalue callsuffix 
+                                            {
+                                                $2->elist = NULL;
+                                                $1 = emit_iftableitem($1);
+                                                if($2->method && $2){
+                                                    expr *last = get_last($2->elist);
+                                                    if (last == NULL) {
+                                                        addToExprList(&$2->elist , $1);
+
+                                                    } else {
+                                                        addToExprList(&last->next,$1);
+                                                    }
+                                                    $1 = emit_iftableitem(member_item($1,$2->name));
+                                                }
+                                                $$ = make_call($1,$2->elist);
+                                            }
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+                                                                                                            { 
+                                                                                                                expr* func = newexpr(programfunc_e);
+                                                                                                                func->sym = $2;
+                                                                                                                $$ = make_call(func,$5);
+                                                                                                            }
                     ;
 
-callsuffix:         normcall 
-                    | methodcall
 
-normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+callsuffix:         normcall  { $$ = $1;}
+                    | methodcall {$$ = $1;}
 
-methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS  
+                                                            {
+                                                                $$ = malloc(sizeof(calls));
+                                                                $$->elist = $2;
+                                                                $$->method = 0;
+                                                                $$->name = NULL;
+                                                            }
 
-elist:              exprlist 
+methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS  
+                                                                                {
+                                                                                    $$->elist = $4;
+                                                                                    $$->method = 1;
+                                                                                    $$->name = strdup($2);
+                                                                                }
+
+elist:              exprlist  {$$ = $1;}
                     | %empty            {}
                     ;
 
-exprlist:           exprlist  COMMA expr 
-                    | expr 
+exprlist:           exprlist  COMMA expr {   addToExprList(&$$->next,$3) ; }
+                    | expr {$$ = $1;}
                     ;
              
 
