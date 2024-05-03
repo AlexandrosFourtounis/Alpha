@@ -5,3 +5,8 @@ Phase2/parser.output
 Phase2/scanner.c
 settings.json
 .vscode
+Phase3/parser
+Phase3/parser.c
+Phase3/parser.h
+Phase3/parser.output
+Phase3/scanner.c
