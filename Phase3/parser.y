@@ -61,7 +61,7 @@
 
 %type <stringv> program parsing  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt 
 %type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  returnstmt
-%type <unsignedv> funcbody block blockk whilestart whilecond N M
+%type <unsignedv> funcbody block blockk whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
@@ -559,8 +559,34 @@ ids:                COMMA IDENTIFIER  {
                     | %empty                 {}
                     ;
 
-ifstmt:             KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt  KEYWORD_ELSE stmt 
-                    | KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS stmt 
+
+ifprefix:           KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS {
+
+                                                            if($3->type == boolexpr_e) {
+                                                                $3 = emit_ifboolean($3);
+                                                            }
+                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,0U,yylineno);
+                                                            $$ = nextquadlabel();
+                                                            emit(jump,NULL,NULL,NULL,0U,yylineno);
+                                                        }
+                                                    ;
+
+elseprefix:         KEYWORD_ELSE {
+                                    $$ = nextquadlabel();
+                                    emit(jump,NULL,NULL,NULL,0,yylineno);
+                                }
+                    ;                                                    
+
+ifstmt:             ifprefix stmt elseprefix stmt {
+                                                    patchlabel($1, $3 + 1);
+                                                    patchlabel($3, nextquadlabel());
+                                                    $$ = $5;
+                                                }
+                    | ifprefix stmt {   
+                                        $$ = $2;
+                                        patchlabel($1, nextquadlabel());
+                                    }
+                    ;
 
 whilestart: KEYWORD_WHILE 
                             {
