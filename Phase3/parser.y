@@ -580,14 +580,13 @@ elseprefix:         KEYWORD_ELSE {
 ifstmt:             ifprefix stmt elseprefix stmt {
                                                     patchlabel($1, $3 + 1);
                                                     patchlabel($3, nextquadlabel());
-                                                    $$ = $5;
+                                                    $$ = $4;
                                                 }
                     | ifprefix stmt {   
                                         $$ = $2;
                                         patchlabel($1, nextquadlabel());
                                     }
                     ;
-
 whilestart: KEYWORD_WHILE 
                             {
                               $$ = nextquadlabel();  
