@@ -78,6 +78,8 @@ typedef struct expr{
     char *strConst;
     char *boolConst;
     struct expr *next;
+    int truelist;
+    int falselist;
 }expr;
 
 typedef struct quad{
@@ -103,6 +105,7 @@ char *newtempname();
 const char* opcode_to_string(iopcode opcode);
 expr *newexpr(expr_t t);
 expr* emit_iftableitem(expr* e);
+expr *emit_ifboolean(expr *e);
 expr* newexpr_conststring(char* s);
 expr* member_item(expr* lv, char* name);
 expr *lvalue_expr(SymbolTableEntry *sym);
@@ -122,6 +125,7 @@ expr* Manage_operations(expr *arg1, iopcode op, expr *arg2);
 
 
 expr *newexpr_bool(char *s);
+expr* newexpr_constbool(unsigned char b);
 expr *newexpr_nil(char *s);
 expr *newexpr_constnum(double x);
 expr *Manage_operations(expr *arg1, iopcode op, expr *arg2);
@@ -155,5 +159,4 @@ typedef struct stmt_struct{
 void addToExprList(reversed_list **head, expr *item);
 reversed_list *get_last(reversed_list *head);
 void patchlist(int list, int label);
-
-expr *newexpr_constbool(char *val);
+int newlist(int i);

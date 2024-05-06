@@ -1,677 +1,697 @@
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include "quads.h"
+%{
+    #include <stdio.h>
+    #include "quads.h"
+    #include "stack.h"
 
-#define BOLD_RED "\033[1;31m"
-#define RESET "\033[0m"
+    #define YYDEBUG 1
+    #define BOLD_RED "\033[1;31m"
+    #define RESET "\033[0m"
 
-quad *quads = (quad *)0;
-unsigned int total = 0;
-unsigned int currQuad = 0;
-unsigned int programVarOffset = 0;
-unsigned int functionLocalOffset = 0;
-unsigned int formalArgOffset = 0;
-unsigned int scopeSpaceCounter = 1;
-int tempcounter = 0;
-extern int scope;
-extern int yylineno;
+    Stack *scopeoffsetstack;
 
-void expand(void)
-{
-    assert(total == currQuad);
-    quad *p = (quad *)malloc(NEW_SIZE);
-    if (quads)
-    {
-        memcpy(p, quads, CURR_SIZE);
-        free(quads);
-    }
-    quads = p;
-    total += EXPAND_SIZE;
+    extern int yydebug;
+    int yyerror (char* yaccProvidedMessage);
+    int alpha_yylex(void* yylval);
+    SymbolTableEntry *entry;
+    SymbolTableEntry *sym;
+    reversed_list *rev_list = NULL;
+    extern int yylineno;
+    extern char* yytext;
+    extern FILE* yyin;
+
+    SymTable_T symTable = NULL;
+    int anonymousCounter = 0;
+    int scope = 0;
+    int called = 0;
+    int doublec_flag = 0;
+%}
+
+%union{
+    int intv;
+    char* stringv;
+    char charv;
+    float floatv;
+    struct SymbolTableEntry *sym;
+    struct expr *expression;
+    unsigned int unsignedv;
+    //struct expr *index;
+    struct reversed_list *call_list;
+    struct call *calls;
+    struct for_struct *for_stmt;
+    struct stmt_struct *stmt_structt;
 }
 
-void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, unsigned int line)
-{
-    if (currQuad == total)
-    {
-        expand();
-    }
-    quad *p = quads + currQuad++;
-    p->op = op;
-    p->arg1 = arg1;
-    p->arg2 = arg2;
-    p->result = result;
-    p->label = label;
-    p->line = line;
-}
+%define parse.error verbose
+%start program
 
-scopespace_t currscopespace(void)
-{
-    if (scopeSpaceCounter == 1)
-        return programVar;
-    else if (scopeSpaceCounter % 2 == 0)
-        return formalArg;
-    else
-        return functionLocal;
-}
-
-unsigned int currscopeoffset(void)
-{
-    switch (currscopespace())
-    {
-    case programVar:
-        return programVarOffset;
-    case functionLocal:
-        return functionLocalOffset;
-    case formalArg:
-        return formalArgOffset;
-    default:
-        assert(0);
-    }
-}
-
-void inccurrscopeoffset(void)
-{
-    switch (currscopespace())
-    {
-    case programVar:
-        ++programVarOffset;
-        break;
-    case functionLocal:
-        ++functionLocalOffset;
-        break;
-    case formalArg:
-        ++formalArgOffset;
-        break;
-    default:
-        assert(0);
-    }
-}
-
-void enterscopespace(void)
-{
-    ++scopeSpaceCounter;
-}
-
-void exitscopespace(void)
-{
-    assert(scopeSpaceCounter > 1);
-    --scopeSpaceCounter;
-}
-
-char *newtempname()
-{
-    char temp[20]; // Buffer to hold the resulting string
-    sprintf(temp, "_t%d", tempcounter++);
-    return strdup(temp);
-}
-
-void resettemp()
-{
-    tempcounter = 0;
-}
-
-void check_arith(expr *e, const char *context)
-{
-    if (e->type == constbool_e ||
-        e->type == conststring_e ||
-        e->type == nil_e ||
-        e->type == newtable_e ||
-        e->type == programfunc_e ||
-        e->type == libraryfunc_e ||
-        e->type == boolexpr_e)
-    {
-        printf(BOLD_RED "Illegal expr used in %s!" RESET, context);
-        exit(-1);
-    }
-}
-
-expr *newexpr(expr_t t)
-{
-    expr *e = (expr *)malloc(sizeof(expr));
-    memset(e, 0, sizeof(expr));
-    e->type = t;
-    return e;
-}
-
-expr *lvalue_expr(SymbolTableEntry *sym)
-{
-    assert(sym);
-    expr *e = (expr *)malloc(sizeof(expr));
-    memset(e, 0, sizeof(expr));
-    e->next = (expr *)0;
-    e->sym = sym;
-    switch (sym->type)
-    {
-    case GLOBAL:
-    case LOCAL:
-    case FORMAL:
-        e = newexpr(var_e);
-        e->sym = sym;
-        break;
-    case USERFUNC:
-        e = newexpr(programfunc_e);
-        e->sym = sym;
-        break;
-    case LIBFUNC:
-        e = newexpr(libraryfunc_e);
-        e->sym = sym;
-        break;
-    default:
-        assert(0);
-    }
-    return e;
-}
-
-SymbolTableEntry *newtemp()
-{
-    char *name = newtempname();
-    SymbolTableEntry *entry = lookup_in_scope(name, scope);
-    if (entry == NULL)
-    {
-        SymbolType type = (scope == 0) ? GLOBAL : LOCAL;
-        entry = insert(name, type, scope, yylineno);
-        return entry;
-    }
-    else
-    {
-        return entry;
-    }
-}
-
-void resetformalargsoffset()
-{
-    formalArgOffset = 0;
-}
-
-void resetfunctionlocalsoffset()
-{
-    functionLocalOffset = 0;
-}
-
-void restorecurrscopeoffset(unsigned int n)
-{
-    switch (currscopespace())
-    {
-    case programVar:
-        programVarOffset = n;
-        break;
-    case functionLocal:
-        functionLocalOffset = n;
-        break;
-    case formalArg:
-        formalArgOffset = n;
-        break;
-    default:
-        assert(0);
-    }
-}
-
-unsigned int nextquadlabel()
-{
-    return currQuad;
-}
-
-void patchlabel(unsigned int quadNo, unsigned int label)
-{
-    assert(quadNo < currQuad);
-    quads[quadNo].label = label;
-}
-
-expr *newexpr_conststring(char *s)
-{
-    expr *e = newexpr(conststring_e);
-    e->strConst = strdup(s);
-    e->sym = NULL;
-    return e;
-}
-
-expr *newexpr_constnum(double x)
-{
-    expr *e = newexpr(constnum_e);
-    e->sym = NULL;
-    e->numConst = x;
-    return e;
-}
+%token <intv> INTEGER "integer constant"
+%token <floatv> REAL "real contstant"
 
 
+%token <stringv> KEYWORD_IF KEYWORD_THEN KEYWORD_ELSE KEYWORD_WHILE 
+%token <stringv> KEYWORD_FOR KEYWORD_FUNCTION KEYWORD_RETURN KEYWORD_BREAK KEYWORD_CONTINUE
+%token <stringv> KEYWORD_AND KEYWORD_NOT KEYWORD_OR KEYWORD_LOCAL KEYWORD_TRUE
+%token <stringv> KEYWORD_FALSE KEYWORD_NIL GREATER LESS EQUALS
+%token <stringv> GREATER_EQUAL LESS_EQUAL NOT_EQUAL INCREMENT DECREMENT 
+%token <stringv> STRING
+%token <stringv> IDENTIFIER LEFTBRACE RIGHTBRACE LEFTBRACKET RIGHTBRACKET 
+%token <stringv> LEFTPARENTHESIS RIGHTPARENTHESIS COMMA SEMICOLON COLON 
+%token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
-expr *newexpr_bool(char *s)
-{
-    expr *e = newexpr(boolexpr_e);
-    e->sym = NULL;
-    printf("s: %s\n", s);
-    if (strcmp(s, "true") == 0)
-    {
-        e->boolConst ="true";
-    }
-    else if (strcmp(s, "false") == 0)
-        e->boolConst = "false";
-    else
-        assert(0);
-    return e;
-}
 
-expr *newexpr_nil(char *s)
-{
-    expr *e = newexpr(nil_e);
-    e->strConst = strdup(s);
-    e->sym = NULL;
-    return e;
-}
+%type <stringv> program parsing  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt 
+%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  returnstmt
+%type <unsignedv> funcbody block blockk whilestart whilecond N M ifprefix elseprefix
+%type <sym> funcprefix funcdef funcname idlist ids funcargs
+%type <calls> callsuffix normcall methodcall 
+%type <for_stmt> forprefix
+%type <stmt_structt> stmt
 
-expr *emit_iftableitem(expr *e)
-{
-    if (e->type != tableitem_e)
-        return e;
-    else
-    {
-        expr *result = newexpr(var_e);
-        result->sym = newtemp();
-        emit(tablegetelem, e, e->index, result, 0, yylineno);
-        return result;
-    }
-}
+%right '='
+%left KEYWORD_OR
+%left KEYWORD_AND
+%nonassoc EQUALS NOT_EQUAL
+%nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL 
+%left '+' '-'
+%left '*' '/' '%'
+%right KEYWORD_NOT INCREMENT DECREMENT UMINUS
+%left DOT DOUBLEDOT
+%left LEFTBRACKET RIGHTBRACKET
+%left LEFTPARENTHESIS RIGHTPARENTHESIS 
 
-expr *member_item(expr *lv, char *name)
-{
-    lv = emit_iftableitem(lv);
-    expr *ti = newexpr(tableitem_e);
-    ti->sym = lv->sym;
-    ti->index = newexpr_conststring(name);
-    return ti;
-}
 
-const char *opcode_to_string(iopcode opcode)
-{
-    switch (opcode)
-    {
-    case assign:
-        return "assign";
-    case jump:
-        return "jump";
-    case add:
-        return "add";
-    case sub:
-        return "sub";
-    case mul:
-        return "mul";
-    case divv:
-        return "divv";
-    case mod:
-        return "mod";
-    case uminus:
-        return "uminus";
-    case and:
-        return "and";
-    case or:
-        return "or";
-    case not:
-        return "not";
-    case if_eq:
-        return "if_eq";
-    case if_noteq:
-        return "if_noteq";
-    case if_lesseq:
-        return "if_lesseq";
-    case if_greatereq:
-        return "if_greatereq";
-    case if_less:
-        return "if_less";
-    case if_greater:
-        return "if_greater";
-    case call:
-        return "call";
-    case param:
-        return "param";
-    case ret:
-        return "return";
-    case getretval:
-        return "getretval";
-    case funcstart:
-        return "funcstart";
-    case funcend:
-        return "funcend";
-    case tablecreate:
-        return "tablecreate";
-    case tablegetelem:
-        return "tablegetelem";
-    case tablesetelem:
-        return "tablesetelem";
-    default:
-        return "unknown opcode";
-    }
-}
+%%
 
-void print_expression(expr *expr, FILE *f)
-{
-    if (!expr)
-    {
-        fprintf(f, "%-16s", "");
-        return;
-    }
-    else if (expr->type == nil_e)
-    {
-        fprintf(f, "%-16s", "NIL");
-        return;
-    }
+program:            parsing      
+                    ;
+parsing:            stmt parsing 
+                    | %empty            {} 
+                    ;
 
-    switch (expr->type)
-    {
-    case boolexpr_e:
-        if (strcmp(expr->boolConst, "true") == 0)
-            fprintf(f, "%-8s", expr->boolConst);
-        else
-            fprintf(f, "%-8s", "false");
-        break;
-    case constnum_e:
-        fprintf(f, "%-8.2f", expr->numConst);
-        break;
-    case constbool_e:
-        if (strcmp(expr->boolConst, "true") == 0)
-            fprintf(f, "%-8s", expr->boolConst);
-        else
-            fprintf(f, "%-8s", "false");
-        break;
-    case conststring_e:
-        fprintf(f, "%-8s", expr->strConst);
-        break;
-    case programfunc_e:
-        fprintf(f, "%-8s", expr->sym->value.funcVal->name);
-        break;
-    case libraryfunc_e:
-        fprintf(f, "%-8s", expr->sym->value.funcVal->name);
-        break;
-    case arithexpr_e:
-        if(expr->sym->value.varVal)
-        {
-            fprintf(f, "%-8s", expr->sym->value.varVal->name);
+stmt:               expr SEMICOLON  {printf("reset\n");resettemp();}
+                    | ifstmt        {resettemp();}
+                    | whilestmt     {resettemp();}
+                    | forstmt       {resettemp();}
+                    | returnstmt    {resettemp();}
+                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");resettemp();}
+                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");resettemp();}
+                    | block { $$ = $1;   resettemp();}
+                    | funcdef { resettemp();}
+                    | SEMICOLON {}
+                    | error SEMICOLON   { yyerrok; }
+                    ;
+
+expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
+                    | expr '*' expr   {$$ = Manage_operations($1,mul,$3);}   
+                    | expr '-' expr   {$$ = Manage_operations($1,sub,$3);}   
+                    | expr '/' expr   {$$ = Manage_operations($1,divv,$3);}
+                    | expr '%' expr   {$$ = Manage_operations($1,mod,$3);}  
+                    | expr GREATER expr   {$$ = Manage_comparisonopers($1, ">",$3);}
+                    | expr GREATER_EQUAL expr {$$ = Manage_comparisonopers($1, ">=",$3);}
+                    | expr LESS expr  {$$ = Manage_comparisonopers($1, "<",$3);}
+                    | expr LESS_EQUAL expr   {$$ = Manage_comparisonopers($1, "<=",$3);}
+                    | expr EQUALS expr  {$$ = Manage_comparisonopers($1, "==",$3);}      
+                    | expr NOT_EQUAL expr {$$ = Manage_comparisonopers($1, "!=",$3);}
+                    | expr KEYWORD_AND expr 
+                    | expr KEYWORD_OR expr   
+                    | assignexpr { $$ = $1;}        
+                    | term  { $$ = emit_iftableitem($1);}
+                    ;
+
+
+term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
+                    | '-' expr %prec UMINUS  {
+                                                check_arith($2,(const char*)"- expr");
+                                                $$ = newexpr(arithexpr_e);
+                                                $$->sym = newtemp();
+                                    
+                                                emit(uminus,$2,NULL,$$,0,yylineno);
+                                             }
+                    | KEYWORD_NOT expr {
+                                            $$ = newexpr(boolexpr_e);
+                                            $$->sym = newtemp();
+                                            emit(not,$2,NULL,$$,0,yylineno);
+                                            
+                                        }
+                    | INCREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");
+                                        check_arith($2,(const char*)"lvalue++");
+                                        if($2->type == tableitem_e){
+                                            $$ = emit_iftableitem($2);
+                                            emit(add, $$, newexpr_constnum(1), $$, 0U, yylineno);
+                                            emit(tablesetelem, $2->index, $$, $2, 0U, yylineno);
+                                        }else{
+                                            expr *temp = newexpr(arithexpr_e);
+                                            temp->sym = newtemp();
+                                            emit(add, $2, newexpr_constnum(1), $2, 0U, yylineno);
+                                            emit(assign, $2, NULL, temp, 0U, yylineno);
+                                        }
+                                        }
+                    | lvalue INCREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");
+                                        check_arith($1,(const char*)"++lvalue");
+                                        expr *tmp = NULL;
+                                        tmp = newexpr(arithexpr_e);
+                                        tmp->sym = newtemp();
+                                        if($1->type == tableitem_e){
+                                            expr *v = emit_iftableitem($1);
+                                            emit(assign, v, NULL, tmp, 0U, yylineno);
+                                            emit(add, v, newexpr_constnum(1), v, 0U, yylineno);
+                                            emit(tablesetelem, $1->index, v, $1, 0U, yylineno);
+                                        }else {
+                                            emit(assign, $1, NULL, tmp, 0U, yylineno);
+                                            emit(add, $1, newexpr_constnum(1), $1, 0U, yylineno);
+                                        }
+
+                                        }
+                    | DECREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");
+                                        check_arith($2,(const char*)"lvalue--");
+                                        if($2->type == tableitem_e){
+                                            $$ = emit_iftableitem($2);
+                                            emit(sub, $$, newexpr_constnum(1), $$, 0U, yylineno);
+                                            emit(tablesetelem, $2->index, $$, $2, 0U, yylineno);
+                                        } else {
+                                            expr *temp = newexpr(arithexpr_e);
+                                            temp->sym = newtemp();
+                                            emit(sub, $2, newexpr_constnum(1), $2, 0U, yylineno);
+                                            emit(assign, $2, NULL, temp, 0U, yylineno);
+                                        }
+                                        }
+                    | lvalue DECREMENT {entry=lookup($1, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot decrement a function");
+                                        check_arith($1,(const char*)"--lvalue");
+                                        expr *tmp = NULL;
+                                        tmp = newexpr(arithexpr_e);
+                                        tmp->sym = newtemp();
+                                        if($1->type == tableitem_e){
+                                            expr *v = emit_iftableitem($1);
+                                            emit(assign, v, NULL, tmp, 0U, yylineno);
+                                            emit(sub, v, newexpr_constnum(1), v, 0U, yylineno);
+                                            emit(tablesetelem, $1->index, v, $1, 0U, yylineno);
+                                        }
+                                        else {
+                                            emit(assign, $1, NULL, tmp, 0U, yylineno);
+                                            emit(sub, $1, newexpr_constnum(1), $1, 0U, yylineno);                   }
+                                        
+                                        }
+                    | primary { $$ = $1; }
+
+assignexpr:         lvalue  '='
+ {
+    if( entry == NULL ){
+        if(scope > 0 )
+        entry = lookup_hidden($1,scope);
+        /* ERROR9.asc -> ACCESSING FORMAL IN ANOTHER SCOPE*/
+        if(entry){
+            if(entry->type == FORMAL){
+                yyerror("cannot access formal argument in another scope");
+            }else if(entry->type == LOCAL){
+                yyerror("Cannot access local variable in another scope");
+            }
+        }else{
+            if(scope==0){
+                insert($1, GLOBAL, scope, yylineno);
+            }else{
+                insert($1, LOCAL, scope, yylineno);  
+            }
         }
-        else
-        {
-            fprintf(f, "%-8s", "var");
-        }
-        break;
+        
+    }
+    else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
+
+} 
+expr {
+    if($1->type == tableitem_e){
+        emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
+        $$ = emit_iftableitem($1);
+        $$->type = assignexpr_e;
+    }
+    else{
+        expr *temp = $4;
+        emit(assign, $4, NULL, $1, 0U, yylineno);
+        $$ = newexpr(assignexpr_e);
+        $$->sym = newtemp();
+        emit(assign, $1, NULL,$$, 0U, yylineno);
+        
+    }
+} 
+
+
+
+                    
+
+primary:             lvalue {$$ = emit_iftableitem($1);}
+                    | call 
+                    | objectdef 
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS  
+                    | const {$$ = $1;}
+                    ;
+
+lvalue:             IDENTIFIER          {    
+                                                entry = lookup_in_scope($1, scope);                                                                                                // else if(entry->type == LIBFUNC) {
+                                                //     yyerror("Cannot assign to a library function");
+                                                // }
+                                                // else if(entry->type == USERFUNC) {
+                                                //     yyerror("Cannot assign to a user function");
+                                                // }
+
+                                                //phase3                                               
+                                                //sym = lookup($1, scope);
+                                                if(entry == NULL) {
+                                                    entry = (scope == 0) ? insert($1, GLOBAL, 0, yylineno) : insert($1, LOCAL, scope, yylineno); 
+                                                    entry->space = currscopespace();
+                                                    entry->offset = currscopeoffset();
+                                                    inccurrscopeoffset();
+                                                }
+                                                $$ = lvalue_expr(entry);
+                                                $$->sym = entry;
+
+                                        }   
+
+                    | KEYWORD_LOCAL IDENTIFIER {  
+                                                    int flag = 0;                                               
+                                                    entry = lookup($2, scope);
+                                                    if(entry != NULL){
+                                                        if(entry->type == LIBFUNC) yyerror("Cannot shadow a library function");                                                                      
+                                                        // else if(scope == 0){
+                                                        //     yyerror("Cannot shadow a global variable");
+                                                        // }
+                                                        else flag =1;
+                                                        goto end;
+                                                    }
+                                                    else {
+                                                        //if(scope==0) yyerror("Cannot shadow a global variable");
+                                                        flag = 1;
+                                                        goto end;
+                                                    }
+                                                
+                                                    end:
+                                                    if(flag == 1) {
+                                                        entry = lookup_in_scope($2, scope);
+                                                        if(entry == NULL) entry = insert($2, LOCAL, scope, yylineno);                                                   
+                                                        else yyerror("Cannot shadow a local variable"); 
+                                                    }
+
+                                                    //phase 3
+                                                    sym = lookup_in_scope($2, scope);
+                                                    if (sym == NULL){
+                                                        sym = (scope == 0) ? insert($2, GLOBAL, 0, yylineno) : insert($2, LOCAL, scope, yylineno); 
+                                                        sym->space = currscopespace();
+                                                        sym->offset = currscopeoffset();
+                                                        inccurrscopeoffset();
+                                                    } else {
+                                                        if(sym->type == USERFUNC || sym->type == LIBFUNC ){
+                                                            printf(BOLD_RED"sym is a function\n"RESET);
+                                                        }
+
+                                                    }
+                                                    $$ = lvalue_expr(sym);                                                                                                                                      
+                                                    
+                                                }
+                                            
+
+                    // /*WORKS FOR ::f() BUT NOT FOR :f(f()) or (functiondef)(elist)*/
+                    // BIG PROBLEM IF UNCOMMENTED ABOVE ISSUE IS FIXED , BUT 4 SHIFT/REDUCe CONFLICTS
+                    // | DOUBLECOLON IDENTIFIER callsuffix {
+                    //                                         entry = lookup_in_scope($2, 0); 
+                    //                                         if(entry == NULL) yyerror("global identifier not found");
+                                                            
+                    //                                     }
+                    
+                    
+                    | DOUBLECOLON IDENTIFIER   {
+                                                    entry = lookup_in_scope($2, 0); 
+                                            
+                                                        char error_message[256];
+                                                        sprintf(error_message, "global identifier not found %s", $2);
+                                                        if (entry == NULL || !entry->isActive) yyerror(error_message);
+
+                                                }
+                    | member {$$ = $1;}
+
+member:             lvalue DOT IDENTIFIER   { 
+                                            if (entry == NULL || !entry->isActive) yyerror("member error" );
+                                            else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue.id");
+                                            $$ = member_item($1, $3);
+                                            }            
+                    | lvalue LEFTBRACKET expr RIGHTBRACKET { 
+                                            expr* tmp;
+                                            if (entry == NULL || !entry->isActive) yyerror("member error");
+                                            else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("function member error: lvalue[expr]");
+                                            $1 = emit_iftableitem($1);
+                                            tmp = newexpr(tableitem_e);
+                                            tmp->sym = $1->sym;
+                                            tmp->index = $3;
+                                            $$ = tmp;
+                                            }
+                    | call DOT IDENTIFIER               
+                    | call LEFTBRACKET expr RIGHTBRACKET
+                    ;
+
+call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS  { $$ =  make_call($1,$3);}
+                    | lvalue callsuffix 
+                                            {
+                                                $2->elist = NULL;
+                                                $1 = emit_iftableitem($1);
+                                                if($2->method && $2){
+                                                    expr *last = get_last($2->elist);
+                                                    if (last == NULL) {
+                                                        expr *temp = $1;
+                                                        addToExprList(&$2->elist , $1);
+
+                                                    } else {
+                                                        addToExprList(&last->next,$1);
+                                                    }
+                                                    $1 = emit_iftableitem(member_item($1,$2->name));
+                                                }
+                                                $$ = make_call($1,$2->elist);
+                                            }
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS 
+                                                                                                            { 
+                                                                                                                expr* func = newexpr(programfunc_e);
+                                                                                                                func->sym = $2;
+                                                                                                                $$ = make_call(func,$5);
+                                                                                                            }
+                    ;
+
+
+callsuffix:         normcall  { $$ = $1;}
+                    | methodcall {$$ = $1;}
+
+normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS  
+                                                            {
+                                                                $$ = malloc(sizeof(calls));
+                                                                $$->elist = $2;
+                                                                $$->method = 0;
+                                                                $$->name = NULL;
+                                                            }
+
+methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS  
+                                                                                {
+                                                                                    $$->elist = $4;
+                                                                                    $$->method = 1;
+                                                                                    $$->name = strdup($2);
+                                                                                }
+
+elist:              exprlist  {$$ = $1;}
+                    | %empty            {}
+                    ;
+
+exprlist:           exprlist  COMMA expr {   addToExprList(&$$->next,$3) ; }
+                    | expr {$$ = $1;}
+                    ;
+             
+
+objectdef:          LEFTBRACKET  elist RIGHTBRACKET
+                    | LEFTBRACKET indexed RIGHTBRACKET
+                    | LEFTBRACKET RIGHTBRACKET
+                    ;
+
+obj:                elist 
+                    | indexed 
+                    ;
+                    
+indexed:            indexedelem 
+                    | indexedelem COMMA indexed
+                    ;
+
+indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
+
+block:              LEFTBRACE  { scope++; } blockk  RIGHTBRACE { scope--; }
+                    ;
+
+blockk:              stmt blockk
+                    | %empty            {}
+                    ;
+
+funcname: IDENTIFIER {
+                        
+                        if(scope < 0) scope = 0;
+                        entry = lookup_in_scope($1, scope); 
+
+                        int temp = scope;
+                        while(temp >= 0){
+                            hide_scope(temp);
+                            temp--;
+                        }
+                     
+                       //libfuncs
+                        if (entry != NULL) {
+                            //check collision with library/user functions or formals
+                            if (entry->type == LIBFUNC) yyerror("library function collision");
+                            else if (entry->type == USERFUNC) yyerror("user function collision");
+                            else if (entry->type == FORMAL) yyerror("function name already defined as formal");
+                            
+                        }
+                        else {
+                            //entry = lookup_in_scope_hidden($<stringv>2, scope);
+                            //if(!entry) yyerror("variable already defined"); 
+                            //else{ 
+                                entry = insert($1, USERFUNC, scope, yylineno);
+                                scope++;
+                            //} 
+                        }
+                        $$ = entry;
+                        $$->value.funcVal->name = entry->value.funcVal->name;
+                    } 
+
+funcname: %empty  { 
+                        int temp = scope;
+                        while(temp != 0){
+                        hide_scope(temp);
+                        temp--;
+                        }
+
+                        char str[20]; 
+                        sprintf(str, "_%d", anonymousCounter++); 
+                        entry = insert(str, USERFUNC, scope, yylineno); 
+                        scope++; // increment scope here
+
+                        $$ = entry;
+                        $$->value.funcVal->name = entry->value.funcVal->name;
+
+                    } 
+
+funcprefix: KEYWORD_FUNCTION funcname {
+                                        $$ = $2;
+                                        $$->iaddress = nextquadlabel();
+
+                                        emit(jump, NULL, NULL, NULL, 0, yylineno);
+                                        emit(funcstart, lvalue_expr($$), NULL, NULL,0, yylineno);
+                                        push(scopeoffsetstack, currscopeoffset());
+                                        print(scopeoffsetstack);
+                                        enterscopespace();
+                                        resetformalargsoffset();
+                                       }  
+
+
+
+
+funcargs: LEFTPARENTHESIS idlist RIGHTPARENTHESIS {
+                                                     scope--;
+                                                     enterscopespace();
+                                                     resetfunctionlocalsoffset();
+                                                     $$ = $2;
+                                                  } 
+funcbody: block {
+                 $$ = currscopeoffset();
+                 exitscopespace();
+                 //slide 6 mathima 10
+                }
+
+funcdef:   funcprefix funcargs funcbody  {
+                                            exitscopespace();
+                                            $$->totalLocals = $3;
+                                            print(scopeoffsetstack);
+                                            int offset = pop(scopeoffsetstack);
+                                            restorecurrscopeoffset(offset);
+                                            $$ = $1;
+                                            SymbolTableEntry *temp = $1;
+
+                                            emit(funcend, lvalue_expr($1), NULL, NULL, 0U, yylineno);
+                                            patchlabel($1->iaddress, nextquadlabel()+1);
+
+
+}                         
+           ;
+
+const:              number                  
+                    | STRING                { $$ = newexpr_conststring(yylval.stringv); }
+                    | KEYWORD_NIL           { $$ = newexpr_nil(yylval.stringv);  }
+                    | KEYWORD_TRUE          { 
+                                              expr *temp = newexpr_bool(yylval.stringv);
+                                              $$ = temp;
+                    
+                                            }
+                    | KEYWORD_FALSE         { $$ = newexpr_bool(yylval.stringv); }
+
+number:             INTEGER                 { $$ = newexpr_constnum(yylval.intv); }
+                    | REAL                  { $$ = newexpr_constnum(yylval.floatv); }
+                    ;
+
+
+idlist:              IDENTIFIER ids  {  
+                                    entry = lookup($1, scope); //lookup in function scope
+                                    if(entry != NULL) {
+                                        if (entry->type == LIBFUNC) {
+                                            yyerror("library function collision");
+                                        }
+                                    } else {  
+                                        entry = insert($<stringv>1,FORMAL,scope,yylineno);     
+                                    }
+                                    $$ = $1;
+
+                                }
+                    | %empty                 {}
+                    ;
+
+ids:                COMMA IDENTIFIER  {  
+                                    printf("scope is %d\n", scope);
+
+                                    entry = lookup(yylval.stringv, scope); //lookup in function scope
+                                    if(entry != NULL) {
+                                        if (entry->type == LIBFUNC) {
+                                            yyerror("library function collision");
+                                        }else if(strcmp($<stringv>1, entry->value.varVal->name) == 0) {
+                                            yyerror("formal collision");
+                                        }
+                                    } else {
+                                        entry = insert($<stringv>2,FORMAL,scope,yylineno);     
+                                    }
+                                } ids
+                    | %empty                 {}
+                    ;
+
+
+ifprefix:           KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS {
+
+                                                            /*
+                                                            if($3->type == boolexpr_e) {
+                                                                $3 = emit_ifboolean($3);
+                                                            } */
+                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,0U,yylineno);
+                                                            $$ = nextquadlabel();
+                                                            emit(jump,NULL,NULL,NULL,0U,yylineno);
+                                                        }
+                                                    ;
+
+elseprefix:         KEYWORD_ELSE {
+                                    $$ = nextquadlabel();
+                                    emit(jump,NULL,NULL,NULL,0,yylineno);
+                                }
+                    ;                                                    
+
+ifstmt:             ifprefix stmt elseprefix stmt {
+                                                    patchlabel($1, $3 + 1);
+                                                    patchlabel($3, nextquadlabel());
+                                                
+                                                }
+                    | ifprefix stmt {  
+                                        $$ = $2;
+                                        patchlabel($1, nextquadlabel());
+                                        
+                                    }
+                    ;
+
+whilestart: KEYWORD_WHILE 
+                            {
+                              $$ = nextquadlabel();  
+                            }
+            ;
+
+whilecond: LEFTPARENTHESIS expr RIGHTPARENTHESIS
+                                                    {
+                                                        emit(if_eq,$2,newexpr_constbool(1),NULL,nextquadlabel()+2,yylineno);
+                                                        $$ = nextquadlabel();
+                                                        emit(jump,NULL,NULL,NULL,0U,yylineno);
+                                                    }
+            ;
+
+whilestmt:          whilestart whilecond stmt 
+                                                {
+                                                    $3 = malloc(sizeof(struct stmt_struct));
+                                                    emit(jump,NULL,NULL,$1,0U,yylineno);
+                                                    patchlabel($2, nextquadlabel());
+                                                    patchlist($3->breaklist, nextquadlabel());
+                                                    patchlist($3->contlist, $1);
+                                                                
+                                                }
+                    ;
+
+N: %empty {$$ = nextquadlabel(); emit(jump,NULL,NULL,NULL,0U,yylineno);}
+M: %empty {$$ = nextquadlabel();}
+
+forprefix:  KEYWORD_FOR LEFTPARENTHESIS elist SEMICOLON M expr SEMICOLON
+            {
+                $$->test = $5;
+                $$->enter = nextquadlabel();
+                emit(if_eq,$6,newexpr_constbool(1),NULL,0U,yylineno);
+            }
+            ;
+forstmt:            forprefix N elist RIGHTPARENTHESIS N stmt N 
+                    {
+                        // $6 = malloc(sizeof(stmt_struct));
+                        patchlabel($1->enter, $5+1); //true jump
+                        patchlabel($2, nextquadlabel()); // false jump
+                        patchlabel($5, $1->test); // loop jump
+                        patchlabel($7, $2+1); // closure jump
+                        patchlist($6->breaklist, nextquadlabel());
+                        patchlist($6->contlist, $2+1);
+                    }
+                    ;
+
+returnstmt:         KEYWORD_RETURN expr  SEMICOLON {
+                                                    if(scope == 0) yyerror("Use of 'return' while not in a function\n");
+                                                    emit(ret, NULL, NULL, $2, 0, yylineno);
+                                                    emit(jump, NULL, NULL, NULL, 0, yylineno);//to discuss: cant patch label because there is nowhere 
+                                                                                            //to save the index - maybe change grammar rules
+                                                  
+                                                    }
+                    | KEYWORD_RETURN SEMICOLON {
+                                                if(scope == 0) yyerror("Use of 'return' while not in a fucntion\n");
+                                                emit(ret, NULL, NULL, NULL, 0, yylineno);
+                                                emit(jump, NULL, NULL, NULL, 0, yylineno);//to discuss: cant patch label because there is nowhere 
+                                                                                        //to save the index - maybe change grammar rules
+
+                                                }
+
+%%
+int yyerror (char* yaccProvidedMessage) {
+    fprintf(stderr, "%s: at line %d, before token: %s\n",yaccProvidedMessage,yylineno,yytext);
+    fprintf(stderr,"INPUT NOT VALID\n");
+    return 1;
+}
+
+//**************************************************************
+
+int main(int argc,char **argv){
+    //yydebug = 1;
+    symTable = SymTable_new();
+    initialize_scope_links();
+    insert_libfuncs();
+    char *libfuncs[12] = {"print", "input", "objectmemberkeys", "objecttotalmembers", "objectcopy", "totalarguments", "argument", "typeof", "strtonum", "sqrt", "cos", "sin"};
     
-    case assignexpr_e:
-        if(expr->sym->value.varVal)
-        {
-            fprintf(f, "%-8s", expr->sym->value.varVal->name);
-        }
-        else
-        {
-            fprintf(f, "%-8s", "var");
-        }
-        break;
-    case var_e:
-        if (expr->sym && expr->sym->value.varVal)
-        {
-            fprintf(f, "%-8s", expr->sym->value.varVal->name);
-        }
-        else
-        {
-            fprintf(f, "%-8s", "var");
-        }
-        break;
-    default:
-        fprintf(f, "%-8s", expr->strConst);
-        break;
+    scopeoffsetstack = malloc(sizeof(Stack));
+    if (scopeoffsetstack == NULL) {
+        fprintf(stderr, "Failed to allocate memory for scopeoffsetstack\n");
+        return 1;
     }
-}
+    initialize(scopeoffsetstack);
 
-void print_quads()
-{
-    unsigned int i = 0U;
-    FILE *f = fopen("quads.txt", "w");
-    fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "QUAD", "OP", "RESULT", "ARG1", "ARG2", "LABEL", "LINE");
-
-    while (i < currQuad)
-    {
-        if (quads[i].op == assign || quads[i].op == uminus || quads[i].op == not )
-        {
-            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].result, f);
-            print_expression(quads[i].arg1, f);
-            //print_expression(quads[i].arg2, f);
-             fprintf(f, "%-8s", "");
-            fprintf(f, "%-8d%-8d", quads[i].label, quads[i].line);
-            fprintf(f, "\n");
+    if(argc > 1){
+        if(!(yyin = fopen(argv[1],"r"))){
+            fprintf(stderr,"Cannot open file\n");
+            return 1;
         }
-        else if (quads[i].op == jump )
-        {
-            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
-        }
-
-        else if(quads[i].op == ret){
-            
-            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].result, f);
-            fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
-        }
-        else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend  || quads[i].op == tablecreate)
-
-        {
-            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].arg1, f);
-            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
-        }
-        else if (quads[i].op == if_eq || quads[i].op == if_greater || quads[i].op == if_greatereq || quads[i].op == if_less || quads[i].op == if_lesseq || quads[i].op == if_noteq || quads[i].op == and || quads[i].op == or)
-        {
-            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            fprintf(f,"%-8s", "");
-            print_expression(quads[i].arg1, f);
-            print_expression(quads[i].arg2, f);
-            fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
-            
-        }
-        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem || quads[i].op == tablesetelem)
-        {
-            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].result, f);
-            print_expression(quads[i].arg1, f);
-            print_expression(quads[i].arg2, f);
-            fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
-        }
-        else if (quads[i].op == param || quads[i].op == call)
-        {
-            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].arg1, f);
-            fprintf(f, "%-8s%-8s%-8d\n", "", "", quads[i].line);
-        }
-        else if (quads[i].op == getretval ){
-            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].result, f);
-            fprintf(f, "%-8s%-8s%-8d\n", "", "", quads[i].line);
-        }
-        i++;
+    }else{
+        yyin = stdin;
     }
-}
+    yyparse();
 
-expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
-{
-    assert(arg1);
-    assert(arg2);
+    printf("PRINTING SYMBOL TABLE \n");
+    print_scope_links();
 
-    check_arith(arg1, (const char *)"Manage_operations");
-    check_arith(arg2, (const char *)"Manage_operations");
+    printf("PRINTING QUADS\n");
+    print_quads();
 
-    expr *result = NULL;
-    SymbolTableEntry *temp;
-
-    // if (arg1->sym && arg1->sym->value.varVal && arg1->sym->value.varVal->name)
-    // {
-    //     printf("arg1: %s\n", arg1->sym->value.varVal->name);
-    // }
-    // else
-    // {
-    //     printf("arg1: %s\n", "NULL");
-    // }
-
-    // if (arg2->sym && arg2->sym->value.varVal && arg2->sym->value.varVal->name)
-    // {
-    //     printf("arg2: %s\n", arg2->sym->value.varVal->name);
-    // }
-    // else
-    // {
-    //     printf("arg2: %s\n", "NULL");
-    // }
-
-    if (arg1->sym && arg1->sym->type < 2 && arg1->sym->value.varVal->name[0] == '_') // in case of tmp
-    {
-        temp = arg1->sym;
-    }
-    else if (arg2->sym && arg2->sym->type < 2 && arg2->sym->value.varVal->name[0] == '_')
-    {
-        temp = arg2->sym;
-    }
-    else
-    {
-        temp = newtemp(); // create new tmp variable
-    }
-
-    result = lvalue_expr(temp);
-    result->sym = temp;
-
-    switch (op)
-    {
-    case add:
-        emit(add, arg1, arg2, result, 0, yylineno);
-        break;
-    case sub:
-        emit(sub, arg1, arg2, result, 0, yylineno);
-        break;
-    case mul:
-        emit(mul, arg1, arg2, result, 0, yylineno);
-        break;
-    case divv:
-        emit(divv, arg1, arg2, result, 0, yylineno);
-        break;
-    case mod:
-        emit(mod, arg1, arg2, result, 0, yylineno);
-        break;
-    default:
-        printf("Invalid operation\n");
-        exit(-1);
-    }
-    return result;
-}
-
-expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
-{
-    assert(arg1);
-    assert(arg2);
-
-    expr *tmp = newexpr(boolexpr_e);
-    // tmp->sym = newtemp();
-
-    // ta lines prepei na diorthothoun gia na exoun to currQuad
-    switch (op[0])
-    {
-    case '=':
-        tmp->type = boolexpr_e;
-        emit(if_eq, arg1, arg2, NULL, 0, yylineno);
-        emit(jump, NULL, NULL, NULL, 0, yylineno);
-        break;
-    case '!':
-        emit(if_noteq, arg1, arg2, NULL, 0, yylineno);
-        emit(jump, NULL, NULL, NULL, 0, yylineno);
-        break;
-    case '<':
-        tmp->type = boolexpr_e;
-        if (strcmp(op, "<") == 0)
-        {
-            emit(if_less, arg1, arg2, NULL, 0, yylineno);
-            emit(jump, NULL, NULL, NULL, 0, yylineno);
-        }
-        else if (strcmp(op, "<=") == 0)
-        {
-            emit(if_lesseq, arg1, arg2, NULL, 0, yylineno);
-            emit(jump, NULL, NULL, NULL, 0, yylineno);
-        }
-        break;
-    case '>':
-        tmp->type = boolexpr_e;
-        if (strcmp(op, ">") == 0)
-        {
-            emit(if_greater, arg1, arg2, NULL, 0, yylineno);
-            emit(jump, NULL, NULL, NULL, 0, yylineno);
-        }
-        else if (strcmp(op, ">=") == 0)
-        {
-            emit(if_greatereq, arg1, arg2, NULL, 0, yylineno);
-            emit(jump, NULL, NULL, NULL, 0, yylineno);
-        }
-        break;
-    default:
-        printf("Invalid comparison operator\n");
-        exit(-1);
-    }
-    return tmp;
-}
-
-expr *make_call(expr *lv, expr *reversed_elist){
-    expr *func = emit_iftableitem(lv);
-    while(reversed_elist){
-        emit(param, reversed_elist, NULL, NULL, 0U, yylineno);
-        reversed_elist = reversed_elist->next;  
-    }
-    emit(call, func, NULL, NULL, 0U, yylineno);
-    expr *result = newexpr(var_e);
-    result->sym = newtemp();
-    emit(getretval, NULL, NULL, result, 0U, yylineno);
-    return result;
-}
-
-reversed_list *createExprNode(expr *item){
-    reversed_list *node = malloc(sizeof(reversed_list));
-    node->item = item;
-    node->next = NULL;
-    return node;
-}
-void addToExprList(reversed_list **head, expr *item){
-    reversed_list *node = createExprNode(item);
-    node->next = *head;
-    *head = node;
-}
-
-reversed_list *get_last(reversed_list *head)
-{
-    if (head == NULL)
-    {
-        return NULL;
-    }
-    while (head->next != NULL)
-    {
-        head = head->next;
-    }
-    return head;
-}
-
-
-void patchlist(int list, int label)
-{
-    while (list != 0 && list < currQuad)
-    {
-        int next = quads[list].label;
-        quads[list].label = label;
-        list = next;
-    }
-}
-
-
-expr *newexpr_constbool(char *val)
-{
-    expr *temp = newexpr(constbool_e);
-    temp->sym = NULL;
-    if (strcmp(val, "true") == 0)
-    {
-        temp->boolConst = "true";
-    }
-    else if (strcmp(val, "false") == 0)
-        temp->boolConst = "false";
-    else
-        assert(0);
-    return temp;
+    SymTable_free(symTable);
+    free_scope_links();
+    return 0;
 }
