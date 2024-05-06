@@ -562,9 +562,10 @@ ids:                COMMA IDENTIFIER  {
 
 ifprefix:           KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS {
 
+                                                            /*
                                                             if($3->type == boolexpr_e) {
                                                                 $3 = emit_ifboolean($3);
-                                                            }
+                                                            } */
                                                             emit(if_eq,$3,newexpr_constbool(1),NULL,0U,yylineno);
                                                             $$ = nextquadlabel();
                                                             emit(jump,NULL,NULL,NULL,0U,yylineno);
@@ -580,11 +581,12 @@ elseprefix:         KEYWORD_ELSE {
 ifstmt:             ifprefix stmt elseprefix stmt {
                                                     patchlabel($1, $3 + 1);
                                                     patchlabel($3, nextquadlabel());
-                                                    $$ = $5;
+                                                
                                                 }
-                    | ifprefix stmt {   
+                    | ifprefix stmt {  
                                         $$ = $2;
                                         patchlabel($1, nextquadlabel());
+                                        
                                     }
                     ;
 
