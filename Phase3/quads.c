@@ -706,7 +706,7 @@ void patchlist(int list, int label){
     }
 }
 
-
+//fixed
 stmt_struct* make_stmt () { 
     stmt_struct *s = malloc(sizeof(stmt_struct));
     if (s == NULL) {

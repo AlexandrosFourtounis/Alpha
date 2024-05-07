@@ -612,7 +612,7 @@ ifstmt:             ifprefix stmt elseprefix stmt { //prepei $3 +1 gia na pigain
                                                     stmt_struct* t = make_stmt();
                                                     t->breaklist = ($2->breaklist && $4->breaklist) ? mergelist($2->breaklist, $4->breaklist) : NULL;
                                                     t->contlist = ($2->contlist && $4->contlist) ? mergelist($2->contlist, $4->contlist) : NULL;
-                                                    printf("breaklist %d\n", t->breaklist);
+                                                    printf("breaklist %d\n", t->breaklist); //debug
                                                     }
                                                 
                     | ifprefix stmt {  

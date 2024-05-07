@@ -158,7 +158,7 @@ typedef struct stmt_struct{
     createExprNode(expr *item);
 void addToExprList(reversed_list **head, expr *item);
 reversed_list *get_last(reversed_list *head);
-int mergelist (int l1, int l2);
+int mergelist (int l1, int l2); //added
 void patchlist(int list, int label);
 stmt_struct* make_stmt ();
 int newlist(int i);
