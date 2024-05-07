@@ -59,13 +59,13 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt 
+%type <stringv> program parsing  objectdef obj indexed indexedelem  number whilestmt forstmt 
 %type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  returnstmt
 %type <unsignedv> funcbody block blockk whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
-%type <stmt_structt> stmt
+%type <stmt_structt> stmt ifstmt stmts
 
 %right '='
 %left KEYWORD_OR
@@ -88,18 +88,40 @@ parsing:            stmt parsing
                     | %empty            {} 
                     ;
 
-stmt:               expr SEMICOLON  {printf("reset\n");resettemp();}
-                    | ifstmt        {resettemp();}
-                    | whilestmt     {resettemp();}
-                    | forstmt       {resettemp();}
-                    | returnstmt    {resettemp();}
-                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");resettemp();}
-                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");resettemp();}
+stmt:               expr SEMICOLON  {//printf("reset\n");
+                                  $$ = make_stmt();
+                                     resettemp();}
+                    | ifstmt        {$$=$1; resettemp();}
+                    | whilestmt     {$$ = make_stmt();resettemp();}
+                    | forstmt       {$$ = make_stmt();resettemp();}
+                    | returnstmt    {$$ = make_stmt(); resettemp();}
+                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");
+
+                                                stmt_struct* t = make_stmt();
+                                                emit(jump, NULL, NULL, NULL, 0, yylineno);
+                                                t->breaklist = newlist(nextquadlabel());
+                                                resettemp();}
+                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");
+                                                    
+                                                stmt_struct* t = make_stmt();
+                                                emit(jump, NULL, NULL, NULL, 0, yylineno);
+                                                t->breaklist = newlist(nextquadlabel());
+                                                resettemp();}
+                                                
                     | block { $$ = $1;   resettemp();}
                     | funcdef { resettemp();}
-                    | SEMICOLON {}
+                    | SEMICOLON {$$ = make_stmt();}
                     | error SEMICOLON   { yyerrok; }
                     ;
+
+stmts:              stmts stmt{ 
+                        $$ = make_stmt();
+                        $$->breaklist = mergelist($1->breaklist, $2->breaklist);
+                        $$->contlist = mergelist($1->contlist, $2->contlist);
+                    }
+                    | stmt {$$ = $1;}
+                    ;
+
 
 expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr '*' expr   {$$ = Manage_operations($1,mul,$3);}   
@@ -562,11 +584,14 @@ ids:                COMMA IDENTIFIER  {
 
 ifprefix:           KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS {
 
-                                                            /*
+                                                            
                                                             if($3->type == boolexpr_e) {
                                                                 $3 = emit_ifboolean($3);
-                                                            } */
-                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,0U,yylineno);
+                                                            } 
+
+                                                            printf("cq %d\n", currQuad);
+                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,nextquadlabel()+2,yylineno);
+                                                            printf("cq %d\n", currQuad);
                                                             $$ = nextquadlabel();
                                                             emit(jump,NULL,NULL,NULL,0U,yylineno);
                                                         }
@@ -578,11 +603,18 @@ elseprefix:         KEYWORD_ELSE {
                                 }
                     ;                                                    
 
-ifstmt:             ifprefix stmt elseprefix stmt {
+ifstmt:             ifprefix stmt elseprefix stmt { //prepei $3 +1 gia na pigainei meta to else alla to jump lathos
+
                                                     patchlabel($1, $3 + 1);
                                                     patchlabel($3, nextquadlabel());
+                                                    $2 = malloc(sizeof(struct stmt_struct));
+                                                    $4 = malloc(sizeof(struct stmt_struct));
+                                                    stmt_struct* t = make_stmt();
+                                                    t->breaklist = ($2->breaklist && $4->breaklist) ? mergelist($2->breaklist, $4->breaklist) : NULL;
+                                                    t->contlist = ($2->contlist && $4->contlist) ? mergelist($2->contlist, $4->contlist) : NULL;
+                                                    printf("breaklist %d\n", t->breaklist);
+                                                    }
                                                 
-                                                }
                     | ifprefix stmt {  
                                         $$ = $2;
                                         patchlabel($1, nextquadlabel());

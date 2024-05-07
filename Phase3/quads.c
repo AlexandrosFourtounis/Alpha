@@ -680,21 +680,44 @@ reversed_list *get_last(reversed_list *head)
     return head;
 }
 
-
-void patchlist(int list, int label)
+int mergelist(int l1, int l2)
 {
-    while (list != 0 && list < currQuad)
+    if (!l1)
+        return l2;
+    else if (!l2)
+        return l1;
+    else
+    {
+        int i = l1;
+        while (quads[i].label)
+            i = quads[i].label;
+        quads[i].label = l2;
+        return l1;
+    }
+}
+
+void patchlist(int list, int label){
+    while(list) {
     {
         int next = quads[list].label;
         quads[list].label = label;
         list = next;
     }
+    }
 }
 
-/*
-void make_stmt (stmt_t * s)
-    { s->breakList = s->contList = 0; }
-*/
+
+stmt_struct* make_stmt () { 
+    stmt_struct *s = malloc(sizeof(stmt_struct));
+    if (s == NULL) {
+        fprintf(stderr, "Failed to allocate memory for stmt_struct\n");
+        exit(EXIT_FAILURE);
+    }
+    s->breaklist = 0;
+    s->contlist = 0;
+    return s;
+}
+
 
 int newlist(int i){
     quads[i].label = 0; 
