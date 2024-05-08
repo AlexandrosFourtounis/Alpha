@@ -88,6 +88,14 @@ parsing:            stmt parsing
                     | %empty            {} 
                     ;
 
+stmts:              stmts stmt{ 
+                        $$ = make_stmt();
+                        $$->breaklist = mergelist($1->breaklist, $2->breaklist);
+                        $$->contlist = mergelist($1->contlist, $2->contlist);
+                    }
+                    | stmt {$$ = $1;}
+                    ;
+
 stmt:               expr SEMICOLON  {//printf("reset\n");
                                   $$ = make_stmt();
                                      resettemp();}
@@ -97,9 +105,9 @@ stmt:               expr SEMICOLON  {//printf("reset\n");
                     | returnstmt    {$$ = make_stmt(); resettemp();}
                     | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");
 
-                                                stmt_struct* t = make_stmt();
+                                                $$ = make_stmt();
+                                                $$->breaklist = newlist(nextquadlabel());
                                                 emit(jump, NULL, NULL, NULL, 0, yylineno);
-                                                t->breaklist = newlist(nextquadlabel());
                                                 resettemp();}
                     | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");
                                                     
@@ -112,14 +120,6 @@ stmt:               expr SEMICOLON  {//printf("reset\n");
                     | funcdef { resettemp();}
                     | SEMICOLON {$$ = make_stmt();}
                     | error SEMICOLON   { yyerrok; }
-                    ;
-
-stmts:              stmts stmt{ 
-                        $$ = make_stmt();
-                        $$->breaklist = mergelist($1->breaklist, $2->breaklist);
-                        $$->contlist = mergelist($1->contlist, $2->contlist);
-                    }
-                    | stmt {$$ = $1;}
                     ;
 
 
@@ -583,17 +583,12 @@ ids:                COMMA IDENTIFIER  {
 
 
 ifprefix:           KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS {
-
-                                                            
-                                                            if($3->type == boolexpr_e) {
-                                                                $3 = emit_ifboolean($3);
-                                                            } 
-
                                                             printf("cq %d\n", currQuad);
                                                             emit(if_eq,$3,newexpr_constbool(1),NULL,nextquadlabel()+2,yylineno);
                                                             printf("cq %d\n", currQuad);
                                                             $$ = nextquadlabel();
                                                             emit(jump,NULL,NULL,NULL,0U,yylineno);
+                                                            
                                                         }
                                                     ;
 
@@ -604,7 +599,7 @@ elseprefix:         KEYWORD_ELSE {
                     ;                                                    
 
 ifstmt:             ifprefix stmt elseprefix stmt { //prepei $3 +1 gia na pigainei meta to else alla to jump lathos
-
+                                                    
                                                     patchlabel($1, $3 + 1);
                                                     patchlabel($3, nextquadlabel());
                                                     $2 = malloc(sizeof(struct stmt_struct));
@@ -612,13 +607,14 @@ ifstmt:             ifprefix stmt elseprefix stmt { //prepei $3 +1 gia na pigain
                                                     stmt_struct* t = make_stmt();
                                                     t->breaklist = ($2->breaklist && $4->breaklist) ? mergelist($2->breaklist, $4->breaklist) : NULL;
                                                     t->contlist = ($2->contlist && $4->contlist) ? mergelist($2->contlist, $4->contlist) : NULL;
-                                                    printf("breaklist %d\n", t->breaklist); //debug
+                                                    printf("breaklist %d\n", t->breaklist);
+                                                    $$ = t;
                                                     }
                                                 
                     | ifprefix stmt {  
-                                        $$ = $2;
-                                        patchlabel($1, nextquadlabel());
                                         
+                                        patchlabel($1, nextquadlabel());
+                                        $$ = $2;
                                     }
                     ;
 
