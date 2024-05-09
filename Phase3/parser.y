@@ -61,11 +61,11 @@
 
 %type <stringv> program parsing  objectdef obj indexed indexedelem  number whilestmt forstmt 
 %type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  returnstmt
-%type <unsignedv> funcbody block blockk whilestart whilecond N M ifprefix elseprefix
+%type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
-%type <stmt_structt> stmt ifstmt stmts
+%type <stmt_structt> stmt ifstmt stmts block blockk loopstmt
 
 %right '='
 %left KEYWORD_OR
@@ -84,7 +84,7 @@
 
 program:            parsing      
                     ;
-parsing:            stmt parsing 
+parsing:            stmt parsing { $$ = $1; }
                     | %empty            {} 
                     ;
 
@@ -99,24 +99,25 @@ stmts:              stmts stmt{
 stmt:               expr SEMICOLON  {//printf("reset\n");
                                   $$ = make_stmt();
                                      resettemp();}
-                    | ifstmt        {$$=$1; resettemp();}
+                    | ifstmt        { resettemp(); $$=$1;}
                     | whilestmt     {$$ = make_stmt();resettemp();}
                     | forstmt       {$$ = make_stmt();resettemp();}
                     | returnstmt    {$$ = make_stmt(); resettemp();}
                     | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");
-
-                                                $$ = make_stmt();
-                                                $$->breaklist = newlist(nextquadlabel());
+                                                struct stmt_struct* t = make_stmt();
+                                                t->breaklist = newlist(nextquadlabel()-1);
                                                 emit(jump, NULL, NULL, NULL, 0, yylineno);
+                                                $$ = t;
                                                 resettemp();}
                     | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");
                                                     
                                                 stmt_struct* t = make_stmt();
                                                 emit(jump, NULL, NULL, NULL, 0, yylineno);
-                                                t->breaklist = newlist(nextquadlabel());
+                                                t->breaklist = newlist(nextquadlabel()-1);
+                                                $$ = t;
                                                 resettemp();}
                                                 
-                    | block { $$ = $1;   resettemp();}
+                    | block { $$ = $1;   resettemp(); printf("enter stmt");}
                     | funcdef { resettemp();}
                     | SEMICOLON {$$ = make_stmt();}
                     | error SEMICOLON   { yyerrok; }
@@ -436,12 +437,22 @@ indexed:            indexedelem
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
 
-block:              LEFTBRACE  { scope++; } blockk  RIGHTBRACE { scope--; }
-                    ;
+block:              LEFTBRACE { scope++; } blockk RIGHTBRACE { 
+                                                                scope--; 
+                                                                $$ = $3; 
+                                                                printf("enter block");
+                                                            }
+                                                            ;
 
-blockk:              stmt blockk
-                    | %empty            {}
-                    ;
+blockk:             stmts blockk { 
+                                    stmt_struct* t = make_stmt();
+                                    $$ = t; 
+                                }
+                    | %empty { 
+                                stmt_struct* t = make_stmt();
+                                $$ = t; 
+                            }
+                            ;
 
 funcname: IDENTIFIER {
                         
@@ -598,18 +609,17 @@ elseprefix:         KEYWORD_ELSE {
                                 }
                     ;                                                    
 
-ifstmt:             ifprefix stmt elseprefix stmt { //prepei $3 +1 gia na pigainei meta to else alla to jump lathos
-                                                    
+ifstmt:             ifprefix stmt elseprefix stmt {
                                                     patchlabel($1, $3 + 1);
                                                     patchlabel($3, nextquadlabel());
                                                     $2 = malloc(sizeof(struct stmt_struct));
                                                     $4 = malloc(sizeof(struct stmt_struct));
                                                     stmt_struct* t = make_stmt();
-                                                    t->breaklist = ($2->breaklist && $4->breaklist) ? mergelist($2->breaklist, $4->breaklist) : NULL;
-                                                    t->contlist = ($2->contlist && $4->contlist) ? mergelist($2->contlist, $4->contlist) : NULL;
+                                                    t->breaklist = $2->breaklist ? ($4->breaklist ? mergelist($2->breaklist, $4->breaklist) : $2->breaklist) : $4->breaklist;
+                                                    t->contlist = $2->contlist ? ($4->contlist ? mergelist($2->contlist, $4->contlist) : $2->contlist) : $4->contlist;
                                                     printf("breaklist %d\n", t->breaklist);
                                                     $$ = t;
-                                                    }
+                                                }
                                                 
                     | ifprefix stmt {  
                                         
@@ -617,6 +627,22 @@ ifstmt:             ifprefix stmt elseprefix stmt { //prepei $3 +1 gia na pigain
                                         $$ = $2;
                                     }
                     ;
+
+loopstart:              {
+                            ++loopcounter;
+                        }
+            ;
+
+loopend:                {
+                            --loopcounter;
+                        }
+            ;            
+
+loopstmt:   loopstart stmt loopend  {
+                                        $$ = $2;
+                                    }
+            ;                        
+
 
 whilestart: KEYWORD_WHILE 
                             {
