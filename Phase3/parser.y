@@ -65,7 +65,7 @@
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
-%type <stmt_structt> stmt ifstmt stmts block blockk loopstmt
+%type <stmt_structt> stmt ifstmt stmts block blockk loopstmt loopstart loopend
 
 %right '='
 %left KEYWORD_OR
@@ -135,7 +135,26 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr LESS_EQUAL expr   {$$ = Manage_comparisonopers($1, "<=",$3);}
                     | expr EQUALS expr  {$$ = Manage_comparisonopers($1, "==",$3);}      
                     | expr NOT_EQUAL expr {$$ = Manage_comparisonopers($1, "!=",$3);}
-                    | expr KEYWORD_AND expr 
+                    | expr KEYWORD_AND {
+                                            if($1->type != boolexpr_e){
+                                                expr *temp = newexpr(boolexpr_e);
+                                                temp->sym = newtemp();
+                                                temp->truelist =nextquadlabel();
+                                                temp->falselist = nextquadlabel()+1;
+                                                emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
+                                                emit(jump, NULL, NULL, NULL, 0, yylineno);
+                                                 printf("ok");
+                                            }
+                                            
+                    } M expr { 
+                                                $$ = newexpr(boolexpr_e);
+                                                //$$->sym = newtemp();
+                                                $$->type = boolexpr_e;
+                                                patchlist($1->falselist, $4);
+                                                $$->truelist = mergelist($1->truelist, $5->truelist);
+                                                $$->falselist = $5->falselist;
+                                                
+                                            }
                     | expr KEYWORD_OR expr   
                     | assignexpr { $$ = $1;}        
                     | term  { $$ = emit_iftableitem($1);}
@@ -439,18 +458,18 @@ indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE
 
 block:              LEFTBRACE { scope++; } blockk RIGHTBRACE { 
                                                                 scope--; 
-                                                                $$ = $3; 
+                                                                $$ = make_stmt(); 
                                                                 printf("enter block");
                                                             }
                                                             ;
 
 blockk:             stmts blockk { 
-                                    stmt_struct* t = make_stmt();
-                                    $$ = t; 
+                                    //stmt_struct* t = make_stmt();
+                                    $$ = $1; 
                                 }
                     | %empty { 
-                                stmt_struct* t = make_stmt();
-                                $$ = t; 
+                                //stmt_struct* t = make_stmt();
+                                //$$ = t; 
                             }
                             ;
 
@@ -628,20 +647,11 @@ ifstmt:             ifprefix stmt elseprefix stmt {
                                     }
                     ;
 
-loopstart:              {
-                            ++loopcounter;
-                        }
-            ;
+loopstart:%empty  {++loopcounter;}
 
-loopend:                {
-                            --loopcounter;
-                        }
-            ;            
+loopend:%empty  {--loopcounter;}
 
-loopstmt:   loopstart stmt loopend  {
-                                        $$ = $2;
-                                    }
-            ;                        
+loopstmt: loopstart stmt loopend { $$ =$2;}                    
 
 
 whilestart: KEYWORD_WHILE 

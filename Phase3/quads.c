@@ -382,8 +382,9 @@ void print_expression(expr *expr, FILE *f)
     switch (expr->type)
     {
     case boolexpr_e:
-        if (strcmp(expr->boolConst, "true") == 0)
-            fprintf(f, "%-8s", expr->boolConst);
+        expr->type = constbool_e;
+      if(expr->boolConst)
+            fprintf(f, "%-8s", "true");
         else
             fprintf(f, "%-8s", "false");
         break;
