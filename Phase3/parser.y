@@ -97,7 +97,7 @@ stmts:              stmts stmt{
                     ;
 
 stmt:               expr SEMICOLON  {//printf("reset\n");
-                                  $$ = make_stmt();
+                                  $$ = make_stmt(); //emit_ifboolean($1);
                                      resettemp();}
                     | ifstmt        { resettemp(); $$=$1;}
                     | whilestmt     {$$ = make_stmt();resettemp();}
@@ -114,13 +114,12 @@ stmt:               expr SEMICOLON  {//printf("reset\n");
                                                 stmt_struct* t = make_stmt();
                                                 emit(jump, NULL, NULL, NULL, 0, yylineno);
                                                 t->contlist = newlist(nextquadlabel()-1);
-                                                emit(jump, NULL, NULL, NULL, 0, yylineno);
                                                 $$ = t;
                                                 resettemp();}
                                                 
                     | block { $$ = $1;   resettemp(); printf("enter stmt");}
                     | funcdef { resettemp();}
-                    | SEMICOLON {$$ = make_stmt();}
+                    | SEMICOLON {$$ = make_stmt(); resettemp();}
                     | error SEMICOLON   { yyerrok; }
                     ;
 
@@ -137,25 +136,29 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr EQUALS expr  {$$ = Manage_comparisonopers($1, "==",$3);}      
                     | expr NOT_EQUAL expr {$$ = Manage_comparisonopers($1, "!=",$3);}
                     | expr KEYWORD_AND {
-                                            if($1->type != boolexpr_e){
-                                                expr *temp = newexpr(boolexpr_e);
-                                                temp->sym = newtemp();
-                                                temp->truelist =nextquadlabel();
-                                                temp->falselist = nextquadlabel()+1;
-                                                emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
-                                                emit(jump, NULL, NULL, NULL, 0, yylineno);
-                                                 printf("ok");
-                                            }
-                                            
+                        if($1->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
                     } M expr { 
-                                                $$ = newexpr(boolexpr_e);
-                                                //$$->sym = newtemp();
-                                                $$->type = boolexpr_e;
-                                                patchlist($1->falselist, $4);
-                                                $$->truelist = mergelist($1->truelist, $5->truelist);
-                                                $$->falselist = $5->falselist;
-                                                
-                                            }
+                        if($5->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
+                        $$ = newexpr(boolexpr_e);
+                        $$->type = boolexpr_e;
+                        patchlist($1->falselist, $4);
+                        $$->truelist = mergelist($1->truelist, $5->truelist);
+                        $$->falselist = $5->falselist;
+                    }
                     | expr KEYWORD_OR expr   
                     | assignexpr { $$ = $1;}        
                     | term  { $$ = emit_iftableitem($1);}
@@ -567,13 +570,12 @@ funcdef:   funcprefix funcargs funcbody  {
 
 const:              number                  
                     | STRING                { $$ = newexpr_conststring(yylval.stringv); }
-                    | KEYWORD_NIL           { $$ = newexpr_nil(yylval.stringv);  }
+                    | KEYWORD_NIL           {$$ = newexpr_nil();}
                     | KEYWORD_TRUE          { 
-                                              expr *temp = newexpr_bool(yylval.stringv);
-                                              $$ = temp;
+                                              $$ = newexpr_constbool(1);
                     
                                             }
-                    | KEYWORD_FALSE         { $$ = newexpr_bool(yylval.stringv); }
+                    | KEYWORD_FALSE         { $$ = newexpr_constbool(0); }
 
 number:             INTEGER                 { $$ = newexpr_constnum(yylval.intv); }
                     | REAL                  { $$ = newexpr_constnum(yylval.floatv); }

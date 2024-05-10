@@ -37,7 +37,9 @@ void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, 
     {
         expand();
     }
-    quad *p = quads + currQuad++;
+    quad *p     = malloc(sizeof(quad));
+    assert(p);
+    p = quads + currQuad++;
     p->op = op;
     p->arg1 = arg1;
     p->arg2 = arg2;
@@ -132,6 +134,8 @@ expr *newexpr(expr_t t)
     expr *e = (expr *)malloc(sizeof(expr));
     memset(e, 0, sizeof(expr));
     e->type = t;
+    e->truelist = 0;
+    e->falselist = 0;
     return e;
 }
 
@@ -258,10 +262,10 @@ expr *newexpr_bool(char *s)
     return e;
 }
 
-expr *newexpr_nil(char *s)
+expr *newexpr_nil()
 {
     expr *e = newexpr(nil_e);
-    e->strConst = strdup(s);
+    //e->strConst = strdup(s);
     e->sym = NULL;
     return e;
 }
@@ -373,17 +377,21 @@ void print_expression(expr *expr, FILE *f)
         fprintf(f, "%-16s", "");
         return;
     }
-    else if (expr->type == nil_e)
+    if (expr == NULL) {
+        fprintf(f, "NULL expression\n");
+        return;
+    }
+    printf("expr: %p\n", (void *)expr);
+     if (expr != NULL && expr->type == nil_e)
     {
-        fprintf(f, "%-16s", "NIL");
+        fprintf(f, "%-8s", "NIL");
         return;
     }
 
     switch (expr->type)
     {
     case boolexpr_e:
-        expr->type = constbool_e;
-      if(expr->boolConst)
+        if (expr->boolConst)
             fprintf(f, "%-8s", "true");
         else
             fprintf(f, "%-8s", "false");
@@ -724,3 +732,66 @@ int newlist(int i){
     quads[i].label = 0; 
     return i; 
 }
+/*
+int true_test(expr* arg){
+    //puts("I AM TRUE TESTING");
+    if(arg == NULL){
+        //puts("I AM HERE");
+        return 0;
+    }
+    else if(arg->type == boolexpr_e) {
+        //puts("I AM HERE");
+        return 0;
+    }
+    
+    
+    //arg->type = boolexpr_e;
+    //if(arg->type != constbool_e){
+        arg->type = boolexpr_e;
+    //}
+    
+    emit(if_eq, arg, newexpr_constbool(1),NULL, 0, currQuad);
+    emit(jump, NULL, NULL, NULL, 0, currQuad);
+    // printf("%d\n", nextquad()-2);
+    // printf("%d\n", nextquad()-1);
+    arg->truelist = newlist(nextquadlabel()-2);
+    arg->falselist = newlist(nextquadlabel()-1);
+    return 1;
+}
+
+expr* Manage_boolexpr(expr* arg1,iopcode op, expr* arg2, unsigned int Mlabel){
+    //fprintf(yacc_out,"boolexpr -> expr %s expr\n", op);
+    expr* tmp_expr=newexpr(boolexpr_e);
+    //tmp_expr->sym = NULL;
+    //tmp_expr->sym = new_temp(); // create new tmp variable
+    // expr* tmp_expr = lvalue_to_expr(tmp); // make it an lvalue expr
+    // tmp_expr->type = boolexpr_e;
+    
+    switch (op){
+        case or:
+        //emit(or, tmp_expr, arg1, arg2, -1, currQuad);
+        //if(true_test(arg1)) Mlabel += 2;
+        //true_test(arg2);
+        tmp_expr->type = boolexpr_e;
+        patchlist(arg1->falselist, Mlabel);
+        tmp_expr->truelist = mergelist(arg1->truelist, arg2->truelist);
+        tmp_expr->falselist = arg2->falselist;
+        break;
+    case and:
+        //emit(and, tmp_expr, arg1, arg2, -1, currQuad);
+        //if(true_test(arg1)) Mlabel += 2;
+        //true_test(arg2);
+        tmp_expr->type = boolexpr_e;
+        //printf("Mlabel = %d\n", Mlabel);
+        patchlist(arg1->truelist, Mlabel);
+        tmp_expr->truelist = arg2->truelist;
+        tmp_expr->falselist = mergelist(arg1->falselist, arg2->falselist);
+        break;
+    default:
+        printf("Invalid operator\n");
+        return NULL;
+        break;
+    }
+    
+    return tmp_expr;
+} */
