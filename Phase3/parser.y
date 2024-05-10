@@ -113,7 +113,8 @@ stmt:               expr SEMICOLON  {//printf("reset\n");
                                                     
                                                 stmt_struct* t = make_stmt();
                                                 emit(jump, NULL, NULL, NULL, 0, yylineno);
-                                                t->breaklist = newlist(nextquadlabel()-1);
+                                                t->contlist = newlist(nextquadlabel()-1);
+                                                emit(jump, NULL, NULL, NULL, 0, yylineno);
                                                 $$ = t;
                                                 resettemp();}
                                                 
