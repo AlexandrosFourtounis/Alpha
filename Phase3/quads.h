@@ -105,7 +105,7 @@ char *newtempname();
 const char* opcode_to_string(iopcode opcode);
 expr *newexpr(expr_t t);
 expr* emit_iftableitem(expr* e);
-expr *emit_ifboolean(expr *e);
+expr *backpatching(expr *e);
 expr* newexpr_conststring(char* s);
 expr* member_item(expr* lv, char* name);
 expr *lvalue_expr(SymbolTableEntry *sym);

@@ -283,7 +283,7 @@ expr *emit_iftableitem(expr *e)
     }
 }
 
-expr *emit_ifboolean(expr *e){
+expr *backpatching(expr *e){
     if(e->type == boolexpr_e || e->type == constbool_e){
         patchlist(e->truelist, nextquadlabel());
         patchlist(e->falselist, nextquadlabel()+2);
@@ -291,9 +291,9 @@ expr *emit_ifboolean(expr *e){
         expr* tmp = newexpr(boolexpr_e);
         tmp->sym = newtemp();
         
-        emit(assign, tmp, newexpr_constbool(1), NULL, -1, currQuad);
+        emit(assign, tmp, newexpr_constbool(1), NULL, 0, currQuad);
         emit(jump, NULL, NULL, NULL, nextquadlabel() + 2 , currQuad);
-        emit(assign, tmp, newexpr_constbool(0), NULL, -1, currQuad);
+        emit(assign, tmp, newexpr_constbool(0), NULL, 0, currQuad);
         
         return tmp;
     }
@@ -464,7 +464,7 @@ void print_quads()
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
-            //print_expression(quads[i].arg2, f);
+            print_expression(quads[i].arg2, f);
              fprintf(f, "%-8s", "");
             fprintf(f, "%-8d%-8d", quads[i].label, quads[i].line);
             fprintf(f, "\n");
@@ -758,40 +758,4 @@ int true_test(expr* arg){
     arg->falselist = newlist(nextquadlabel()-1);
     return 1;
 }
-/*
-expr* Manage_boolexpr(expr* arg1,iopcode op, expr* arg2, unsigned int Mlabel){
-    //fprintf(yacc_out,"boolexpr -> expr %s expr\n", op);
-    expr* tmp_expr=newexpr(boolexpr_e);
-    //tmp_expr->sym = NULL;
-    //tmp_expr->sym = new_temp(); // create new tmp variable
-    // expr* tmp_expr = lvalue_to_expr(tmp); // make it an lvalue expr
-    // tmp_expr->type = boolexpr_e;
-    
-    switch (op){
-        case or:
-        //emit(or, tmp_expr, arg1, arg2, -1, currQuad);
-        //if(true_test(arg1)) Mlabel += 2;
-        //true_test(arg2);
-        tmp_expr->type = boolexpr_e;
-        patchlist(arg1->falselist, Mlabel);
-        tmp_expr->truelist = mergelist(arg1->truelist, arg2->truelist);
-        tmp_expr->falselist = arg2->falselist;
-        break;
-    case and:
-        //emit(and, tmp_expr, arg1, arg2, -1, currQuad);
-        //if(true_test(arg1)) Mlabel += 2;
-        //true_test(arg2);
-        tmp_expr->type = boolexpr_e;
-        //printf("Mlabel = %d\n", Mlabel);
-        patchlist(arg1->truelist, Mlabel);
-        tmp_expr->truelist = arg2->truelist;
-        tmp_expr->falselist = mergelist(arg1->falselist, arg2->falselist);
-        break;
-    default:
-        printf("Invalid operator\n");
-        return NULL;
-        break;
-    }
-    
-    return tmp_expr;
-} */
+ 

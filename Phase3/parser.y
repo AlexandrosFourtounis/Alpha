@@ -97,20 +97,25 @@ stmts:              stmts stmt{
                     ;
 
 stmt:               expr SEMICOLON  {//printf("reset\n");
-                                  $$ = make_stmt(); //emit_ifboolean($1);
-                                     resettemp();}
+                                    $$ = make_stmt();
+                                    expr *temp = $1;
+                                    backpatching(temp);
+                                     
+                                     resettemp();
+                                    }
                     | ifstmt        { resettemp(); $$=$1;}
                     | whilestmt     {$$ = make_stmt();resettemp();}
                     | forstmt       {$$ = make_stmt();resettemp();}
                     | returnstmt    {$$ = make_stmt(); resettemp();}
                     | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");
+                                                $$ = $1;
                                                 struct stmt_struct* t = make_stmt();
                                                 t->breaklist = newlist(nextquadlabel()-1);
                                                 emit(jump, NULL, NULL, NULL, 0, yylineno);
                                                 $$ = t;
                                                 resettemp();}
                     | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");
-                                                    
+                                                $$=$1;
                                                 stmt_struct* t = make_stmt();
                                                 emit(jump, NULL, NULL, NULL, 0, yylineno);
                                                 t->contlist = newlist(nextquadlabel()-1);
@@ -155,13 +160,38 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                         }
                         $$ = newexpr(boolexpr_e);
                         $$->type = boolexpr_e;
-                        patchlist($1->falselist, $4);
-                        $$->truelist = mergelist($1->truelist, $5->truelist);
-                        $$->falselist = $5->falselist;
+                        patchlist($1->truelist, $4);
+                        $$->truelist = $5->truelist;
+                        $$->falselist = mergelist($1->falselist, $5->falselist);
+                        
                     }
-                    | expr KEYWORD_OR expr   
+                    | expr KEYWORD_OR {
+                        if($1->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
+                    } M expr { 
+                        if($5->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
+                        $$ = newexpr(boolexpr_e);
+                        $$->type = boolexpr_e;
+                        patchlist($1->falselist, $4);
+                        $$->falselist = $5->falselist;
+                        $$->truelist = mergelist($1->truelist, $5->truelist);
+                        
+                    } 
                     | assignexpr { $$ = $1;}        
-                    | term  { $$ = emit_iftableitem($1);}
+                    | term  { $$ = $1;}
                     ;
 
 
@@ -266,9 +296,8 @@ assignexpr:         lvalue  '='
         
     }
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
-
 } 
-expr {
+expr { 
     if($1->type == tableitem_e){
         emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
         $$ = emit_iftableitem($1);
@@ -276,17 +305,16 @@ expr {
     }
     else{
         expr *temp = $4;
-        emit(assign, $4, NULL, $1, 0U, yylineno);
-        $$ = newexpr(assignexpr_e);
-        $$->sym = newtemp();
-        emit(assign, $1, NULL,$$, 0U, yylineno);
-        
+        if($4->type == boolexpr_e){
+            temp = backpatching($4);
+        } 
+        emit(assign, temp, NULL, $1, 0U, yylineno);
+        SymbolTableEntry *ntemp = newtemp();
+        expr *ntemp_e = lvalue_expr(ntemp);
+        emit(assign, $1, NULL,ntemp_e, 0U, yylineno);
+        $$ = ntemp;
     }
 } 
-
-
-
-                    
 
 primary:             lvalue {$$ = emit_iftableitem($1);}
                     | call 
@@ -621,6 +649,9 @@ ids:                COMMA IDENTIFIER  {
 
 
 ifprefix:           KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS {
+                                                            if($3->type == boolexpr_e) {
+                                                                $3 = backpatching($3);
+                                                            }
                                                             printf("cq %d\n", currQuad);
                                                             emit(if_eq,$3,newexpr_constbool(1),NULL,nextquadlabel()+2,yylineno);
                                                             printf("cq %d\n", currQuad);
