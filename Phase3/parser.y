@@ -176,7 +176,12 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                     | KEYWORD_NOT expr {
                                             $$ = newexpr(boolexpr_e);
                                             $$->sym = newtemp();
-                                            emit(not,$2,NULL,$$,0,yylineno);
+                                            true_test($2);
+                                            unsigned int tmp = $2->truelist;
+                                            $2->truelist =$2->falselist;
+                                            $2->falselist = tmp;
+                                            $$ = $2;
+                                            //emit(not,$2,NULL,$$,0,yylineno);
                                             
                                         }
                     | INCREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");

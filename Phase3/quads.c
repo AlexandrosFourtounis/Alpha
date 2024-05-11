@@ -732,7 +732,7 @@ int newlist(int i){
     quads[i].label = 0; 
     return i; 
 }
-/*
+
 int true_test(expr* arg){
     //puts("I AM TRUE TESTING");
     if(arg == NULL){
@@ -758,7 +758,7 @@ int true_test(expr* arg){
     arg->falselist = newlist(nextquadlabel()-1);
     return 1;
 }
-
+/*
 expr* Manage_boolexpr(expr* arg1,iopcode op, expr* arg2, unsigned int Mlabel){
     //fprintf(yacc_out,"boolexpr -> expr %s expr\n", op);
     expr* tmp_expr=newexpr(boolexpr_e);
