@@ -597,6 +597,15 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
     expr *tmp = newexpr(boolexpr_e);
     // tmp->sym = newtemp();
 
+    if (arg1->type == boolexpr_e)
+    {
+        arg1 = backpatching(arg1);
+    }
+    if (arg2->type == boolexpr_e)
+    {
+        arg2 = backpatching(arg2);
+    }
+
     // ta lines prepei na diorthothoun gia na exoun to currQuad
     switch (op[0])
     {
@@ -604,15 +613,19 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
         tmp->type = boolexpr_e;
         emit(if_eq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
         emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
-        tmp->truelist = newlist(nextquadlabel());
-        tmp->falselist = newlist(nextquadlabel()+1);
+        tmp->truelist = newlist(nextquadlabel()-2);
+        printf("truelist%d\n", tmp->truelist);
+        tmp->falselist = newlist(nextquadlabel()-1);
+        printf("falselist%d\n", tmp->falselist);
         break;
     case '!':
         tmp->type = boolexpr_e;
         emit(if_noteq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
         emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
-        tmp->truelist = newlist(nextquadlabel());
-        tmp->falselist = newlist(nextquadlabel()+1);
+        tmp->truelist = newlist(nextquadlabel()-2);
+        printf("truelist%d\n", tmp->truelist);
+        tmp->falselist = newlist(nextquadlabel()-1);
+        printf("falselist%d\n", tmp->falselist);
         break;
     case '<':
         tmp->type = boolexpr_e;
@@ -626,8 +639,10 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
             emit(if_lesseq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
             emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         }
-        tmp->truelist = newlist(nextquadlabel());
-        tmp->falselist = newlist(nextquadlabel()+1);
+        tmp->truelist = newlist(nextquadlabel()-2);
+        printf("truelist%d\n", tmp->truelist);
+        tmp->falselist = newlist(nextquadlabel()-1);
+        printf("falselist%d\n", tmp->falselist);
         break;
     case '>':
         tmp->type = boolexpr_e;
@@ -641,8 +656,10 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
             emit(if_greatereq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
             emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         }
-        tmp->truelist = newlist(nextquadlabel());
-        tmp->falselist = newlist(nextquadlabel()+1);
+        tmp->truelist = newlist(nextquadlabel()-2);
+        printf("truelist%d\n", tmp->truelist);
+        tmp->falselist = newlist(nextquadlabel()-1);
+        printf("falselist%d\n", tmp->falselist);
         break;
     default:
         printf("Invalid comparison operator\n");
@@ -734,13 +751,13 @@ int newlist(int i){
 }
 
 int true_test(expr* arg){
-    //puts("I AM TRUE TESTING");
+    //printf("I AM TRUE TESTING");
     if(arg == NULL){
-        //puts("I AM HERE");
+        //printf("I AM HERE");
         return 0;
     }
     else if(arg->type == boolexpr_e) {
-        //puts("I AM HERE");
+        //printf("I AM HERE");
         return 0;
     }
     
@@ -758,4 +775,3 @@ int true_test(expr* arg){
     arg->falselist = newlist(nextquadlabel()-1);
     return 1;
 }
- 

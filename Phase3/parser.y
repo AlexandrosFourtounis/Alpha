@@ -159,7 +159,7 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                             emit(jump, NULL, NULL, NULL, 0, yylineno);
                         }
                         $$ = newexpr(boolexpr_e);
-                        $$->type = boolexpr_e;
+                        //$$->type = boolexpr_e;
                         patchlist($1->truelist, $4);
                         $$->truelist = $5->truelist;
                         $$->falselist = mergelist($1->falselist, $5->falselist);
@@ -184,7 +184,7 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                             emit(jump, NULL, NULL, NULL, 0, yylineno);
                         }
                         $$ = newexpr(boolexpr_e);
-                        $$->type = boolexpr_e;
+                        //$$->type = boolexpr_e;
                         patchlist($1->falselist, $4);
                         $$->falselist = $5->falselist;
                         $$->truelist = mergelist($1->truelist, $5->truelist);
