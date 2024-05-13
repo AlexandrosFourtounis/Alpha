@@ -653,23 +653,23 @@ ifprefix:           KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS {
                                                                 $3 = backpatching($3);
                                                             }
                                                             printf("cq %d\n", currQuad);
-                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,nextquadlabel()+2,yylineno);
+                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,currQuad+2,yylineno);
                                                             printf("cq %d\n", currQuad);
-                                                            $$ = nextquadlabel();
+                                                            $$ = currQuad;
                                                             emit(jump,NULL,NULL,NULL,0U,yylineno);
                                                             
                                                         }
                                                     ;
 
 elseprefix:         KEYWORD_ELSE {
-                                    $$ = nextquadlabel();
+                                    $$ = currQuad;
                                     emit(jump,NULL,NULL,NULL,0,yylineno);
                                 }
                     ;                                                    
 
 ifstmt:             ifprefix stmt elseprefix stmt {
                                                     patchlabel($1, $3 + 1);
-                                                    patchlabel($3, nextquadlabel());
+                                                    patchlabel($3, currQuad);
                                                     $2 = malloc(sizeof(struct stmt_struct));
                                                     $4 = malloc(sizeof(struct stmt_struct));
                                                     stmt_struct* t = make_stmt();
@@ -677,11 +677,13 @@ ifstmt:             ifprefix stmt elseprefix stmt {
                                                     t->contlist = $2->contlist ? ($4->contlist ? mergelist($2->contlist, $4->contlist) : $2->contlist) : $4->contlist;
                                                     printf("breaklist %d\n", t->breaklist);
                                                     $$ = t;
+                                                    free($2);
+                                                    free($4);
                                                 }
                                                 
                     | ifprefix stmt {  
                                         
-                                        patchlabel($1, nextquadlabel());
+                                        patchlabel($1, currQuad);
                                         $$ = $2;
                                     }
                     ;
