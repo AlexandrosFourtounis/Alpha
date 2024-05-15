@@ -80,7 +80,7 @@ typedef struct expr{
     struct expr *next;
     int truelist;
     int falselist;
-}expr;
+} expr;
 
 typedef struct quad{
     iopcode op;

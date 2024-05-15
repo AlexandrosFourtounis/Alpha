@@ -1,0 +1,24 @@
+QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
+1       jump                                    8       2       
+2       funcstart       iamafunction                        2       
+3       add             _t0     a       b       0       3       
+4       return          8.00                            4       
+5       jump                                    0       4       
+6       sub             _t0     9.00    0.00    0       5       
+7       funcend         iamafunction                        6       
+8       jump                                    11      8       
+9       funcstart       iamnothing                        8       
+10      funcend         iamnothing                        8       
+11      jump                                    14      12      
+12      funcstart       _0                              12      
+13      funcend         _0                              12      
+14      jump                                    24      14      
+15      funcstart       _1                              14      
+16      jump                                    23      14      
+17      funcstart       _2                              14      
+18      param           4.00                    14      
+19      param           3.00                    14      
+20      call            iamafunction                14      
+21      getretval                                               14      
+22      funcend         _2                              14      
+23      funcend         _1                              14      

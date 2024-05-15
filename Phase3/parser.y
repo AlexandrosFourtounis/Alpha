@@ -193,7 +193,7 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                         $$->truelist = mergelist($1->truelist, $5->truelist);
                         
                     } 
-                    | assignexpr { $$ = $1;}        
+                    | assignexpr { $$ = $1;} 
                     | term  { $$ = $1;}
                     ;
 
@@ -432,24 +432,44 @@ call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS  { $$ =  make_ca
                                             {
                                                 $1 = emit_iftableitem($1);
                                                 if($2 && $2->method){
-                                                    expr *last = get_last($2->elist);
-                                                    if (last == NULL) {
-                                                        expr *temp = $1;
-                                                        addToExprList(&$2->elist , $1);
+                                                    expr *last = $1;
 
-                                                    } else {
-                                                        addToExprList(&last->next,$1);
-                                                    }
-                                                    $1 = emit_iftableitem(member_item($1,$2->name));
+                                                    $1 = emit_iftableitem(member_item(last,$2->name));
+                                                    expr *temp = $2->elist;
+                                                        if(temp==NULL)
+                                                              {
+                                                                $2->elist=last;
+                                                              }
+                                                              else
+                                                              {
+
+                                                                while(temp->next!=NULL)
+                                                                {
+                                                                    temp=temp->next;
+                                                                }
+                                                                temp->next=last;
+                                                              }
                                                 }
                                                 $$ = make_call($1,$2->elist);
                                             }
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS 
                                                                                                             { 
                                                                                                                 expr* func = newexpr(programfunc_e);
+                                                                                                                if($2 !=NULL)
                                                                                                                 func->sym = $2;
                                                                                                                 $$ = make_call(func,$5);
                                                                                                             }
+                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS  RIGHTPARENTHESIS 
+                                                                                                            { 
+                                                                                                                expr* func = newexpr(programfunc_e);
+                                                                                                                if($2 !=NULL)
+                                                                                                                func->sym = $2;
+                                                                                                                $$ = make_call(func,NULL);
+                                                                                                            }
+                    | LEFTPARENTHESIS RIGHTPARENTHESIS 
+                                                        {
+                                                            $$ = make_call($$,NULL);
+                                                        }
                     ;
 
 
@@ -478,23 +498,30 @@ methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
                                                                                     $$->name = strdup($2);
                                                                                 }
 
-elist_help:         COMMA expr elist_help
-                                            {
-                                                addToExprList(&$3,$2);
-                                                $$ = $3;
-                                            }
-                    | {$$ = NULL;}
+// elist_help:         COMMA expr elist_help
+//                                             {
+//                                                 expr * temp = $2;
+                                        
+//                                                 printf("temp->type %d\n", temp->type);
+//                                                 printf("temp->sym %s\n", temp->sym->value.varVal->name);
+//                                                 addToExprList(&$3,$2);
+//                                                 printf("before $$ b is? %s\n", $3->item->sym->value.varVal->name);
+//                                                 $$ = $3;
+//                                                 printf("after $$ b is? %s\n", $$->item->sym->value.varVal->name);
+//                                             }
+//                     | {$$ = NULL;}
 
 
-elist:              expr elist_help{
-                                $$ = malloc(sizeof(struct reversed_list));
-    $$->item = $1;
-    $$->next = $2;
-                        }
-                    |  
-                                        {
-                                           $$ = NULL;
-                                        }
+elist:              expr { 
+                            $$ = $1;
+                            }   
+                    |expr COMMA elist{
+                                if($1 != NULL){
+                                    $1->next = $3;
+                                }
+                                // printf("expr a %s and expr b %s\n", $$->next->item->sym->value.varVal->name,$$->next->next->item->sym->value.varVal->name);
+                                }
+                    | %empty { }
                     ;
 
 

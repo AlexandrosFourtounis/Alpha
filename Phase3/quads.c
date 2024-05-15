@@ -667,9 +667,24 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
     }
     return tmp;
 }
+expr* reverse_elist(expr* head) {
+    expr* prev = NULL;
+    expr* current = head;
+    expr* next = NULL;
+    while (current != NULL) {
+        next = current->next;  // store the next node
+        current->next = prev;  // reverse the link
+        prev = current;  // move the prev and current one step forward
+        current = next;
+    }
+    head = prev;  // finally, make the last node as head
+    return head;
+}
 
 expr *make_call(expr *lv, expr *reversed_elist){
     expr *func = emit_iftableitem(lv);
+    reversed_elist = reverse_elist(reversed_elist); // reverse the elist
+
     while(reversed_elist){
         emit(param, reversed_elist, NULL, NULL, 0U, yylineno);
         reversed_elist = reversed_elist->next;  
@@ -688,9 +703,13 @@ reversed_list *createExprNode(expr *item){
     return node;
 }
 void addToExprList(reversed_list **head, expr *item){
-    reversed_list *node = createExprNode(item);
+    reversed_list *node = malloc(sizeof(reversed_list));
+    node->item = item;
+    node->next = NULL;
+    printf("entered addToExprList\n");
     if (*head == NULL)
     {
+        printf("head is null\n");
         *head = node; // if the list is empty, add the node at the head
     }
     else
@@ -699,6 +718,7 @@ void addToExprList(reversed_list **head, expr *item){
         while (current->next != NULL)
         {
             current = current->next; // traverse the list to find the last node
+            printf("current: %p\n", (void *)current);
         }
         current->next = node; // add the node at the end
     }
@@ -726,9 +746,11 @@ int mergelist(int l1, int l2)
     else
     {
         int i = l1;
-        while (quads[i].label)
+        while (i < total && quads[i].label)
             i = quads[i].label;
-        quads[i].label = l2;
+        if (i < total) {
+            quads[i].label = l2;
+        }
         return l1;
     }
 }
