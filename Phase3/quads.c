@@ -483,7 +483,7 @@ void print_quads()
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             fprintf(f,"%-8s", "");
-            print_expression(quads[i].arg1, f);
+            //print_expression(quads[i].arg1, f);
             print_expression(quads[i].arg2, f);
             fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
             
@@ -663,8 +663,19 @@ reversed_list *createExprNode(expr *item){
 }
 void addToExprList(reversed_list **head, expr *item){
     reversed_list *node = createExprNode(item);
-    node->next = *head;
-    *head = node;
+    if (*head == NULL)
+    {
+        *head = node; // if the list is empty, add the node at the head
+    }
+    else
+    {
+        reversed_list *current = *head;
+        while (current->next != NULL)
+        {
+            current = current->next; // traverse the list to find the last node
+        }
+        current->next = node; // add the node at the end
+    }
 }
 
 reversed_list *get_last(reversed_list *head)
