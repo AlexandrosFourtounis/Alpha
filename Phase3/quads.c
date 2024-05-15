@@ -471,7 +471,7 @@ void print_quads()
             print_expression(quads[i].arg1, f);
             print_expression(quads[i].arg2, f);
             fprintf(f, "%-8s%-8d\n", "", quads[i].line);
-        }
+        } 
         else if(quads[i].op == tablesetelem){ //hardcoded
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].arg2, f);

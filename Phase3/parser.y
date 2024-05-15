@@ -209,7 +209,7 @@ assignexpr:         lvalue  '='
             }
         }
         
-    }
+    } 
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
 
 } 
