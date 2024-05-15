@@ -315,7 +315,7 @@ expr {
         SymbolTableEntry *ntemp = newtemp();
         expr *ntemp_e = lvalue_expr(ntemp);
         emit(assign, $1, NULL,ntemp_e, 0U, yylineno);
-        $$ = ntemp;
+        $$->sym = ntemp;
     }
 } 
 
@@ -513,15 +513,23 @@ methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
 
 
 elist:              expr { 
+                            if($1->type == boolexpr_e){
+                                $1 = backpatching($1);
+                            }
                             $$ = $1;
                             }   
                     |expr COMMA elist{
+                 
+                                
+                                if($1->type == boolexpr_e){
+                                    $1 = backpatching($1);
+                                }
                                 if($1 != NULL){
                                     $1->next = $3;
                                 }
                                 // printf("expr a %s and expr b %s\n", $$->next->item->sym->value.varVal->name,$$->next->next->item->sym->value.varVal->name);
                                 }
-                    | %empty { }
+                    | %empty { $$ = NULL;}
                     ;
 
 

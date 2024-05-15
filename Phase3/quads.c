@@ -667,7 +667,12 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
     }
     return tmp;
 }
+
 expr* reverse_elist(expr* head) {
+    if (head == NULL)
+    {
+        return NULL;
+    }
     expr* prev = NULL;
     expr* current = head;
     expr* next = NULL;
@@ -683,7 +688,8 @@ expr* reverse_elist(expr* head) {
 
 expr *make_call(expr *lv, expr *reversed_elist){
     expr *func = emit_iftableitem(lv);
-    reversed_elist = reverse_elist(reversed_elist); // reverse the elist
+    if(reversed_elist != NULL)
+        reversed_elist = reverse_elist(reversed_elist); // reverse the elist
 
     while(reversed_elist){
         emit(param, reversed_elist, NULL, NULL, 0U, yylineno);

@@ -9,16 +9,24 @@ QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE
 8       jump                                    11      8       
 9       funcstart       iamnothing                        8       
 10      funcend         iamnothing                        8       
-11      jump                                    14      12      
-12      funcstart       _0                              12      
-13      funcend         _0                              12      
-14      jump                                    24      14      
-15      funcstart       _1                              14      
-16      jump                                    23      14      
-17      funcstart       _2                              14      
-18      param           4.00                    14      
-19      param           3.00                    14      
-20      call            iamafunction                14      
-21      getretval                                               14      
-22      funcend         _2                              14      
-23      funcend         _1                              14      
+11      jump                                    18      10      
+12      funcstart       _0                              10      
+13      sub             _t0     10.00   0.00    0       10      
+14      return          12.00                           10      
+15      jump                                    0       10      
+16      sub             _t0     11.00   0.00    0       10      
+17      funcend         _0                              10      
+18      assign          _t0     KEYWORD                         0       10      
+19      assign          _t0     _t0                             0       10      
+20      jump                                    23      12      
+21      funcstart       _1                              12      
+22      funcend         _1                              12      
+23      jump                                    0       14      
+24      funcstart       _2                              14      
+25      jump                                    32      14      
+26      funcstart       _3                              14      
+27      param           4.00                    14      
+28      param           3.00                    14      
+29      call            iamafunction                14      
+30      getretval                                               14      
+31      funcend         _3                              14      
