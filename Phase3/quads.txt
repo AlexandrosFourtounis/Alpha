@@ -1,4 +1,0 @@
-QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
-1       param           à¯<˜0V                  1       
-2       call            foo                     1       
-3       getretval                                               1       

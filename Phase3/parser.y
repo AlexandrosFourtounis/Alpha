@@ -59,14 +59,16 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt 
-%type <expression> term lvalue assignexpr expr primary  member const call  exprlist  returnstmt
-%type <unsignedv> funcbody block blockk whilestart whilecond N M ifprefix elseprefix
+
+%type <stringv> program parsing  objectdef obj indexed indexedelem  number whilestmt forstmt 
+%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  returnstmt
+%type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
-%type <stmt_structt> stmt
+%type <stmt_structt> stmt ifstmt stmts block blockk loopstmt loopstart loopend
 %type <call_list> elist elist_help
+
 
 %right '='
 %left KEYWORD_OR
@@ -85,22 +87,50 @@
 
 program:            parsing      
                     ;
-parsing:            stmt parsing 
+parsing:            stmt parsing { $$ = $1; }
                     | %empty            {} 
                     ;
 
-stmt:               expr SEMICOLON  {printf("reset\n");resettemp();}
-                    | ifstmt        {resettemp();}
-                    | whilestmt     {resettemp();}
-                    | forstmt       {resettemp();}
-                    | returnstmt    {resettemp();}
-                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");resettemp();}
-                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");resettemp();}
-                    | block { $$ = $1;   resettemp();}
+stmts:              stmts stmt{ 
+                        $$ = make_stmt();
+                        $$->breaklist = mergelist($1->breaklist, $2->breaklist);
+                        $$->contlist = mergelist($1->contlist, $2->contlist);
+                    }
+                    | stmt {$$ = $1;}
+                    ;
+
+stmt:               expr SEMICOLON  {//printf("reset\n");
+                                    $$ = make_stmt();
+                                    expr *temp = $1;
+                                    backpatching(temp);
+                                     
+                                     resettemp();
+                                    }
+                    | ifstmt        { resettemp(); $$=$1;}
+                    | whilestmt     {$$ = make_stmt();resettemp();}
+                    | forstmt       {$$ = make_stmt();resettemp();}
+                    | returnstmt    {$$ = make_stmt(); resettemp();}
+                    | KEYWORD_BREAK SEMICOLON {if(scope == 0) yyerror("Use of 'break' while not in a loop\n");
+                                                $$ = $1;
+                                                struct stmt_struct* t = make_stmt();
+                                                t->breaklist = newlist(nextquadlabel()-1);
+                                                emit(jump, NULL, NULL, NULL, 0, yylineno);
+                                                $$ = t;
+                                                resettemp();}
+                    | KEYWORD_CONTINUE SEMICOLON {if(scope == 0) yyerror("Use of 'continue' while not in a loop\n");
+                                                $$=$1;
+                                                stmt_struct* t = make_stmt();
+                                                emit(jump, NULL, NULL, NULL, 0, yylineno);
+                                                t->contlist = newlist(nextquadlabel()-1);
+                                                $$ = t;
+                                                resettemp();}
+                                                
+                    | block { $$ = $1;   resettemp(); printf("enter stmt");}
                     | funcdef { resettemp();}
-                    | SEMICOLON {}
+                    | SEMICOLON {$$ = make_stmt(); resettemp();}
                     | error SEMICOLON   { yyerrok; }
                     ;
+
 
 expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr '*' expr   {$$ = Manage_operations($1,mul,$3);}   
@@ -113,10 +143,58 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr LESS_EQUAL expr   {$$ = Manage_comparisonopers($1, "<=",$3);}
                     | expr EQUALS expr  {$$ = Manage_comparisonopers($1, "==",$3);}      
                     | expr NOT_EQUAL expr {$$ = Manage_comparisonopers($1, "!=",$3);}
-                    | expr KEYWORD_AND expr 
-                    | expr KEYWORD_OR expr   
+                    | expr KEYWORD_AND {
+                        if($1->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
+                    } M expr { 
+                        if($5->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
+                        $$ = newexpr(boolexpr_e);
+                        //$$->type = boolexpr_e;
+                        patchlist($1->truelist, $4);
+                        $$->truelist = $5->truelist;
+                        $$->falselist = mergelist($1->falselist, $5->falselist);
+                        
+                    }
+                    | expr KEYWORD_OR {
+                        if($1->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
+                    } M expr { 
+                        if($5->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
+                        $$ = newexpr(boolexpr_e);
+                        //$$->type = boolexpr_e;
+                        patchlist($1->falselist, $4);
+                        $$->falselist = $5->falselist;
+                        $$->truelist = mergelist($1->truelist, $5->truelist);
+                        
+                    } 
                     | assignexpr { $$ = $1;}        
-                    | term  { $$ = emit_iftableitem($1);}
+                    | term  { $$ = $1;}
                     ;
 
 
@@ -131,7 +209,12 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                     | KEYWORD_NOT expr {
                                             $$ = newexpr(boolexpr_e);
                                             $$->sym = newtemp();
-                                            emit(not,$2,NULL,$$,0,yylineno);
+                                            true_test($2);
+                                            unsigned int tmp = $2->truelist;
+                                            $2->truelist =$2->falselist;
+                                            $2->falselist = tmp;
+                                            $$ = $2;
+                                            //emit(not,$2,NULL,$$,0,yylineno);
                                             
                                         }
                     | INCREMENT lvalue {entry=lookup($2, scope); if(!entry); else if(entry->type == USERFUNC || entry->type == LIBFUNC) yyerror("Cannot increment a function");
@@ -216,9 +299,8 @@ assignexpr:         lvalue  '='
         
     }
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
-
 } 
-expr {
+expr { 
     if($1->type == tableitem_e){
         emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
         $$ = emit_iftableitem($1);
@@ -226,17 +308,16 @@ expr {
     }
     else{
         expr *temp = $4;
-        emit(assign, $4, NULL, $1, 0U, yylineno);
-        $$ = newexpr(assignexpr_e);
-        $$->sym = newtemp();
-        emit(assign, $1, NULL,$$, 0U, yylineno);
-        
+        if($4->type == boolexpr_e){
+            temp = backpatching($4);
+        } 
+        emit(assign, temp, NULL, $1, 0U, yylineno);
+        SymbolTableEntry *ntemp = newtemp();
+        expr *ntemp_e = lvalue_expr(ntemp);
+        emit(assign, $1, NULL,ntemp_e, 0U, yylineno);
+        $$ = ntemp;
     }
 } 
-
-
-
-                    
 
 primary:             lvalue {$$ = emit_iftableitem($1);}
                     | call 
@@ -432,12 +513,22 @@ indexed:            indexedelem
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
 
-block:              LEFTBRACE  { scope++; } blockk  RIGHTBRACE { scope--; }
-                    ;
+block:              LEFTBRACE { scope++; } blockk RIGHTBRACE { 
+                                                                scope--; 
+                                                                $$ = make_stmt(); 
+                                                                printf("enter block");
+                                                            }
+                                                            ;
 
-blockk:              stmt blockk
-                    | %empty            {}
-                    ;
+blockk:             stmts blockk { 
+                                    //stmt_struct* t = make_stmt();
+                                    $$ = $1; 
+                                }
+                    | %empty { 
+                                //stmt_struct* t = make_stmt();
+                                //$$ = t; 
+                            }
+                            ;
 
 funcname: IDENTIFIER {
                         
@@ -532,13 +623,12 @@ funcdef:   funcprefix funcargs funcbody  {
 
 const:              number                  
                     | STRING                { $$ = newexpr_conststring(yylval.stringv); }
-                    | KEYWORD_NIL           { $$ = newexpr_nil(yylval.stringv);  }
+                    | KEYWORD_NIL           {$$ = newexpr_nil();}
                     | KEYWORD_TRUE          { 
-                                              expr *temp = newexpr_bool(yylval.stringv);
-                                              $$ = temp;
+                                              $$ = newexpr_constbool(1);
                     
                                             }
-                    | KEYWORD_FALSE         { $$ = newexpr_bool(yylval.stringv); }
+                    | KEYWORD_FALSE         { $$ = newexpr_constbool(0); }
 
 number:             INTEGER                 { $$ = newexpr_constnum(yylval.intv); }
                     | REAL                  { $$ = newexpr_constnum(yylval.floatv); }
@@ -579,35 +669,52 @@ ids:                COMMA IDENTIFIER  {
 
 
 ifprefix:           KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS {
-
-                                                            /*
                                                             if($3->type == boolexpr_e) {
-                                                                $3 = emit_ifboolean($3);
-                                                            } */
-                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,0U,yylineno);
-                                                            $$ = nextquadlabel();
+                                                                $3 = backpatching($3);
+                                                            }
+                                                            printf("cq %d\n", currQuad);
+                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,currQuad+2,yylineno);
+                                                            printf("cq %d\n", currQuad);
+                                                            $$ = currQuad;
                                                             emit(jump,NULL,NULL,NULL,0U,yylineno);
+                                                            
                                                         }
                                                     ;
 
 elseprefix:         KEYWORD_ELSE {
-                                    $$ = nextquadlabel();
+                                    $$ = currQuad;
                                     emit(jump,NULL,NULL,NULL,0,yylineno);
                                 }
                     ;                                                    
 
 ifstmt:             ifprefix stmt elseprefix stmt {
                                                     patchlabel($1, $3 + 1);
-                                                    patchlabel($3, nextquadlabel());
-                                                    $$ = $4;
-
+                                                    patchlabel($3, currQuad);
+                                                    $2 = malloc(sizeof(struct stmt_struct));
+                                                    $4 = malloc(sizeof(struct stmt_struct));
+                                                    stmt_struct* t = make_stmt();
+                                                    t->breaklist = $2->breaklist ? ($4->breaklist ? mergelist($2->breaklist, $4->breaklist) : $2->breaklist) : $4->breaklist;
+                                                    t->contlist = $2->contlist ? ($4->contlist ? mergelist($2->contlist, $4->contlist) : $2->contlist) : $4->contlist;
+                                                    printf("breaklist %d\n", t->breaklist);
+                                                    $$ = t;
+                                                    free($2);
+                                                    free($4);
                                                 }
+                                                
                     | ifprefix stmt {  
-                                        $$ = $2;
-                                        patchlabel($1, nextquadlabel());
                                         
+                                        patchlabel($1, currQuad);
+                                        $$ = $2;
                                     }
                     ;
+
+loopstart:%empty  {++loopcounter;}
+
+loopend:%empty  {--loopcounter;}
+
+loopstmt: loopstart stmt loopend { $$ =$2;}                    
+
+
 whilestart: KEYWORD_WHILE 
                             {
                               $$ = nextquadlabel();  
