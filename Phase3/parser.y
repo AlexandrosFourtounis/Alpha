@@ -61,12 +61,12 @@
 
 
 %type <stringv> program parsing  objectdef obj indexed indexedelem  number whilestmt forstmt 
-%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  returnstmt
+%type <expression> term lvalue assignexpr expr primary  member const call  exprlist   returnstmt
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
-%type <stmt_structt> stmt ifstmt stmts block blockk loopstmt loopstart loopend
+%type <stmt_structt> stmt ifstmt stmts block blockk /*loopstmt loopstart loopend */
 %type <call_list> elist elist_help
 
 
@@ -85,18 +85,18 @@
 
 %%
 
-program:            parsing      
+program:            stmts      
                     ;
-parsing:            stmt parsing { $$ = $1; }
-                    | %empty            {} 
-                    ;
+// parsing:            stmts parsing { $$ = $1; }
+//                     | %empty            {} 
+//                     ;
 
-stmts:              stmts stmt{ 
+stmts:              stmt stmts{ 
                         $$ = make_stmt();
                         $$->breaklist = mergelist($1->breaklist, $2->breaklist);
                         $$->contlist = mergelist($1->contlist, $2->contlist);
                     }
-                    | stmt {$$ = $1;}
+                    | %empty {make_stmt();}
                     ;
 
 stmt:               expr SEMICOLON  {//printf("reset\n");
@@ -513,22 +513,12 @@ indexed:            indexedelem
 
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
 
-block:              LEFTBRACE { scope++; } blockk RIGHTBRACE { 
+block:              LEFTBRACE { scope++; } stmts RIGHTBRACE { 
                                                                 scope--; 
                                                                 $$ = make_stmt(); 
                                                                 printf("enter block");
                                                             }
                                                             ;
-
-blockk:             stmts blockk { 
-                                    //stmt_struct* t = make_stmt();
-                                    $$ = $1; 
-                                }
-                    | %empty { 
-                                //stmt_struct* t = make_stmt();
-                                //$$ = t; 
-                            }
-                            ;
 
 funcname: IDENTIFIER {
                         
@@ -708,11 +698,11 @@ ifstmt:             ifprefix stmt elseprefix stmt {
                                     }
                     ;
 
-loopstart:%empty  {++loopcounter;}
+// loopstart:%empty  {++loopcounter;}
 
-loopend:%empty  {--loopcounter;}
+// loopend:%empty  {--loopcounter;}
 
-loopstmt: loopstart stmt loopend { $$ =$2;}                    
+// loopstmt: loopstart stmt loopend { $$ =$2;}                    
 
 
 whilestart: KEYWORD_WHILE 
