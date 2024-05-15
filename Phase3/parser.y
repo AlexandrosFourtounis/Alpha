@@ -59,6 +59,7 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
+
 %type <stringv> program parsing  objectdef obj indexed indexedelem  number whilestmt forstmt 
 %type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  returnstmt
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
@@ -66,6 +67,8 @@
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
 %type <stmt_structt> stmt ifstmt stmts block blockk loopstmt loopstart loopend
+%type <call_list> elist elist_help
+
 
 %right '='
 %left KEYWORD_OR
@@ -427,9 +430,8 @@ member:             lvalue DOT IDENTIFIER   {
 call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS  { $$ =  make_call($1,$3);}
                     | lvalue callsuffix 
                                             {
-                                                $2->elist = NULL;
                                                 $1 = emit_iftableitem($1);
-                                                if($2->method && $2){
+                                                if($2 && $2->method){
                                                     expr *last = get_last($2->elist);
                                                     if (last == NULL) {
                                                         expr *temp = $1;
@@ -451,8 +453,15 @@ call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS  { $$ =  make_ca
                     ;
 
 
-callsuffix:         normcall  { $$ = $1;}
-                    | methodcall {$$ = $1;}
+callsuffix:         normcall  
+                                {
+                                    $$ = malloc(sizeof(calls));
+                                    $$ = $1;
+                                }
+                    | methodcall {
+                                    $$ = malloc(sizeof(calls));
+                                    $$ = $1;
+                                }
 
 normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS  
                                                             {
@@ -469,14 +478,25 @@ methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
                                                                                     $$->name = strdup($2);
                                                                                 }
 
-elist:              exprlist  {$$ = $1;}
-                    | %empty            {}
+elist_help:         COMMA expr elist_help
+                                            {
+                                                addToExprList(&$3,$2);
+                                                $$ = $3;
+                                            }
+                    | {$$ = NULL;}
+
+
+elist:              expr elist_help{
+                                $$ = malloc(sizeof(struct reversed_list));
+    $$->item = $1;
+    $$->next = $2;
+                        }
+                    |  
+                                        {
+                                           $$ = NULL;
+                                        }
                     ;
 
-exprlist:           exprlist  COMMA expr {   addToExprList(&$$->next,$3) ; }
-                    | expr {$$ = $1;}
-                    ;
-             
 
 objectdef:          LEFTBRACKET  elist RIGHTBRACKET
                     | LEFTBRACKET indexed RIGHTBRACKET
