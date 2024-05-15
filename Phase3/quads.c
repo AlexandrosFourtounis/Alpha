@@ -407,6 +407,12 @@ void print_expression(expr *expr, FILE *f)
             fprintf(f, "%-8s", "var");
         }
         break;
+    case tableitem_e:
+        fprintf(f, "%-8s", expr->sym->value.varVal->name);
+        break;
+    case newtable_e:
+        fprintf(f, "%-8s", expr->sym->value.varVal->name);
+        break;
     default:
         fprintf(f, "%-8s", expr->strConst);
         break;
@@ -437,13 +443,12 @@ void print_quads()
             fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
         }
 
-        else if(quads[i].op == ret){
-            
+        else if(quads[i].op == ret || quads[i].op == tablecreate){ 
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
         }
-        else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend  || quads[i].op == tablecreate)
+        else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend)
 
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
@@ -459,13 +464,20 @@ void print_quads()
             fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
             
         }
-        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem || quads[i].op == tablesetelem)
+        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
             print_expression(quads[i].arg2, f);
-            fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
+            fprintf(f, "%-8s%-8d\n", "", quads[i].line);
+        }
+        else if(quads[i].op == tablesetelem){ //hardcoded
+            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+            print_expression(quads[i].arg2, f);
+            print_expression(quads[i].arg1, f);
+            print_expression(quads[i].result, f);
+            fprintf(f, "%-8s%-8d\n", "", quads[i].line);
         }
         else if (quads[i].op == param || quads[i].op == call)
         {

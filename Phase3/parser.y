@@ -57,8 +57,8 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing stmt  objectdef obj indexed indexedelem  number ifstmt whilestmt forstmt returnstmt
-%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  
+%type <stringv> program parsing stmt    number ifstmt whilestmt forstmt returnstmt
+%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist objectdef obj indexed indexedelem indexedelem_list
 %type <unsignedv> funcbody block blockk
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
@@ -84,7 +84,7 @@ parsing:            stmt parsing
                     | %empty            {} 
                     ;
 
-stmt:               expr SEMICOLON  {printf("reset\n");resettemp();}
+stmt:               expr SEMICOLON  {resettemp();}
                     | ifstmt        {resettemp();}
                     | whilestmt     {resettemp();}
                     | forstmt       {resettemp();}
@@ -215,7 +215,7 @@ assignexpr:         lvalue  '='
 } 
 expr {
     if($1->type == tableitem_e){
-        emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
+        emit(tablesetelem, $1->index, $1, $4, 0U, yylineno);
         $$ = emit_iftableitem($1);
         $$->type = assignexpr_e;
     }
@@ -229,9 +229,6 @@ expr {
     }
 } 
 
-
-
-                    
 
 primary:             lvalue {$$ = emit_iftableitem($1);}
                     | call 
@@ -385,29 +382,52 @@ methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
                                                                                     $$->name = strdup($2);
                                                                                 }
 
-elist:              exprlist  {$$ = $1;}
-                    | %empty            {}
+elist:              expr exprlist  {$$ = $1; $$->next=$2;}
+                    | %empty  {$$ = NULL;}
                     ;
 
-exprlist:           exprlist  COMMA expr {   addToExprList(&$$->next,$3) ; }
-                    | expr {$$ = $1;}
+exprlist:           COMMA expr exprlist{  $$=$2; $$->next=$3; addToExprList(&$$->next,$3);}
+                    | %empty {$$ = NULL;}
                     ;
              
 
-objectdef:          LEFTBRACKET  elist RIGHTBRACKET
-                    | LEFTBRACKET indexed RIGHTBRACKET
-                    | LEFTBRACKET RIGHTBRACKET
+objectdef:          LEFTBRACKET  elist RIGHTBRACKET {
+													int count = 0;
+													expr* t = newexpr(newtable_e);
+													t->sym = newtemp();
+													emit(tablecreate, (expr*) 0, (expr*) 0, t, currQuad, yylineno);
+													while($2 != NULL){
+														emit(tablesetelem, t, newexpr_constnum(count++), $2, currQuad, yylineno);
+														$2 = $2->next;
+													}
+													$$ = t;
+												}
+                    | LEFTBRACKET indexed RIGHTBRACKET{
+													expr* t = newexpr(newtable_e);
+													t->sym = newtemp();
+													emit(tablecreate, (expr*) 0, (expr*) 0, t, currQuad, yylineno);
+													while($2!=NULL){
+														emit(tablesetelem, t, $2->index, $2, currQuad, yylineno);
+														$2 = $2->next;
+													}
+													$$ = t;		
+												}
+                    
                     ;
 
 obj:                elist 
                     | indexed 
                     ;
                     
-indexed:            indexedelem 
-                    | indexedelem COMMA indexed
+indexed:            indexedelem indexedelem_list {$$=$1; $$->next=$2;}
                     ;
 
-indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
+indexedelem_list: COMMA indexedelem indexedelem_list {$$=$2;$$->next=$3;}
+                    |%empty {$$ = NULL;}
+                    ;
+
+indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE {$$=$5;$$->index=$2;}
+                    ;
 
 block:              LEFTBRACE  { scope++; } blockk  RIGHTBRACE { scope--; }
                     ;
