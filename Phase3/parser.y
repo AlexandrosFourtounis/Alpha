@@ -60,8 +60,9 @@
 
 
 
+
 %type <stringv> program parsing  objectdef obj indexed indexedelem  number whilestmt forstmt 
-%type <expression> term lvalue assignexpr expr primary  member const call  exprlist   returnstmt
+%type <expression> term lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
@@ -126,6 +127,7 @@ stmt:               expr SEMICOLON  {//printf("reset\n");
                                                 resettemp();}
                                                 
                     | block { $$ = $1;   resettemp(); printf("enter stmt");}
+
                     | funcdef { resettemp();}
                     | SEMICOLON {$$ = make_stmt(); resettemp();}
                     | error SEMICOLON   { yyerrok; }
@@ -297,12 +299,12 @@ assignexpr:         lvalue  '='
             }
         }
         
-    }
+    } 
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
 } 
 expr { 
     if($1->type == tableitem_e){
-        emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
+        emit(tablesetelem, $1->index, $1, $4, 0U, yylineno);
         $$ = emit_iftableitem($1);
         $$->type = assignexpr_e;
     }
@@ -318,6 +320,7 @@ expr {
         $$->sym = ntemp;
     }
 } 
+
 
 primary:             lvalue {$$ = emit_iftableitem($1);}
                     | call 
@@ -498,6 +501,7 @@ methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
                                                                                     $$->name = strdup($2);
                                                                                 }
 
+
 // elist_help:         COMMA expr elist_help
 //                                             {
 //                                                 expr * temp = $2;
@@ -533,20 +537,43 @@ elist:              expr {
                     ;
 
 
-objectdef:          LEFTBRACKET  elist RIGHTBRACKET
-                    | LEFTBRACKET indexed RIGHTBRACKET
-                    | LEFTBRACKET RIGHTBRACKET
+objectdef:          LEFTBRACKET  elist RIGHTBRACKET {
+													int count = 0;
+													expr* t = newexpr(newtable_e);
+													t->sym = newtemp();
+													emit(tablecreate, (expr*) 0, (expr*) 0, t, currQuad, yylineno);
+													while($2 != NULL){
+														emit(tablesetelem, t, newexpr_constnum(count++), $2, currQuad, yylineno);
+														$2 = $2->next;
+													}
+													$$ = t;
+												}
+                    | LEFTBRACKET indexed RIGHTBRACKET{
+													expr* t = newexpr(newtable_e);
+													t->sym = newtemp();
+													emit(tablecreate, (expr*) 0, (expr*) 0, t, currQuad, yylineno);
+													while($2!=NULL){
+														emit(tablesetelem, t, $2->index, $2, currQuad, yylineno);
+														$2 = $2->next;
+													}
+													$$ = t;		
+												}
+                    
                     ;
 
 obj:                elist 
                     | indexed 
                     ;
                     
-indexed:            indexedelem 
-                    | indexedelem COMMA indexed
+indexed:            indexedelem indexedelem_list {$$=$1; $$->next=$2;}
                     ;
 
-indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
+indexedelem_list: COMMA indexedelem indexedelem_list {$$=$2;$$->next=$3;}
+                    |%empty {$$ = NULL;}
+                    ;
+
+indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE {$$=$5;$$->index=$2;}
+                    ;
 
 block:              LEFTBRACE { scope++; } stmts RIGHTBRACE { 
                                                                 scope--; 
