@@ -78,8 +78,8 @@ typedef struct expr{
     char *strConst;
     char *boolConst;
     struct expr *next;
-    int truelist;
-    int falselist;
+    struct st *truelist;
+    struct st*falselist;
 }expr;
 
 typedef struct quad{
@@ -136,7 +136,7 @@ expr *newexpr_constnum(double x);
 expr *Manage_operations(expr *arg1, iopcode op, expr *arg2);
 expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2);
 expr *make_call(expr *lv, expr *reversed_elist);
-
+st *makelist(unsigned int label);
 typedef struct call
 {
     expr *elist;
@@ -170,3 +170,4 @@ int mergelist (int l1, int l2); //added
 void patchlist(int list, int label);
 stmt_struct* make_stmt ();
 int newlist(int i);
+void backpatch(st *list, int label);

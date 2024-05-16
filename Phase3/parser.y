@@ -63,13 +63,13 @@
 
 
 %type <stringv> program parsing  number whilestmt forstmt 
-%type <expression> term lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
+%type <expression>elist elist_help term lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
 %type <stmt_structt> stmt ifstmt stmts block blockk /*loopstmt loopstart loopend */
-%type <call_list> elist elist_help
+%type <call_list> 
 
 
 %right '='
@@ -162,7 +162,7 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                         if($5->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
                             //temp->sym = newtemp();
-                            temp->truelist =makelist(nextquadlabel());
+                            temp->truelist =  makelist(nextquadlabel());
                             temp->falselist = makelist(nextquadlabel()+1);
                             emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
                             emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
@@ -170,9 +170,8 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                         }
                         $$ = newexpr(boolexpr_e);
                         //$$->type = boolexpr_e;
-                        unsigned int x = $1->truelist;
                         printf("truel %d" , $1->truelist);
-                        backpatch(x, $4+1);
+                        backpatch($1->truelist, $4+1);
                         $$->truelist = $5->truelist;
                         $$->falselist = mergelist($1->falselist, $5->falselist);
                         
@@ -322,6 +321,8 @@ expr {
     }
     else{
         expr *temp = $4;
+        $4->truelist = NULL;
+        $4->falselist = NULL;
         if($4->type == boolexpr_e){
             temp = backpatching($4);
         } 
