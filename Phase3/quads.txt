@@ -1,9 +1,0 @@
-QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
-1       tablegetelem    _t0     t       a               1       
-2       tablegetelem    _t1     c       d               1       
-3       tablegetelem    _t2     f       g               1       
-4       tablegetelem    _t3     _t2     h               1       
-5       tablesetelem    _t3     e       _t1             1       
-6       tablegetelem    _t4     _t1     e               1       
-7       tablesetelem    _t4     b       _t0             1       
-8       tablegetelem    _t5     _t0     b               1       

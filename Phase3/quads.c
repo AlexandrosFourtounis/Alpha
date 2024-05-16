@@ -37,7 +37,9 @@ void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, 
     {
         expand();
     }
-    quad *p = quads + currQuad++;
+    quad *p     = malloc(sizeof(quad));
+    assert(p);
+    p = quads + currQuad++;
     p->op = op;
     p->arg1 = arg1;
     p->arg2 = arg2;
@@ -132,6 +134,8 @@ expr *newexpr(expr_t t)
     expr *e = (expr *)malloc(sizeof(expr));
     memset(e, 0, sizeof(expr));
     e->type = t;
+    e->truelist = 0;
+    e->falselist = 0;
     return e;
 }
 
@@ -235,7 +239,12 @@ expr *newexpr_constnum(double x)
     return e;
 }
 
-
+expr* newexpr_constbool(unsigned char b){
+    expr* e = newexpr(constbool_e);
+    e->sym = NULL;
+    e->boolConst = b;
+    return e;
+}
 
 expr *newexpr_bool(char *s)
 {
@@ -253,10 +262,10 @@ expr *newexpr_bool(char *s)
     return e;
 }
 
-expr *newexpr_nil(char *s)
+expr *newexpr_nil()
 {
     expr *e = newexpr(nil_e);
-    e->strConst = strdup(s);
+    //e->strConst = strdup(s);
     e->sym = NULL;
     return e;
 }
@@ -272,6 +281,23 @@ expr *emit_iftableitem(expr *e)
         emit(tablegetelem, e, e->index, result, 0, yylineno);
         return result;
     }
+}
+
+expr *backpatching(expr *e){
+    if(e->type == boolexpr_e || e->type == constbool_e){
+        patchlist(e->truelist, nextquadlabel());
+        patchlist(e->falselist, nextquadlabel()+2);
+
+        expr* tmp = newexpr(boolexpr_e);
+        tmp->sym = newtemp();
+        
+        emit(assign, tmp, newexpr_constbool(1), NULL, 0, currQuad);
+        emit(jump, NULL, NULL, NULL, nextquadlabel() + 2 , currQuad);
+        emit(assign, tmp, newexpr_constbool(0), NULL, 0, currQuad);
+        
+        return tmp;
+    }
+    return e;
 }
 
 expr *member_item(expr *lv, char *name)
@@ -351,22 +377,33 @@ void print_expression(expr *expr, FILE *f)
         fprintf(f, "%-16s", "");
         return;
     }
-    else if (expr->type == nil_e)
+    if (expr == NULL) {
+        fprintf(f, "NULL expression\n");
+        return;
+    }
+    printf("expr: %p\n", (void *)expr);
+     if (expr != NULL && expr->type == nil_e)
     {
-        fprintf(f, "%-16s", "NIL");
+        fprintf(f, "%-8s", "NIL");
         return;
     }
 
     switch (expr->type)
     {
     case boolexpr_e:
-        if (strcmp(expr->boolConst, "true") == 0)
-            fprintf(f, "%-8s", expr->boolConst);
+        if (expr->boolConst)
+            fprintf(f, "%-8s", "true");
         else
             fprintf(f, "%-8s", "false");
         break;
     case constnum_e:
         fprintf(f, "%-8.2f", expr->numConst);
+        break;
+    case constbool_e:
+        if(expr->boolConst)
+            fprintf(f, "%-8s", "true");
+        else
+            fprintf(f, "%-8s", "false");
         break;
     case conststring_e:
         fprintf(f, "%-8s", expr->strConst);
@@ -387,6 +424,7 @@ void print_expression(expr *expr, FILE *f)
             fprintf(f, "%-8s", "var");
         }
         break;
+    
     case assignexpr_e:
         if(expr->sym->value.varVal)
         {
@@ -432,7 +470,7 @@ void print_quads()
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
-            //print_expression(quads[i].arg2, f);
+            print_expression(quads[i].arg2, f);
              fprintf(f, "%-8s", "");
             fprintf(f, "%-8d%-8d", quads[i].label, quads[i].line);
             fprintf(f, "\n");
@@ -459,7 +497,7 @@ void print_quads()
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             fprintf(f,"%-8s", "");
-            print_expression(quads[i].arg1, f);
+            //print_expression(quads[i].arg1, f);
             print_expression(quads[i].arg2, f);
             fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
             
@@ -571,43 +609,69 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
     expr *tmp = newexpr(boolexpr_e);
     // tmp->sym = newtemp();
 
+    if (arg1->type == boolexpr_e)
+    {
+        arg1 = backpatching(arg1);
+    }
+    if (arg2->type == boolexpr_e)
+    {
+        arg2 = backpatching(arg2);
+    }
+
     // ta lines prepei na diorthothoun gia na exoun to currQuad
     switch (op[0])
     {
     case '=':
         tmp->type = boolexpr_e;
-        emit(if_eq, arg1, arg2, NULL, 0, yylineno);
-        emit(jump, NULL, NULL, NULL, 0, yylineno);
+        emit(if_eq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
+        emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
+        tmp->truelist = newlist(nextquadlabel()-2);
+        printf("truelist%d\n", tmp->truelist);
+        tmp->falselist = newlist(nextquadlabel()-1);
+        printf("falselist%d\n", tmp->falselist);
         break;
     case '!':
-        emit(if_noteq, arg1, arg2, NULL, 0, yylineno);
-        emit(jump, NULL, NULL, NULL, 0, yylineno);
+        tmp->type = boolexpr_e;
+        emit(if_noteq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
+        emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
+        tmp->truelist = newlist(nextquadlabel()-2);
+        printf("truelist%d\n", tmp->truelist);
+        tmp->falselist = newlist(nextquadlabel()-1);
+        printf("falselist%d\n", tmp->falselist);
         break;
     case '<':
         tmp->type = boolexpr_e;
         if (strcmp(op, "<") == 0)
         {
-            emit(if_less, arg1, arg2, NULL, 0, yylineno);
-            emit(jump, NULL, NULL, NULL, 0, yylineno);
+            emit(if_less, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
+            emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         }
         else if (strcmp(op, "<=") == 0)
         {
-            emit(if_lesseq, arg1, arg2, NULL, 0, yylineno);
-            emit(jump, NULL, NULL, NULL, 0, yylineno);
+            emit(if_lesseq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
+            emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         }
+        tmp->truelist = newlist(nextquadlabel()-2);
+        printf("truelist%d\n", tmp->truelist);
+        tmp->falselist = newlist(nextquadlabel()-1);
+        printf("falselist%d\n", tmp->falselist);
         break;
     case '>':
         tmp->type = boolexpr_e;
         if (strcmp(op, ">") == 0)
         {
-            emit(if_greater, arg1, arg2, NULL, 0, yylineno);
-            emit(jump, NULL, NULL, NULL, 0, yylineno);
+            emit(if_greater, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
+            emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         }
         else if (strcmp(op, ">=") == 0)
         {
-            emit(if_greatereq, arg1, arg2, NULL, 0, yylineno);
-            emit(jump, NULL, NULL, NULL, 0, yylineno);
+            emit(if_greatereq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
+            emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         }
+        tmp->truelist = newlist(nextquadlabel()-2);
+        printf("truelist%d\n", tmp->truelist);
+        tmp->falselist = newlist(nextquadlabel()-1);
+        printf("falselist%d\n", tmp->falselist);
         break;
     default:
         printf("Invalid comparison operator\n");
@@ -616,10 +680,31 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
     return tmp;
 }
 
+expr* reverse_elist(expr* head) {
+    if (head == NULL)
+    {
+        return NULL;
+    }
+    expr* prev = NULL;
+    expr* current = head;
+    expr* next = NULL;
+    while (current != NULL) {
+        next = current->next;  // store the next node
+        current->next = prev;  // reverse the link
+        prev = current;  // move the prev and current one step forward
+        current = next;
+    }
+    head = prev;  // finally, make the last node as head
+    return head;
+}
+
 expr *make_call(expr *lv, expr *reversed_elist){
     expr *func = emit_iftableitem(lv);
+    if(reversed_elist != NULL)
+        reversed_elist = reverse_elist(reversed_elist); // reverse the elist
+
     while(reversed_elist){
-        emit(param, reversed_elist, NULL, NULL,0U,yylineno);
+        emit(param, reversed_elist, NULL, NULL, 0U, yylineno);
         reversed_elist = reversed_elist->next;  
     }
     emit(call, func, NULL, NULL, 0U, yylineno);
@@ -636,9 +721,25 @@ reversed_list *createExprNode(expr *item){
     return node;
 }
 void addToExprList(reversed_list **head, expr *item){
-    reversed_list *node = createExprNode(item);
-    node->next = *head;
-    *head = node;
+    reversed_list *node = malloc(sizeof(reversed_list));
+    node->item = item;
+    node->next = NULL;
+    printf("entered addToExprList\n");
+    if (*head == NULL)
+    {
+        printf("head is null\n");
+        *head = node; // if the list is empty, add the node at the head
+    }
+    else
+    {
+        reversed_list *current = *head;
+        while (current->next != NULL)
+        {
+            current = current->next; // traverse the list to find the last node
+            printf("current: %p\n", (void *)current);
+        }
+        current->next = node; // add the node at the end
+    }
 }
 
 reversed_list *get_last(reversed_list *head)
@@ -652,4 +753,76 @@ reversed_list *get_last(reversed_list *head)
         head = head->next;
     }
     return head;
+}
+
+int mergelist(int l1, int l2)
+{
+    if (!l1)
+        return l2;
+    else if (!l2)
+        return l1;
+    else
+    {
+        int i = l1;
+        while (i < total && quads[i].label)
+            i = quads[i].label;
+        if (i < total) {
+            quads[i].label = l2;
+        }
+        return l1;
+    }
+}
+
+void patchlist(int list, int label){
+    while(list) {
+    {
+        int next = quads[list].label;
+        quads[list].label = label;
+        list = next;
+    }
+    }
+}
+
+//fixed
+stmt_struct* make_stmt () { 
+    stmt_struct *s = malloc(sizeof(stmt_struct));
+    if (s == NULL) {
+        fprintf(stderr, "Failed to allocate memory for stmt_struct\n");
+        exit(EXIT_FAILURE);
+    }
+    s->breaklist = 0;
+    s->contlist = 0;
+    return s;
+}
+
+
+int newlist(int i){
+    quads[i].label = 0; 
+    return i; 
+}
+
+int true_test(expr* arg){
+    //printf("I AM TRUE TESTING");
+    if(arg == NULL){
+        //printf("I AM HERE");
+        return 0;
+    }
+    else if(arg->type == boolexpr_e) {
+        //printf("I AM HERE");
+        return 0;
+    }
+    
+    
+    //arg->type = boolexpr_e;
+    //if(arg->type != constbool_e){
+        arg->type = boolexpr_e;
+    //}
+    
+    emit(if_eq, arg, newexpr_constbool(1),NULL, 0, currQuad);
+    emit(jump, NULL, NULL, NULL, 0, currQuad);
+    // printf("%d\n", nextquad()-2);
+    // printf("%d\n", nextquad()-1);
+    arg->truelist = newlist(nextquadlabel()-2);
+    arg->falselist = newlist(nextquadlabel()-1);
+    return 1;
 }

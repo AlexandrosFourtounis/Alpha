@@ -78,7 +78,9 @@ typedef struct expr{
     char *strConst;
     char *boolConst;
     struct expr *next;
-}expr;
+    int truelist;
+    int falselist;
+} expr;
 
 typedef struct quad{
     iopcode op;
@@ -98,21 +100,12 @@ void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, 
 
 //UTILS
 void resettemp();
-void print_quads();
-void exitscopespace();
-void enterscopespace();
-void inccurrscopeoffset();
-void resetformalargsoffset();
-void resetfunctionlocalsoffset();
-void restorecurrscopeoffset(unsigned int n);
 void check_arith(expr *e, const char *context);
-void patchlabel(unsigned int quadNo, unsigned int label);
 char *newtempname();
 const char* opcode_to_string(iopcode opcode);
-unsigned int nextquadlabel();
-unsigned int currscopeoffset(void);
 expr *newexpr(expr_t t);
 expr* emit_iftableitem(expr* e);
+expr *backpatching(expr *e);
 expr* newexpr_conststring(char* s);
 expr* member_item(expr* lv, char* name);
 expr *lvalue_expr(SymbolTableEntry *sym);
@@ -132,7 +125,8 @@ expr* Manage_operations(expr *arg1, iopcode op, expr *arg2);
 
 
 expr *newexpr_bool(char *s);
-expr *newexpr_nil(char *s);
+expr* newexpr_constbool(unsigned char b);
+expr *newexpr_nil();
 expr *newexpr_constnum(double x);
 expr *Manage_operations(expr *arg1, iopcode op, expr *arg2);
 expr *Manage_comparisonopers(expr* arg1, char* op, expr* arg2);
@@ -150,6 +144,21 @@ typedef struct reversed_list{
     struct reversed_list *next;
 } reversed_list;
 
-reversed_list *createExprNode(expr *item);
+typedef struct for_struct{
+    unsigned int test;
+    unsigned int enter;
+} for_struct;
+
+typedef struct stmt_struct{
+    int breaklist;
+    int contlist;
+} stmt_struct;
+
+    reversed_list *
+    createExprNode(expr *item);
 void addToExprList(reversed_list **head, expr *item);
 reversed_list *get_last(reversed_list *head);
+int mergelist (int l1, int l2); //added
+void patchlist(int list, int label);
+stmt_struct* make_stmt ();
+int newlist(int i);
