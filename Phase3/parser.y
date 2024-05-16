@@ -61,7 +61,7 @@
 
 
 
-%type <stringv> program parsing  objectdef obj indexed indexedelem  number whilestmt forstmt 
+%type <stringv> program parsing  number whilestmt forstmt 
 %type <expression> term lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
@@ -314,10 +314,10 @@ expr {
             temp = backpatching($4);
         } 
         emit(assign, temp, NULL, $1, 0U, yylineno);
-        SymbolTableEntry *ntemp = newtemp();
-        expr *ntemp_e = lvalue_expr(ntemp);
-        emit(assign, $1, NULL,ntemp_e, 0U, yylineno);
-        $$->sym = ntemp;
+        $$ = newexpr(assignexpr_e);
+        $$->sym = newtemp();
+
+        emit(assign, $1, NULL,$$, 0U, yylineno);
     }
 } 
 
