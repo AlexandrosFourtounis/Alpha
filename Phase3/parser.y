@@ -525,8 +525,7 @@ elist:              expr {
                             $$ = $1;
                             }   
                     |expr COMMA elist{
-                 
-                                
+                              
                                 if($1->type == boolexpr_e){
                                     $1 = backpatching($1);
                                 }
