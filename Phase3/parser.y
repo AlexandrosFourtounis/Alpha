@@ -39,6 +39,7 @@
     struct call *calls;
     struct for_struct *for_stmt;
     struct stmt_struct *stmt_structt;
+    struct st *st;
 }
 
 %define parse.error verbose
@@ -100,7 +101,7 @@ stmts:              stmt stmts{
                     | %empty {make_stmt();}
                     ;
 
-stmt:               expr SEMICOLON  {//printf("reset\n");
+stmt:               expr SEMICOLON  {printf("reset\n");
                                     $$ = make_stmt();
                                     expr *temp = $1;
                                     backpatching(temp);
@@ -148,24 +149,30 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr KEYWORD_AND {
                         if($1->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
-                            temp->sym = newtemp();
-                            temp->truelist =nextquadlabel();
-                            temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
-                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            temp->truelist =makelist(nextquadlabel());
+                            temp->falselist = makelist(nextquadlabel()+1);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
+                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
+                            //backpatch(temp->falselist, nextquadlabel()+1);
+                            $1 = temp;
                         }
                     } M expr { 
+                        
+                        
                         if($5->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
-                            temp->sym = newtemp();
-                            temp->truelist =nextquadlabel();
-                            temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
-                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            //temp->sym = newtemp();
+                            temp->truelist =makelist(nextquadlabel());
+                            temp->falselist = makelist(nextquadlabel()+1);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
+                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
+                            $5 = temp;
                         }
                         $$ = newexpr(boolexpr_e);
                         //$$->type = boolexpr_e;
-                        patchlist($1->truelist, $4);
+                        unsigned int x = $1->truelist;
+                        printf("truel %d" , $1->truelist);
+                        backpatch(x, $4+1);
                         $$->truelist = $5->truelist;
                         $$->falselist = mergelist($1->falselist, $5->falselist);
                         
@@ -173,11 +180,13 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr KEYWORD_OR {
                         if($1->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
-                            temp->sym = newtemp();
-                            temp->truelist =nextquadlabel();
-                            temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
-                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            //temp->sym = newtemp();
+                            temp->truelist =makelist(nextquadlabel());
+                            temp->falselist = makelist(nextquadlabel()+1);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
+                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
+                            //backpatch($1->truelist, nextquadlabel()+5);
+                            $1 = temp;
                         }
                     } M expr { 
                         if($5->type != boolexpr_e){
@@ -185,12 +194,13 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                             temp->sym = newtemp();
                             temp->truelist =nextquadlabel();
                             temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
                             emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            $5 = temp;
                         }
                         $$ = newexpr(boolexpr_e);
                         //$$->type = boolexpr_e;
-                        patchlist($1->falselist, $4);
+                        backpatch($1->falselist, $4+1);
                         $$->falselist = $5->falselist;
                         $$->truelist = mergelist($1->truelist, $5->truelist);
                         
@@ -749,8 +759,8 @@ ifstmt:             ifprefix stmt elseprefix stmt {
                                                     t->contlist = $2->contlist ? ($4->contlist ? mergelist($2->contlist, $4->contlist) : $2->contlist) : $4->contlist;
                                                     printf("breaklist %d\n", t->breaklist);
                                                     $$ = t;
-                                                    free($2);
-                                                    free($4);
+                                                    //free($2);
+                                                    //free($4);
                                                 }
                                                 
                     | ifprefix stmt {  

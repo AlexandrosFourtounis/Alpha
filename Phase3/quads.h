@@ -80,7 +80,7 @@ typedef struct expr{
     struct expr *next;
     int truelist;
     int falselist;
-} expr;
+}expr;
 
 typedef struct quad{
     iopcode op;
@@ -90,6 +90,11 @@ typedef struct quad{
     unsigned int label;
     unsigned int line;
 }quad;
+
+typedef struct st{
+    unsigned int label;
+    struct st *next;
+} st;   
 
 extern quad *quads;
 extern unsigned int total;

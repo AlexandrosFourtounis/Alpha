@@ -288,23 +288,6 @@ expr *emit_iftableitem(expr *e)
     }
 }
 
-expr *backpatching(expr *e){
-    if(e->type == boolexpr_e || e->type == constbool_e){
-        patchlist(e->truelist, nextquadlabel());
-        patchlist(e->falselist, nextquadlabel()+2);
-
-        expr* tmp = newexpr(boolexpr_e);
-        tmp->sym = newtemp();
-        
-        emit(assign, tmp, newexpr_constbool(1), NULL, 0, currQuad);
-        emit(jump, NULL, NULL, NULL, nextquadlabel() + 2 , currQuad);
-        emit(assign, tmp, newexpr_constbool(0), NULL, 0, currQuad);
-        
-        return tmp;
-    }
-    return e;
-}
-
 expr *member_item(expr *lv, char *name)
 {
     lv = emit_iftableitem(lv);
@@ -502,7 +485,7 @@ void print_quads()
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             fprintf(f,"%-8s", "");
-            //print_expression(quads[i].arg1, f);
+            print_expression(quads[i].arg1, f);
             print_expression(quads[i].arg2, f);
             fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
             
@@ -788,6 +771,14 @@ void patchlist(int list, int label){
     }
 }
 
+void backpatch(st* list, int label){
+    st* tmp = list;
+    while(tmp){
+        patchlabel(tmp->label, label);
+        tmp = tmp->next;
+    }
+}
+
 //fixed
 stmt_struct* make_stmt () { 
     stmt_struct *s = malloc(sizeof(stmt_struct));
@@ -830,4 +821,25 @@ int true_test(expr* arg){
     arg->truelist = newlist(nextquadlabel()-2);
     arg->falselist = newlist(nextquadlabel()-1);
     return 1;
+}
+
+st* makelist(unsigned int label){
+   st *tmp = malloc(sizeof(st));
+    tmp->label = label;
+    tmp->next = NULL;
+    return tmp;
+}
+
+expr *backpatching(expr *e){
+    if(e->type == boolexpr_e || e->type == constbool_e){
+        backpatch(e->truelist, nextquadlabel());
+        backpatch(e->falselist, nextquadlabel()+2);
+        
+        emit(assign, e, newexpr_constbool(1), NULL, 0, currQuad);
+        emit(jump, NULL, NULL, NULL, nextquadlabel() + 2 , currQuad);
+        emit(assign, e, newexpr_constbool(0), NULL, 0, currQuad);
+        
+        return e;
+    }
+    return e;
 }
