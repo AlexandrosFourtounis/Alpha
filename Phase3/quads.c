@@ -111,8 +111,6 @@ char *newtempname()
     return strdup(temp);
 }
 
-Symbol
-
 void resettemp()
 {
     tempcounter = 0;
@@ -467,20 +465,21 @@ void print_quads()
     unsigned int i = 0U;
     FILE *f = fopen("quads.txt", "w");
     fprintf(f, "%-8s%-16s%-8s%-8s%-8s%-8s%-8s\n", "QUAD", "OP", "RESULT", "ARG1", "ARG2", "LABEL", "LINE");
+    fprintf(f, "------------------------------------------------------------\n");
 
     while (i < currQuad)
     {
-        if (quads[i].op == assign || quads[i].op == uminus || quads[i].op == not )
+        if (quads[i].op == assign || quads[i].op == uminus || quads[i].op == not)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
-            print_expression(quads[i].arg2, f);
-             fprintf(f, "%-8s", "");
+            //print_expression(quads[i].arg2, f);
+            fprintf(f, "%-8s", "");
             fprintf(f, "%-8d%-8d", quads[i].label, quads[i].line);
             fprintf(f, "\n");
         }
-        else if (quads[i].op == jump )
+        else if (quads[i].op == jump)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
@@ -516,11 +515,26 @@ void print_quads()
             fprintf(f, "%-8s%-8d\n", "", quads[i].line);
         } 
         else if(quads[i].op == tablesetelem){ //hardcoded
-            fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].arg2, f);
-            print_expression(quads[i].arg1, f);
-            print_expression(quads[i].result, f);
-            fprintf(f, "%-8s%-8d\n", "", quads[i].line);
+            if(quads[i].line>2000){
+                fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+                print_expression(quads[i].arg2, f);
+                print_expression(quads[i].arg1, f);
+                print_expression(quads[i].result, f);
+                fprintf(f, "%-8s%-8d\n", "", quads[i].line-2000);
+            }else if(quads[i].line>1000){
+                fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+                print_expression(quads[i].arg1, f);
+                print_expression(quads[i].arg2, f);
+                print_expression(quads[i].result, f);
+                fprintf(f, "%-8s%-8d\n", "", quads[i].line-1000);
+            }else{
+                fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
+                print_expression(quads[i].result, f);
+                print_expression(quads[i].arg1, f);
+                print_expression(quads[i].arg2, f);
+                fprintf(f, "%-8s%-8d\n", "", quads[i].line);
+
+            }
         }
         else if (quads[i].op == param || quads[i].op == call)
         {

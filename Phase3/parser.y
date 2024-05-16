@@ -62,13 +62,12 @@
 
 
 %type <stringv> program parsing  number whilestmt forstmt 
-%type <expression> term lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
+%type <expression> term elist elist_help lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
 %type <stmt_structt> stmt ifstmt stmts block blockk /*loopstmt loopstart loopend */
-%type <call_list> elist elist_help
 
 
 %right '='
@@ -304,7 +303,7 @@ assignexpr:         lvalue  '='
 } 
 expr { 
     if($1->type == tableitem_e){
-        emit(tablesetelem, $1->index, $1, $4, 0U, yylineno);
+        emit(tablesetelem, $1->index, $1, $4, 0U, yylineno+2000);
         $$ = emit_iftableitem($1);
         $$->type = assignexpr_e;
     }
@@ -523,8 +522,7 @@ elist:              expr {
                             $$ = $1;
                             }   
                     |expr COMMA elist{
-                 
-                                
+                              
                                 if($1->type == boolexpr_e){
                                     $1 = backpatching($1);
                                 }
@@ -543,7 +541,7 @@ objectdef:          LEFTBRACKET  elist RIGHTBRACKET {
 													t->sym = newtemp();
 													emit(tablecreate, (expr*) 0, (expr*) 0, t, currQuad, yylineno);
 													while($2 != NULL){
-														emit(tablesetelem, t, newexpr_constnum(count++), $2, currQuad, yylineno);
+														emit(tablesetelem, t, newexpr_constnum(count++), $2, currQuad, yylineno+1000);
 														$2 = $2->next;
 													}
 													$$ = t;
@@ -553,7 +551,7 @@ objectdef:          LEFTBRACKET  elist RIGHTBRACKET {
 													t->sym = newtemp();
 													emit(tablecreate, (expr*) 0, (expr*) 0, t, currQuad, yylineno);
 													while($2!=NULL){
-														emit(tablesetelem, t, $2->index, $2, currQuad, yylineno);
+														emit(tablesetelem, t, $2->index, $2, currQuad, yylineno+1000);
 														$2 = $2->next;
 													}
 													$$ = t;		
@@ -572,7 +570,7 @@ indexedelem_list: COMMA indexedelem indexedelem_list {$$=$2;$$->next=$3;}
                     |%empty {$$ = NULL;}
                     ;
 
-indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE {$$=$5;$$->index=$2;}
+indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE {$$=$4;$$->index=$2;}
                     ;
 
 block:              LEFTBRACE { scope++; } stmts RIGHTBRACE { 
