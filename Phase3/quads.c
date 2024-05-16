@@ -111,7 +111,9 @@ char *newtempname()
     return strdup(temp);
 }
 
-Symbol
+SymbolTableEntry *curr_temp(){
+    return lookup(curr_temp_name, scope);
+}
 
 void resettemp()
 {

@@ -204,8 +204,10 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                     | '-' expr %prec UMINUS  {
                                                 check_arith($2,(const char*)"- expr");
                                                 $$ = newexpr(arithexpr_e);
-                                                $$->sym = newtemp();
-                                    
+                                                $$->sym = curr_temp();
+                                                if($$->sym == NULL){
+                                                    $$->sym = newtemp();
+                                                }
                                                 emit(uminus,$2,NULL,$$,0,yylineno);
                                              }
                     | KEYWORD_NOT expr {
