@@ -227,7 +227,7 @@ unsigned int nextquadlabel()
 void patchlabel(unsigned int quadNo, unsigned int label)
 {
     assert(quadNo < currQuad);
-    quads[quadNo].label = label;
+    quads[quadNo].label = label+1;
 }
 
 expr *newexpr_conststring(char *s)
@@ -295,13 +295,14 @@ expr *backpatching(expr *e){
         patchlist(e->truelist, nextquadlabel());
         patchlist(e->falselist, nextquadlabel()+2);
 
-        expr* tmp = newexpr(boolexpr_e);
+        expr* tmp = newexpr(var_e);
         tmp->sym = newtemp();
-        
-        emit(assign, tmp, newexpr_constbool(1), NULL, 0, currQuad);
-        emit(jump, NULL, NULL, NULL, nextquadlabel() + 2 , currQuad);
-        emit(assign, tmp, newexpr_constbool(0), NULL, 0, currQuad);
-        
+
+
+        emit(assign, newexpr_constbool(1), NULL, tmp, 0, currQuad);
+        emit(jump, NULL, NULL, NULL, nextquadlabel() + 3 , currQuad);
+        emit(assign, newexpr_constbool(0), NULL, tmp, 0, currQuad);
+
         return tmp;
     }
     return e;
@@ -381,7 +382,7 @@ void print_expression(expr *expr, FILE *f)
 {
     if (!expr)
     {
-        fprintf(f, "%-16s", "");
+        fprintf(f, "%-8s", "");
         return;
     }
     if (expr == NULL) {
@@ -758,7 +759,7 @@ void patchlist(int list, int label){
     while(list) {
     {
         int next = quads[list].label;
-        quads[list].label = label;
+        quads[list].label = label+1;
         list = next;
     }
     }
