@@ -1,9 +1,9 @@
 Nonterminals useless in grammar
 
     parsing
+    elist_help
     exprlist
     blockk
-    elist_help
     obj
 
 
@@ -283,7 +283,7 @@ Nonterminals, with rules where they appear
     methodcall <calls> (66)
         on left: 63
         on right: 61
-    elist <call_list> (67)
+    elist <expression> (67)
         on left: 64 65 66
         on right: 55 57 62 63 65 67 102 103
     objectdef <expression> (68)
