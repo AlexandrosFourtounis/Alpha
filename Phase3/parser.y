@@ -39,6 +39,7 @@
     struct call *calls;
     struct for_struct *for_stmt;
     struct stmt_struct *stmt_structt;
+    struct st *st;
 }
 
 %define parse.error verbose
@@ -62,7 +63,8 @@
 
 
 %type <stringv> program parsing  number whilestmt forstmt 
-%type <expression> term elist elist_help lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
+%type <expression>elist elist_help term lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
+
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
@@ -99,7 +101,7 @@ stmts:              stmt stmts{
                     | %empty {make_stmt();}
                     ;
 
-stmt:               expr SEMICOLON  {//printf("reset\n");
+stmt:               expr SEMICOLON  {printf("reset\n");
                                     $$ = make_stmt();
                                     expr *temp = $1;
                                     backpatching(temp);
@@ -147,24 +149,29 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr KEYWORD_AND {
                         if($1->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
-                            temp->sym = newtemp();
-                            temp->truelist =nextquadlabel();
-                            temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
-                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            temp->truelist =makelist(nextquadlabel());
+                            temp->falselist = makelist(nextquadlabel()+1);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
+                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
+                            //backpatch(temp->falselist, nextquadlabel()+1);
+                            $1 = temp;
                         }
                     } M expr { 
+                        
+                        
                         if($5->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
-                            temp->sym = newtemp();
-                            temp->truelist =nextquadlabel();
-                            temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
-                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            //temp->sym = newtemp();
+                            temp->truelist =  makelist(nextquadlabel());
+                            temp->falselist = makelist(nextquadlabel()+1);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
+                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
+                            $5 = temp;
                         }
                         $$ = newexpr(boolexpr_e);
                         //$$->type = boolexpr_e;
-                        patchlist($1->truelist, $4);
+                        printf("truel %d" , $1->truelist);
+                        backpatch($1->truelist, $4+1);
                         $$->truelist = $5->truelist;
                         $$->falselist = mergelist($1->falselist, $5->falselist);
                         
@@ -172,11 +179,13 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr KEYWORD_OR {
                         if($1->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
-                            temp->sym = newtemp();
-                            temp->truelist =nextquadlabel();
-                            temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
-                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            //temp->sym = newtemp();
+                            temp->truelist =makelist(nextquadlabel());
+                            temp->falselist = makelist(nextquadlabel()+1);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
+                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
+                            //backpatch($1->truelist, nextquadlabel()+5);
+                            $1 = temp;
                         }
                     } M expr { 
                         if($5->type != boolexpr_e){
@@ -184,12 +193,13 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                             temp->sym = newtemp();
                             temp->truelist =nextquadlabel();
                             temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
                             emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            $5 = temp;
                         }
                         $$ = newexpr(boolexpr_e);
                         //$$->type = boolexpr_e;
-                        patchlist($1->falselist, $4);
+                        backpatch($1->falselist, $4+1);
                         $$->falselist = $5->falselist;
                         $$->truelist = mergelist($1->truelist, $5->truelist);
                         
@@ -203,8 +213,10 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                     | '-' expr %prec UMINUS  {
                                                 check_arith($2,(const char*)"- expr");
                                                 $$ = newexpr(arithexpr_e);
-                                                $$->sym = newtemp();
-                                    
+                                                $$->sym = curr_temp();
+                                                if($$->sym == NULL){
+                                                    $$->sym = newtemp();
+                                                }
                                                 emit(uminus,$2,NULL,$$,0,yylineno);
                                              }
                     | KEYWORD_NOT expr {
@@ -309,6 +321,8 @@ expr {
     }
     else{
         expr *temp = $4;
+        $4->truelist = NULL;
+        $4->falselist = NULL;
         if($4->type == boolexpr_e){
             temp = backpatching($4);
         } 
@@ -747,8 +761,8 @@ ifstmt:             ifprefix stmt elseprefix stmt {
                                                     t->contlist = $2->contlist ? ($4->contlist ? mergelist($2->contlist, $4->contlist) : $2->contlist) : $4->contlist;
                                                     printf("breaklist %d\n", t->breaklist);
                                                     $$ = t;
-                                                    free($2);
-                                                    free($4);
+                                                    //free($2);
+                                                    //free($4);
                                                 }
                                                 
                     | ifprefix stmt {  
