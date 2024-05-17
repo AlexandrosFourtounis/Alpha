@@ -59,13 +59,16 @@
 %token <stringv> DOT DOUBLEDOT DOUBLECOLON 
 
 
-%type <stringv> program parsing  objectdef obj indexed indexedelem  number whilestmt forstmt 
-%type <expression> term lvalue assignexpr expr primary  member const call  exprlist elist  returnstmt
+
+%type <stringv> program parsing  number whilestmt forstmt 
+%type <expression>elist elist_help term lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
+
+
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
-%type <stmt_structt> stmt ifstmt stmts block blockk loopstmt loopstart loopend
+%type <stmt_structt> stmt ifstmt stmts block blockk /*loopstmt loopstart loopend */
 
 %right '='
 %left KEYWORD_OR
@@ -299,7 +302,7 @@ assignexpr:         lvalue  '='
 } 
 expr { 
     if($1->type == tableitem_e){
-        emit(tablesetelem, $1, $1->index, $4, 0U, yylineno);
+        emit(tablesetelem, $1->index, $1, $4, 0U, yylineno+2000);
         $$ = emit_iftableitem($1);
         $$->type = assignexpr_e;
     }
@@ -469,8 +472,40 @@ methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
                                                                                     $$->name = strdup($2);
                                                                                 }
 
-elist:              exprlist  {$$ = $1;}
-                    | %empty            {}
+
+
+// elist_help:         COMMA expr elist_help
+//                                             {
+//                                                 expr * temp = $2;
+                                        
+//                                                 printf("temp->type %d\n", temp->type);
+//                                                 printf("temp->sym %s\n", temp->sym->value.varVal->name);
+//                                                 addToExprList(&$3,$2);
+//                                                 printf("before $$ b is? %s\n", $3->item->sym->value.varVal->name);
+//                                                 $$ = $3;
+//                                                 printf("after $$ b is? %s\n", $$->item->sym->value.varVal->name);
+//                                             }
+//                     | {$$ = NULL;}
+
+
+elist:              expr { 
+                            if($1->type == boolexpr_e){
+                                $1 = backpatching($1);
+                            }
+                            $$ = $1;
+                            }   
+                    |expr COMMA elist{
+                              
+                                if($1->type == boolexpr_e){
+                                    $1 = backpatching($1);
+                                }
+                                if($1 != NULL){
+                                    $1->next = $3;
+                                }
+                                // printf("expr a %s and expr b %s\n", $$->next->item->sym->value.varVal->name,$$->next->next->item->sym->value.varVal->name);
+                                }
+                    | %empty { $$ = NULL;}
+
                     ;
 
 exprlist:           exprlist  COMMA expr {   addToExprList(&$$->next,$3) ; }
@@ -478,9 +513,29 @@ exprlist:           exprlist  COMMA expr {   addToExprList(&$$->next,$3) ; }
                     ;
              
 
-objectdef:          LEFTBRACKET  elist RIGHTBRACKET
-                    | LEFTBRACKET indexed RIGHTBRACKET
-                    | LEFTBRACKET RIGHTBRACKET
+objectdef:          LEFTBRACKET  elist RIGHTBRACKET {
+													int count = 0;
+													expr* t = newexpr(newtable_e);
+													t->sym = newtemp();
+													emit(tablecreate, (expr*) 0, (expr*) 0, t, currQuad, yylineno);
+													while($2 != NULL){
+														emit(tablesetelem, t, newexpr_constnum(count++), $2, currQuad, yylineno+1000);
+														$2 = $2->next;
+													}
+													$$ = t;
+												}
+                    | LEFTBRACKET indexed RIGHTBRACKET{
+													expr* t = newexpr(newtable_e);
+													t->sym = newtemp();
+													emit(tablecreate, (expr*) 0, (expr*) 0, t, currQuad, yylineno);
+													while($2!=NULL){
+														emit(tablesetelem, t, $2->index, $2, currQuad, yylineno+1000);
+														$2 = $2->next;
+													}
+													$$ = t;		
+												}
+                    
+
                     ;
 
 obj:                elist 
@@ -491,7 +546,14 @@ indexed:            indexedelem
                     | indexedelem COMMA indexed
                     ;
 
-indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE 
+
+indexedelem_list: COMMA indexedelem indexedelem_list {$$=$2;$$->next=$3;}
+                    |%empty {$$ = NULL;}
+                    ;
+
+indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE {$$=$4;$$->index=$2;}
+                    ;
+
 
 block:              LEFTBRACE { scope++; } blockk RIGHTBRACE { 
                                                                 scope--; 
