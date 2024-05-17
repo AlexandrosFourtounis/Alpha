@@ -17,6 +17,7 @@ unsigned int scopeSpaceCounter = 1;
 int tempcounter = 0;
 extern int scope;
 extern int yylineno;
+char *curr_temp_name = NULL;
 
 void expand(void)
 {
@@ -106,6 +107,7 @@ char *newtempname()
 {
     char temp[20]; // Buffer to hold the resulting string
     sprintf(temp, "_t%d", tempcounter++);
+    curr_temp_name = strdup(temp);
     return strdup(temp);
 }
 

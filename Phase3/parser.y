@@ -68,7 +68,7 @@
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
-%type <stmt_structt> stmt ifstmt stmts block blockk /*loopstmt loopstart loopend */
+%type <stmt_structt> stmt ifstmt stmts block blockk loopstmt loopstart loopend 
 
 %right '='
 %left KEYWORD_OR
@@ -146,24 +146,26 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr KEYWORD_AND {
                         if($1->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
-                            temp->sym = newtemp();
-                            temp->truelist =nextquadlabel();
-                            temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
-                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            //temp->sym = newtemp();
+                            temp->truelist = newlist(nextquadlabel());
+                            temp->falselist = newlist(nextquadlabel()+1);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
+                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
+                            $1 = temp;
                         }
                     } M expr { 
                         if($5->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
-                            temp->sym = newtemp();
-                            temp->truelist =nextquadlabel();
-                            temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
-                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                            //temp->sym = newtemp();
+                            temp->truelist =newlist(nextquadlabel());
+                            temp->falselist = newlist(nextquadlabel()+1);
+                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
+                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
+                            $5 = temp;
                         }
                         $$ = newexpr(boolexpr_e);
                         //$$->type = boolexpr_e;
-                        patchlist($1->truelist, $4);
+                        patchlist($1->truelist, $4+1);
                         $$->truelist = $5->truelist;
                         $$->falselist = mergelist($1->falselist, $5->falselist);
                         

@@ -163,9 +163,8 @@ union YYSTYPE
     struct call *calls;
     struct for_struct *for_stmt;
     struct stmt_struct *stmt_structt;
-    struct st *st;
 
-#line 169 "parser.h"
+#line 168 "parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

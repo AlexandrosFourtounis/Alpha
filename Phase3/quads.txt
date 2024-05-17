@@ -1,0 +1,10 @@
+QUAD    OP              RESULT  ARG1    ARG2    LABEL   LINE    
+------------------------------------------------------------
+1       if_eq                   1.00    true    2       1       
+2       jump                                    8       1       
+3       assign          x       3.00            0       2       
+4       assign          _t0     x               0       2       
+5       add             _t0     x       1.00            3       
+6       assign          a       _t0             0       3       
+7       assign          _t1     a               0       3       
+8       jump                                    0       4       
