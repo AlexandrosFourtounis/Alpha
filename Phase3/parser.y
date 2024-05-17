@@ -39,7 +39,6 @@
     struct call *calls;
     struct for_struct *for_stmt;
     struct stmt_struct *stmt_structt;
-    struct st *st;
 }
 
 %define parse.error verbose
@@ -61,16 +60,15 @@
 
 
 
-
 %type <stringv> program parsing  number whilestmt forstmt 
 %type <expression>elist elist_help term lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
+
 
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
 %type <sym> funcprefix funcdef funcname idlist ids funcargs
 %type <calls> callsuffix normcall methodcall 
 %type <for_stmt> forprefix
 %type <stmt_structt> stmt ifstmt stmts block blockk /*loopstmt loopstart loopend */
-
 
 %right '='
 %left KEYWORD_OR
@@ -87,21 +85,21 @@
 
 %%
 
-program:            stmts      
+program:            parsing      
                     ;
-// parsing:            stmts parsing { $$ = $1; }
-//                     | %empty            {} 
-//                     ;
+parsing:            stmt parsing { $$ = $1; }
+                    | %empty            {} 
+                    ;
 
-stmts:              stmt stmts{ 
+stmts:              stmts stmt{ 
                         $$ = make_stmt();
                         $$->breaklist = mergelist($1->breaklist, $2->breaklist);
                         $$->contlist = mergelist($1->contlist, $2->contlist);
                     }
-                    | %empty {make_stmt();}
+                    | stmt {$$ = $1;}
                     ;
 
-stmt:               expr SEMICOLON  {printf("reset\n");
+stmt:               expr SEMICOLON  {//printf("reset\n");
                                     $$ = make_stmt();
                                     expr *temp = $1;
                                     backpatching(temp);
@@ -128,7 +126,6 @@ stmt:               expr SEMICOLON  {printf("reset\n");
                                                 resettemp();}
                                                 
                     | block { $$ = $1;   resettemp(); printf("enter stmt");}
-
                     | funcdef { resettemp();}
                     | SEMICOLON {$$ = make_stmt(); resettemp();}
                     | error SEMICOLON   { yyerrok; }
@@ -149,43 +146,11 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                     | expr KEYWORD_AND {
                         if($1->type != boolexpr_e){
                             expr *temp = newexpr(boolexpr_e);
-                            temp->truelist =makelist(nextquadlabel());
-                            temp->falselist = makelist(nextquadlabel()+1);
-                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
-                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
-                            //backpatch(temp->falselist, nextquadlabel()+1);
-                            $1 = temp;
-                        }
-                    } M expr { 
-                        
-                        
-                        if($5->type != boolexpr_e){
-                            expr *temp = newexpr(boolexpr_e);
-                            //temp->sym = newtemp();
-                            temp->truelist =  makelist(nextquadlabel());
-                            temp->falselist = makelist(nextquadlabel()+1);
-                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
-                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
-                            $5 = temp;
-                        }
-                        $$ = newexpr(boolexpr_e);
-                        //$$->type = boolexpr_e;
-                        printf("truel %d" , $1->truelist);
-                        backpatch($1->truelist, $4+1);
-                        $$->truelist = $5->truelist;
-                        $$->falselist = mergelist($1->falselist, $5->falselist);
-                        
-                    }
-                    | expr KEYWORD_OR {
-                        if($1->type != boolexpr_e){
-                            expr *temp = newexpr(boolexpr_e);
-                            //temp->sym = newtemp();
-                            temp->truelist =makelist(nextquadlabel());
-                            temp->falselist = makelist(nextquadlabel()+1);
-                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
-                            emit(jump, NULL, NULL, NULL, nextquadlabel(), yylineno);
-                            //backpatch($1->truelist, nextquadlabel()+5);
-                            $1 = temp;
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
                         }
                     } M expr { 
                         if($5->type != boolexpr_e){
@@ -193,18 +158,42 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                             temp->sym = newtemp();
                             temp->truelist =nextquadlabel();
                             temp->falselist = nextquadlabel()+1;
-                            emit(if_eq, temp, newexpr_constbool(1), NULL, nextquadlabel(), yylineno);
+                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
                             emit(jump, NULL, NULL, NULL, 0, yylineno);
-                            $5 = temp;
                         }
                         $$ = newexpr(boolexpr_e);
                         //$$->type = boolexpr_e;
-                        backpatch($1->falselist, $4+1);
+                        patchlist($1->truelist, $4);
+                        $$->truelist = $5->truelist;
+                        $$->falselist = mergelist($1->falselist, $5->falselist);
+                        
+                    }
+                    | expr KEYWORD_OR {
+                        if($1->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $1, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
+                    } M expr { 
+                        if($5->type != boolexpr_e){
+                            expr *temp = newexpr(boolexpr_e);
+                            temp->sym = newtemp();
+                            temp->truelist =nextquadlabel();
+                            temp->falselist = nextquadlabel()+1;
+                            emit(if_eq, $5, newexpr_constbool(1), NULL, 0, yylineno);
+                            emit(jump, NULL, NULL, NULL, 0, yylineno);
+                        }
+                        $$ = newexpr(boolexpr_e);
+                        //$$->type = boolexpr_e;
+                        patchlist($1->falselist, $4);
                         $$->falselist = $5->falselist;
                         $$->truelist = mergelist($1->truelist, $5->truelist);
                         
                     } 
-                    | assignexpr { $$ = $1;} 
+                    | assignexpr { $$ = $1;}        
                     | term  { $$ = $1;}
                     ;
 
@@ -213,10 +202,8 @@ term:               LEFTPARENTHESIS expr RIGHTPARENTHESIS   {$$ = $2;}
                     | '-' expr %prec UMINUS  {
                                                 check_arith($2,(const char*)"- expr");
                                                 $$ = newexpr(arithexpr_e);
-                                                $$->sym = curr_temp();
-                                                if($$->sym == NULL){
-                                                    $$->sym = newtemp();
-                                                }
+                                                $$->sym = newtemp();
+                                    
                                                 emit(uminus,$2,NULL,$$,0,yylineno);
                                              }
                     | KEYWORD_NOT expr {
@@ -310,7 +297,7 @@ assignexpr:         lvalue  '='
             }
         }
         
-    } 
+    }
     else if( entry->type == LIBFUNC || entry->type == USERFUNC) yyerror("Cannot assign to a function");
 } 
 expr { 
@@ -321,19 +308,16 @@ expr {
     }
     else{
         expr *temp = $4;
-        $4->truelist = NULL;
-        $4->falselist = NULL;
         if($4->type == boolexpr_e){
             temp = backpatching($4);
         } 
         emit(assign, temp, NULL, $1, 0U, yylineno);
-        $$ = newexpr(assignexpr_e);
-        $$->sym = newtemp();
-
-        emit(assign, $1, NULL,$$, 0U, yylineno);
+        SymbolTableEntry *ntemp = newtemp();
+        expr *ntemp_e = lvalue_expr(ntemp);
+        emit(assign, $1, NULL,ntemp_e, 0U, yylineno);
+        $$ = ntemp;
     }
 } 
-
 
 primary:             lvalue {$$ = emit_iftableitem($1);}
                     | call 
@@ -446,58 +430,32 @@ member:             lvalue DOT IDENTIFIER   {
 call:               call LEFTPARENTHESIS elist RIGHTPARENTHESIS  { $$ =  make_call($1,$3);}
                     | lvalue callsuffix 
                                             {
+                                                $2->elist = NULL;
                                                 $1 = emit_iftableitem($1);
-                                                if($2 && $2->method){
-                                                    expr *last = $1;
+                                                if($2->method && $2){
+                                                    expr *last = get_last($2->elist);
+                                                    if (last == NULL) {
+                                                        expr *temp = $1;
+                                                        addToExprList(&$2->elist , $1);
 
-                                                    $1 = emit_iftableitem(member_item(last,$2->name));
-                                                    expr *temp = $2->elist;
-                                                        if(temp==NULL)
-                                                              {
-                                                                $2->elist=last;
-                                                              }
-                                                              else
-                                                              {
-
-                                                                while(temp->next!=NULL)
-                                                                {
-                                                                    temp=temp->next;
-                                                                }
-                                                                temp->next=last;
-                                                              }
+                                                    } else {
+                                                        addToExprList(&last->next,$1);
+                                                    }
+                                                    $1 = emit_iftableitem(member_item($1,$2->name));
                                                 }
                                                 $$ = make_call($1,$2->elist);
                                             }
                     | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS elist RIGHTPARENTHESIS 
                                                                                                             { 
                                                                                                                 expr* func = newexpr(programfunc_e);
-                                                                                                                if($2 !=NULL)
                                                                                                                 func->sym = $2;
                                                                                                                 $$ = make_call(func,$5);
                                                                                                             }
-                    | LEFTPARENTHESIS funcdef RIGHTPARENTHESIS LEFTPARENTHESIS  RIGHTPARENTHESIS 
-                                                                                                            { 
-                                                                                                                expr* func = newexpr(programfunc_e);
-                                                                                                                if($2 !=NULL)
-                                                                                                                func->sym = $2;
-                                                                                                                $$ = make_call(func,NULL);
-                                                                                                            }
-                    | LEFTPARENTHESIS RIGHTPARENTHESIS 
-                                                        {
-                                                            $$ = make_call($$,NULL);
-                                                        }
                     ;
 
 
-callsuffix:         normcall  
-                                {
-                                    $$ = malloc(sizeof(calls));
-                                    $$ = $1;
-                                }
-                    | methodcall {
-                                    $$ = malloc(sizeof(calls));
-                                    $$ = $1;
-                                }
+callsuffix:         normcall  { $$ = $1;}
+                    | methodcall {$$ = $1;}
 
 normcall:           LEFTPARENTHESIS elist RIGHTPARENTHESIS  
                                                             {
@@ -513,6 +471,7 @@ methodcall:         DOUBLEDOT IDENTIFIER LEFTPARENTHESIS elist RIGHTPARENTHESIS
                                                                                     $$->method = 1;
                                                                                     $$->name = strdup($2);
                                                                                 }
+
 
 
 // elist_help:         COMMA expr elist_help
@@ -546,8 +505,13 @@ elist:              expr {
                                 // printf("expr a %s and expr b %s\n", $$->next->item->sym->value.varVal->name,$$->next->next->item->sym->value.varVal->name);
                                 }
                     | %empty { $$ = NULL;}
+
                     ;
 
+exprlist:           exprlist  COMMA expr {   addToExprList(&$$->next,$3) ; }
+                    | expr {$$ = $1;}
+                    ;
+             
 
 objectdef:          LEFTBRACKET  elist RIGHTBRACKET {
 													int count = 0;
@@ -571,14 +535,17 @@ objectdef:          LEFTBRACKET  elist RIGHTBRACKET {
 													$$ = t;		
 												}
                     
+
                     ;
 
 obj:                elist 
                     | indexed 
                     ;
                     
-indexed:            indexedelem indexedelem_list {$$=$1; $$->next=$2;}
+indexed:            indexedelem 
+                    | indexedelem COMMA indexed
                     ;
+
 
 indexedelem_list: COMMA indexedelem indexedelem_list {$$=$2;$$->next=$3;}
                     |%empty {$$ = NULL;}
@@ -587,12 +554,23 @@ indexedelem_list: COMMA indexedelem indexedelem_list {$$=$2;$$->next=$3;}
 indexedelem:        LEFTBRACE expr COLON expr RIGHTBRACE {$$=$4;$$->index=$2;}
                     ;
 
-block:              LEFTBRACE { scope++; } stmts RIGHTBRACE { 
+
+block:              LEFTBRACE { scope++; } blockk RIGHTBRACE { 
                                                                 scope--; 
                                                                 $$ = make_stmt(); 
                                                                 printf("enter block");
                                                             }
                                                             ;
+
+blockk:             stmts blockk { 
+                                    //stmt_struct* t = make_stmt();
+                                    $$ = $1; 
+                                }
+                    | %empty { 
+                                //stmt_struct* t = make_stmt();
+                                //$$ = t; 
+                            }
+                            ;
 
 funcname: IDENTIFIER {
                         
@@ -761,8 +739,8 @@ ifstmt:             ifprefix stmt elseprefix stmt {
                                                     t->contlist = $2->contlist ? ($4->contlist ? mergelist($2->contlist, $4->contlist) : $2->contlist) : $4->contlist;
                                                     printf("breaklist %d\n", t->breaklist);
                                                     $$ = t;
-                                                    //free($2);
-                                                    //free($4);
+                                                    free($2);
+                                                    free($4);
                                                 }
                                                 
                     | ifprefix stmt {  
@@ -772,11 +750,11 @@ ifstmt:             ifprefix stmt elseprefix stmt {
                                     }
                     ;
 
-// loopstart:%empty  {++loopcounter;}
+loopstart:%empty  {++loopcounter;}
 
-// loopend:%empty  {--loopcounter;}
+loopend:%empty  {--loopcounter;}
 
-// loopstmt: loopstart stmt loopend { $$ =$2;}                    
+loopstmt: loopstart stmt loopend { $$ =$2;}                    
 
 
 whilestart: KEYWORD_WHILE 

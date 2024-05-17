@@ -17,7 +17,6 @@ unsigned int scopeSpaceCounter = 1;
 int tempcounter = 0;
 extern int scope;
 extern int yylineno;
-char *curr_temp_name = NULL;
 
 void expand(void)
 {
@@ -107,14 +106,13 @@ char *newtempname()
 {
     char temp[20]; // Buffer to hold the resulting string
     sprintf(temp, "_t%d", tempcounter++);
-    curr_temp_name = strdup(temp);
     return strdup(temp);
 }
+
 
 SymbolTableEntry *curr_temp(){
     return lookup(curr_temp_name, scope);
 }
-
 
 void resettemp()
 {
@@ -174,7 +172,6 @@ expr *lvalue_expr(SymbolTableEntry *sym)
     }
     return e;
 }
-
 
 SymbolTableEntry *newtemp()
 {
@@ -289,6 +286,23 @@ expr *emit_iftableitem(expr *e)
         emit(tablegetelem, e, e->index, result, 0, yylineno);
         return result;
     }
+}
+
+expr *backpatching(expr *e){
+    if(e->type == boolexpr_e || e->type == constbool_e){
+        patchlist(e->truelist, nextquadlabel());
+        patchlist(e->falselist, nextquadlabel()+2);
+
+        expr* tmp = newexpr(boolexpr_e);
+        tmp->sym = newtemp();
+        
+        emit(assign, tmp, newexpr_constbool(1), NULL, 0, currQuad);
+        emit(jump, NULL, NULL, NULL, nextquadlabel() + 2 , currQuad);
+        emit(assign, tmp, newexpr_constbool(0), NULL, 0, currQuad);
+        
+        return tmp;
+    }
+    return e;
 }
 
 expr *member_item(expr *lv, char *name)
@@ -436,12 +450,6 @@ void print_expression(expr *expr, FILE *f)
             fprintf(f, "%-8s", "var");
         }
         break;
-    case tableitem_e:
-        fprintf(f, "%-8s", expr->sym->value.varVal->name);
-        break;
-    case newtable_e:
-        fprintf(f, "%-8s", expr->sym->value.varVal->name);
-        break;
     default:
         fprintf(f, "%-8s", expr->strConst);
         break;
@@ -473,12 +481,13 @@ void print_quads()
             fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
         }
 
-        else if(quads[i].op == ret || quads[i].op == tablecreate){ 
+        else if(quads[i].op == ret){
+            
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
         }
-        else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend)
+        else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend  || quads[i].op == tablecreate)
 
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
@@ -494,12 +503,13 @@ void print_quads()
             fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
             
         }
-        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem)
+        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem || quads[i].op == tablesetelem)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
             print_expression(quads[i].arg2, f);
+
             fprintf(f, "%-8s%-8d\n", "", quads[i].line);
         } 
         else if(quads[i].op == tablesetelem){ //hardcoded
@@ -523,6 +533,7 @@ void print_quads()
                 fprintf(f, "%-8s%-8d\n", "", quads[i].line);
 
             }
+
         }
         else if (quads[i].op == param || quads[i].op == call)
         {
@@ -687,29 +698,8 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
     return tmp;
 }
 
-expr* reverse_elist(expr* head) {
-    if (head == NULL)
-    {
-        return NULL;
-    }
-    expr* prev = NULL;
-    expr* current = head;
-    expr* next = NULL;
-    while (current != NULL) {
-        next = current->next;  // store the next node
-        current->next = prev;  // reverse the link
-        prev = current;  // move the prev and current one step forward
-        current = next;
-    }
-    head = prev;  // finally, make the last node as head
-    return head;
-}
-
 expr *make_call(expr *lv, expr *reversed_elist){
     expr *func = emit_iftableitem(lv);
-    if(reversed_elist != NULL)
-        reversed_elist = reverse_elist(reversed_elist); // reverse the elist
-
     while(reversed_elist){
         emit(param, reversed_elist, NULL, NULL, 0U, yylineno);
         reversed_elist = reversed_elist->next;  
@@ -728,25 +718,9 @@ reversed_list *createExprNode(expr *item){
     return node;
 }
 void addToExprList(reversed_list **head, expr *item){
-    reversed_list *node = malloc(sizeof(reversed_list));
-    node->item = item;
-    node->next = NULL;
-    printf("entered addToExprList\n");
-    if (*head == NULL)
-    {
-        printf("head is null\n");
-        *head = node; // if the list is empty, add the node at the head
-    }
-    else
-    {
-        reversed_list *current = *head;
-        while (current->next != NULL)
-        {
-            current = current->next; // traverse the list to find the last node
-            printf("current: %p\n", (void *)current);
-        }
-        current->next = node; // add the node at the end
-    }
+    reversed_list *node = createExprNode(item);
+    node->next = *head;
+    *head = node;
 }
 
 reversed_list *get_last(reversed_list *head)
@@ -771,11 +745,9 @@ int mergelist(int l1, int l2)
     else
     {
         int i = l1;
-        while (i < total && quads[i].label)
+        while (quads[i].label)
             i = quads[i].label;
-        if (i < total) {
-            quads[i].label = l2;
-        }
+        quads[i].label = l2;
         return l1;
     }
 }
@@ -787,14 +759,6 @@ void patchlist(int list, int label){
         quads[list].label = label;
         list = next;
     }
-    }
-}
-
-void backpatch(st* list, int label){
-    st* tmp = list;
-    while(tmp){
-        patchlabel(tmp->label, label);
-        tmp = tmp->next;
     }
 }
 
@@ -840,25 +804,4 @@ int true_test(expr* arg){
     arg->truelist = newlist(nextquadlabel()-2);
     arg->falselist = newlist(nextquadlabel()-1);
     return 1;
-}
-
-st* makelist(unsigned int label){
-   st *tmp = malloc(sizeof(st));
-    tmp->label = label;
-    tmp->next = NULL;
-    return tmp;
-}
-
-expr *backpatching(expr *e){
-    if(e->type == boolexpr_e || e->type == constbool_e){
-        backpatch(e->truelist, nextquadlabel());
-        backpatch(e->falselist, nextquadlabel()+2);
-        
-        emit(assign, e, newexpr_constbool(1), NULL, 0, currQuad);
-        emit(jump, NULL, NULL, NULL, nextquadlabel() + 2 , currQuad);
-        emit(assign, e, newexpr_constbool(0), NULL, 0, currQuad);
-        
-        return e;
-    }
-    return e;
 }

@@ -78,8 +78,8 @@ typedef struct expr{
     char *strConst;
     char *boolConst;
     struct expr *next;
-    struct st *truelist;
-    struct st*falselist;
+    int truelist;
+    int falselist;
 }expr;
 
 typedef struct quad{
@@ -90,11 +90,6 @@ typedef struct quad{
     unsigned int label;
     unsigned int line;
 }quad;
-
-typedef struct st{
-    unsigned int label;
-    struct st *next;
-} st;   
 
 extern quad *quads;
 extern unsigned int total;
@@ -115,7 +110,6 @@ expr* newexpr_conststring(char* s);
 expr* member_item(expr* lv, char* name);
 expr *lvalue_expr(SymbolTableEntry *sym);
 SymbolTableEntry *newtemp();
-SymbolTableEntry *curr_temp();
 scopespace_t currscopespace(void);
 unsigned int currscopeoffset(void);
 void inccurrscopeoffset(void);
@@ -127,40 +121,38 @@ void restorecurrscopeoffset(unsigned int n);
 unsigned int nextquadlabel();
 void patchlabel(unsigned int quadNo, unsigned int label);
 void print_quads();
-expr *Manage_operations(expr *arg1, iopcode op, expr *arg2);
+expr* Manage_operations(expr *arg1, iopcode op, expr *arg2);
+
 
 expr *newexpr_bool(char *s);
-expr *newexpr_constbool(unsigned char b);
+expr* newexpr_constbool(unsigned char b);
 expr *newexpr_nil();
 expr *newexpr_constnum(double x);
 expr *Manage_operations(expr *arg1, iopcode op, expr *arg2);
-expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2);
+expr *Manage_comparisonopers(expr* arg1, char* op, expr* arg2);
 expr *make_call(expr *lv, expr *reversed_elist);
-st *makelist(unsigned int label);
+
 typedef struct call
 {
-    expr *elist;
+    expr* elist;
     int method;
     char *name;
-    } calls;
+}calls;
 
-    typedef struct reversed_list
-    {
-        expr *item;
-        struct reversed_list *next;
-    } reversed_list;
+typedef struct reversed_list{
+    expr *item;
+    struct reversed_list *next;
+} reversed_list;
 
-    typedef struct for_struct
-    {
-        unsigned int test;
-        unsigned int enter;
-    } for_struct;
+typedef struct for_struct{
+    unsigned int test;
+    unsigned int enter;
+} for_struct;
 
-    typedef struct stmt_struct
-    {
-        int breaklist;
-        int contlist;
-    } stmt_struct;
+typedef struct stmt_struct{
+    int breaklist;
+    int contlist;
+} stmt_struct;
 
     reversed_list *
     createExprNode(expr *item);
@@ -170,4 +162,3 @@ int mergelist (int l1, int l2); //added
 void patchlist(int list, int label);
 stmt_struct* make_stmt ();
 int newlist(int i);
-void backpatch(st *list, int label);
