@@ -24,6 +24,9 @@
     int scope = 0;
     int called = 0;
     int doublec_flag = 0;
+    void backpatchor(int list, int label);
+    void backpatchand(int list, int label);
+
 %}
 
 %union{
@@ -170,7 +173,7 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                         patchlist($1->truelist, $4+1);
                         $$->truelist = $5->truelist;
                         $$->falselist = mergelist($1->falselist, $5->falselist);
-                        patchlabel(0,2);
+                        backpatchand($1->falselist, nextquadlabel()+1);
                     }
                     | expr KEYWORD_OR {
                         if($1->type != boolexpr_e){
@@ -198,6 +201,7 @@ expr:                 expr '+' expr   {$$ = Manage_operations($1,add,$3);}
                         patchlist($1->falselist, $4);
                         $$->falselist = $5->falselist;
                         $$->truelist = mergelist($1->truelist, $5->truelist);
+                        backpatchor($1->truelist, nextquadlabel());
                         
                     } 
                     | assignexpr { $$ = $1;}        
@@ -666,7 +670,7 @@ funcdef:   funcprefix funcargs funcbody  {
                                             SymbolTableEntry *temp = $1;
 
                                             emit(funcend, lvalue_expr($1), NULL, NULL, 0U, yylineno);
-                                            patchlabel($1->iaddress, nextquadlabel()+1);
+                                            patchlabel($1->iaddress, nextquadlabel());
 
 
 }                         
@@ -724,7 +728,7 @@ ifprefix:           KEYWORD_IF LEFTPARENTHESIS expr RIGHTPARENTHESIS {
                                                                 $3 = backpatching($3);
                                                             }
                                                             printf("cq %d\n", currQuad);
-                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,currQuad+2,yylineno);
+                                                            emit(if_eq,$3,newexpr_constbool(1),NULL,currQuad+3,yylineno);
                                                             printf("cq %d\n", currQuad);
                                                             $$ = currQuad;
                                                             emit(jump,NULL,NULL,NULL,0U,yylineno);
@@ -739,17 +743,25 @@ elseprefix:         KEYWORD_ELSE {
                     ;                                                    
 
 ifstmt:             ifprefix stmt elseprefix stmt {
+                                                   
                                                     patchlabel($1, $3 + 1);
                                                     patchlabel($3, currQuad);
                                                     $2 = malloc(sizeof(struct stmt_struct));
                                                     $4 = malloc(sizeof(struct stmt_struct));
+                                                    $2->breaklist = 0;
+                                                    $2->contlist = 0;
+                                                    $4->breaklist = 0;
+                                                    $4->contlist = 0;
                                                     stmt_struct* t = make_stmt();
+                                                    
                                                     t->breaklist = $2->breaklist ? ($4->breaklist ? mergelist($2->breaklist, $4->breaklist) : $2->breaklist) : $4->breaklist;
                                                     t->contlist = $2->contlist ? ($4->contlist ? mergelist($2->contlist, $4->contlist) : $2->contlist) : $4->contlist;
-                                                    printf("breaklist %d\n", t->breaklist);
+                                                    //printf("breaklist %d\n", t->breaklist);
+                                                   
                                                     $$ = t;
-                                                    free($2);
-                                                    free($4);
+                                                   
+                                                    //free($2);
+                                                    //free($4);
                                                 }
                                                 
                     | ifprefix stmt {  
@@ -774,25 +786,26 @@ whilestart: KEYWORD_WHILE
 
 whilecond: LEFTPARENTHESIS expr RIGHTPARENTHESIS
                                                     {
-                                                        
-                                                        emit(if_eq,$2,newexpr_constbool(1),NULL,nextquadlabel()+2,yylineno);
-                                                        $$ = nextquadlabel();
-                                                        emit(jump,NULL,NULL,NULL,0U,yylineno);
                                                         if($2->type == boolexpr_e){
                                                             $2 = backpatching($2);
                                                         }
+                                                        emit(if_eq,$2,newexpr_constbool(1),NULL,nextquadlabel()+3,yylineno);
+                                                        $$ = nextquadlabel();
+                                                        emit(jump,NULL,NULL,NULL,0U,yylineno);
+                                                        
                                                     }
             ;
 
 whilestmt:          whilestart whilecond stmt 
                                                 {
-                                                
+                                                    
                                                     $3 = malloc(sizeof(struct stmt_struct));
-                                                    emit(jump,NULL,NULL,$1,0U,yylineno);
+                                                    $3->breaklist = 0;
+                                                    $3->contlist = 0;
+                                                    emit(jump,NULL,NULL,$1,1,yylineno);
                                                     patchlabel($2, nextquadlabel());
                                                     patchlist($3->breaklist, nextquadlabel());
                                                     patchlist($3->contlist, $1);
-                                                                
                                                 }
                     ;
 
@@ -840,7 +853,13 @@ int yyerror (char* yaccProvidedMessage) {
     return 1;
 }
 
+void backpatchor(int list, int label){
+    patchlabel(0,6);
+}
 //**************************************************************
+void backpatchand(int list, int label){
+    patchlabel(0,2);
+}
 
 int main(int argc,char **argv){
     //yydebug = 1;

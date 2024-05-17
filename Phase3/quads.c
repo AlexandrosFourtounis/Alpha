@@ -16,6 +16,7 @@ unsigned int formalArgOffset = 0;
 unsigned int scopeSpaceCounter = 1;
 int tempcounter = 0;
 extern int scope;
+int test;
 extern int yylineno;
 char *curr_temp_name = NULL;
 
@@ -257,7 +258,7 @@ expr *newexpr_bool(char *s)
 {
     expr *e = newexpr(boolexpr_e);
     e->sym = NULL;
-    printf("s: %s\n", s);
+    // printf("s: %s\n", s);
     if (strcmp(s, "true") == 0)
     {
         e->boolConst ="true";
@@ -389,7 +390,7 @@ void print_expression(expr *expr, FILE *f)
         fprintf(f, "NULL expression\n");
         return;
     }
-    printf("expr: %p\n", (void *)expr);
+    // printf("expr: %p\n", (void *)expr);
      if (expr != NULL && expr->type == nil_e)
     {
         fprintf(f, "%-8s", "NIL");
@@ -443,6 +444,12 @@ void print_expression(expr *expr, FILE *f)
             fprintf(f, "%-8s", "var");
         }
         break;
+    case tableitem_e:
+        fprintf(f, "%-8s", expr->sym->value.varVal->name);
+        break;
+    case newtable_e:
+        fprintf(f, "%-8s", expr->sym->value.varVal->name);
+        break;
     case var_e:
         if (expr->sym && expr->sym->value.varVal)
         {
@@ -475,7 +482,7 @@ void print_quads()
             print_expression(quads[i].arg1, f);
             //print_expression(quads[i].arg2, f);
             fprintf(f, "%-8s", "");
-            fprintf(f, "%-8d%-8d", quads[i].label, quads[i].line);
+            fprintf(f, "%-8s%-8d", "", quads[i].line);
             fprintf(f, "\n");
         }
         else if (quads[i].op == jump)
@@ -484,13 +491,14 @@ void print_quads()
             fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
         }
 
-        else if(quads[i].op == ret){
-            
+        else if (quads[i].op == ret || quads[i].op == tablecreate)
+        {
+
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
         }
-        else if (quads[i].op == getretval || quads[i].op == funcstart || quads[i].op == funcend  || quads[i].op == tablecreate)
+        else if ( quads[i].op == funcstart || quads[i].op == funcend  )
 
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
@@ -506,7 +514,7 @@ void print_quads()
             fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
             
         }
-        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem || quads[i].op == tablesetelem)
+        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem )
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
@@ -515,7 +523,7 @@ void print_quads()
 
             fprintf(f, "%-8s%-8d\n", "", quads[i].line);
         } 
-        else if(quads[i].op == tablesetelem){ //hardcoded
+        else if(quads[i].op == tablesetelem){ 
             if(quads[i].line>2000){
                 fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
                 print_expression(quads[i].arg2, f);
@@ -542,12 +550,15 @@ void print_quads()
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].arg1, f);
-            fprintf(f, "%-8s%-8s%-8d\n", "", "", quads[i].line);
+            fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
         }
+        
         else if (quads[i].op == getretval ){
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            print_expression(quads[i].result, f);
-            fprintf(f, "%-8s%-8s%-8d\n", "", "", quads[i].line);
+            struct expr *tmp = newexpr(var_e);
+            tmp->sym = newtemp();
+            print_expression(tmp, f);
+            fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
         }
         i++;
     }
@@ -582,18 +593,8 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
     //     printf("arg2: %s\n", "NULL");
     // }
 
-    if (arg1->sym && arg1->sym->type < 2 && arg1->sym->value.varVal->name[0] == '_') // in case of tmp
-    {
-        temp = arg1->sym;
-    }
-    else if (arg2->sym && arg2->sym->type < 2 && arg2->sym->value.varVal->name[0] == '_')
-    {
-        temp = arg2->sym;
-    }
-    else
-    {
-        temp = newtemp(); // create new tmp variable
-    }
+   temp = (arg1->sym && arg1->sym->type <2 && arg1->sym->value.varVal->name[0] == '_') ? arg1->sym : 
+    (arg2->sym && arg2->sym->type <2 && arg2->sym->value.varVal->name[0] == '_') ? arg2->sym : newtemp();
 
     result = lvalue_expr(temp);
     result->sym = temp;
@@ -647,18 +648,18 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
         emit(if_eq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
         emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         tmp->truelist = newlist(nextquadlabel()-2);
-        printf("truelist%d\n", tmp->truelist);
+        // printf("truelist%d\n", tmp->truelist);
         tmp->falselist = newlist(nextquadlabel()-1);
-        printf("falselist%d\n", tmp->falselist);
+        // printf("falselist%d\n", tmp->falselist);
         break;
     case '!':
         tmp->type = boolexpr_e;
         emit(if_noteq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
         emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         tmp->truelist = newlist(nextquadlabel()-2);
-        printf("truelist%d\n", tmp->truelist);
+        // printf("truelist%d\n", tmp->truelist);
         tmp->falselist = newlist(nextquadlabel()-1);
-        printf("falselist%d\n", tmp->falselist);
+        // printf("falselist%d\n", tmp->falselist);
         break;
     case '<':
         tmp->type = boolexpr_e;
@@ -673,9 +674,9 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
             emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         }
         tmp->truelist = newlist(nextquadlabel()-2);
-        printf("truelist%d\n", tmp->truelist);
+        // printf("truelist%d\n", tmp->truelist);
         tmp->falselist = newlist(nextquadlabel()-1);
-        printf("falselist%d\n", tmp->falselist);
+        // printf("falselist%d\n", tmp->falselist);
         break;
     case '>':
         tmp->type = boolexpr_e;
@@ -690,9 +691,9 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
             emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
         }
         tmp->truelist = newlist(nextquadlabel()-2);
-        printf("truelist%d\n", tmp->truelist);
+        // printf("truelist%d\n", tmp->truelist);
         tmp->falselist = newlist(nextquadlabel()-1);
-        printf("falselist%d\n", tmp->falselist);
+        // printf("falselist%d\n", tmp->falselist);
         break;
     default:
         printf("Invalid comparison operator\n");
@@ -701,11 +702,36 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
     return tmp;
 }
 
-expr *make_call(expr *lv, expr *reversed_elist){
+expr *reverse_elist(expr *head)
+{
+    if (head == NULL)
+    {
+        return NULL;
+    }
+    expr *prev = NULL;
+    expr *current = head;
+    expr *next = NULL;
+    while (current != NULL)
+    {
+        next = current->next; // store the next node
+        current->next = prev; // reverse the link
+        prev = current;       // move the prev and current one step forward
+        current = next;
+    }
+    head = prev; // finally, make the last node as head
+    return head;
+}
+
+expr *make_call(expr *lv, expr *reversed_elist)
+{
     expr *func = emit_iftableitem(lv);
-    while(reversed_elist){
+    if (reversed_elist != NULL)
+        reversed_elist = reverse_elist(reversed_elist); // reverse the elist
+
+    while (reversed_elist)
+    {
         emit(param, reversed_elist, NULL, NULL, 0U, yylineno);
-        reversed_elist = reversed_elist->next;  
+        reversed_elist = reversed_elist->next;
     }
     emit(call, func, NULL, NULL, 0U, yylineno);
     expr *result = newexpr(var_e);
@@ -784,22 +810,17 @@ int newlist(int i){
 }
 
 int true_test(expr* arg){
-    //printf("I AM TRUE TESTING");
+
     if(arg == NULL){
-        //printf("I AM HERE");
         return 0;
     }
     else if(arg->type == boolexpr_e) {
-        //printf("I AM HERE");
         return 0;
     }
-    
-    
     //arg->type = boolexpr_e;
     //if(arg->type != constbool_e){
         arg->type = boolexpr_e;
     //}
-    
     emit(if_eq, arg, newexpr_constbool(1),NULL, 0, currQuad);
     emit(jump, NULL, NULL, NULL, 0, currQuad);
     // printf("%d\n", nextquad()-2);
