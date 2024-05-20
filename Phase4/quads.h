@@ -67,7 +67,8 @@ typedef enum iopcode
     funcend,
     tablecreate,
     tablegetelem,
-    tablesetelem
+    tablesetelem,
+    nop
 }iopcode;
 
 typedef struct expr{
@@ -89,6 +90,7 @@ typedef struct quad{
     expr *arg2;
     unsigned int label;
     unsigned int line;
+    unsigned int taddress;
 }quad;
 
 extern quad *quads;
@@ -162,3 +164,159 @@ int mergelist (int l1, int l2); //added
 void patchlist(int list, int label);
 stmt_struct* make_stmt ();
 int newlist(int i);
+
+/*Phase 4*/
+typedef enum
+{
+    label_a,
+    global_a,
+    formal_a,
+    local_a,
+    number_a,
+    string_a,
+    bool_a,
+    nil_a,
+    userfunc_a,
+    libfunc_a,
+    retval_a
+} vmarg_t;
+
+typedef enum vm_opcode
+{
+    assign_v,
+    jump_v,
+    add_v,
+    sub_v,
+    mul_v,
+    div_v,
+    mod_v,
+    uminus_v,
+    and_v,
+    or_v,
+    not_v,
+    jeq_v,
+    jne_v,
+    jle_v,
+    jge_v,
+    jlt_v,
+    jgt_v,
+    callfunc_v,
+    pusharg_v,
+    enterfunc_v,
+    exitfunc_v,
+    newtable_v,
+    tablegetelem_v,
+    tablesetelem_v,
+    nop_v
+} vm_opcode;
+
+typedef struct vmarg
+{
+    vmarg_t type;
+    unsigned int val;
+} vmarg;
+
+
+typedef struct instruction{
+    vm_opcode opcode;
+    vmarg result;
+    vmarg arg1;
+    vmarg arg2;
+    unsigned int srcLine;
+} instruction;
+
+typedef struct userfunc
+{
+    unsigned int address;
+    unsigned int localSize;
+    char *id;
+} userfunc;
+
+consts_newstring(char *s);
+unsigned int consts_newnumber(double n);
+unsigned int libfuncs_newused(char *s);
+unsigned int userfuncs_newfunc(SymbolTableEntry *sym);
+
+void make_operand(expr *e, vmarg *arg);
+void make_numberoperand(vmarg *arg, double val);
+void make_booloperand(vmarg *arg, unsigned val);
+void make_retvaloperand(vmarg *arg);
+
+typedef struct incomplete_jump
+{
+    unsigned int instrNo;
+    unsigned int iaddress;
+    struct incomplete_jump *next;
+} incomplete_jump;
+
+void add_incomplete_jump(unsigned int instrNo, unsigned int iaddress);
+void patch_incomplete_jumps();
+
+void generate_ADD(quad *);
+void generate_SUB(quad *);
+void generate_MUL(quad *);
+void generate_DIV(quad *);
+void generate_MOD(quad *);
+void generate_UMINUS(quad *);
+void generate_AND(quad *);
+void generate_OR(quad *);
+void generate_NOT(quad *);
+void generate_IF_EQ(quad *);
+void generate_IF_NOTEQ(quad *);
+void generate_IF_LESSEQ(quad *);
+void generate_IF_GREATEREQ(quad *);
+void generate_IF_LESS(quad *);
+void generate_IF_GREATER(quad *);
+void generate_JUMP(quad *);
+void generate_CALL(quad *);
+void generate_PARAM(quad *);
+void generate_RET(quad *);
+void generate_GETRETVAL(quad *);
+void generate_FUNCSTART(quad *);
+void generate_FUNCEND(quad *);
+void generate_TABLECREATE(quad *);
+void generate_TABLEGETELEM(quad *);
+void generate_TABLESETELEM(quad *);
+void generate_ASSIGN(quad *);
+void generate_NOP(quad *);
+
+typedef void (*generator_func_t)(quad *);
+
+generator_func_t generators[] = {
+    generate_ASSIGN,
+    generate_JUMP,
+    generate_ADD,
+    generate_SUB,
+    generate_MUL,
+    generate_DIV,
+    generate_MOD,
+    generate_UMINUS,
+    generate_AND,
+    generate_OR,
+    generate_NOT,
+    generate_IF_EQ,
+    generate_IF_NOTEQ,
+    generate_IF_LESSEQ,
+    generate_IF_GREATEREQ,
+    generate_IF_LESS,
+    generate_IF_GREATER,
+    generate_CALL,
+    generate_PARAM,
+    generate_RET,
+    generate_GETRETVAL,
+    generate_FUNCSTART,
+    generate_FUNCEND,
+    generate_TABLECREATE,
+    generate_TABLEGETELEM,
+    generate_TABLESETELEM,
+    generate_NOP
+};
+
+void generate(void);
+
+void emit_instruction(instruction *t);
+unsigned int nextinstrlabel();
+
+void generate_op(vm_opcode op, quad *q);
+
+void generate_relational(vm_opcode op, quad *q);
