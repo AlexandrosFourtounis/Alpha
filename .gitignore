@@ -12,3 +12,11 @@ Phase3/parser.output
 Phase3/scanner.c
 Phase3/test.asc
 Phase3/quads.txt
+Phase4/parser
+Phase4/parser.c
+Phase4/parser.h
+Phase4/parser.output
+Phase4/scanner.c
+Phase4/test.asc
+Phase4/quads.txt
+
