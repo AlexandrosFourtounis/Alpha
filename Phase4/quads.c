@@ -921,7 +921,7 @@ SymbolTableEntry *pop_funcstack(FuncStack *fs)
 
 SymbolTableEntry *top_funcstack(FuncStack *fs)
 {
-    if (isEmpty(fs))
+    if (isEmpty_funcstack(fs))
     {
         printf("Error: funcstack is empty\n");
         return -1;
