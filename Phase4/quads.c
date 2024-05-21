@@ -893,7 +893,7 @@ int isFull_funcstack(FuncStack *fs)
     return (fs->top == MAX_SIZE - 1);
 }
 
-void push_funcstack(FuncStack *fs, SymbolTableEntry value)
+void push_funcstack(FuncStack *fs, SymbolTableEntry *value)
 {
     if (isFull_funcstack(fs))
     {
@@ -906,7 +906,7 @@ void push_funcstack(FuncStack *fs, SymbolTableEntry value)
         printf("Error: memory allocation failed\n");
         return;
     }
-    *fs->arr[++fs->top] = value;
+    fs->arr[++fs->top] = value;
 }
 
 SymbolTableEntry *pop_funcstack(FuncStack *fs)
@@ -1408,7 +1408,7 @@ void generate_FUNCSTART(quad *q)
     userFuncs[curr_userfuncs].address = sym->taddress;
     userFuncs[curr_userfuncs].localSize = sym->totalLocals;
 
-    push(funcstack, sym);
+    push_funcstack(funcstack, sym);
 
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
