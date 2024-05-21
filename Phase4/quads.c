@@ -19,6 +19,7 @@ extern int scope;
 int test;
 extern int yylineno;
 char *curr_temp_name = NULL;
+FuncStack *funcstack = NULL;
 
 void expand(void)
 {
@@ -39,7 +40,7 @@ void emit(iopcode op, expr *arg1, expr *arg2, expr *result, unsigned int label, 
     {
         expand();
     }
-    quad *p     = malloc(sizeof(quad));
+    quad *p = malloc(sizeof(quad));
     assert(p);
     p = quads + currQuad++;
     p->op = op;
@@ -112,8 +113,8 @@ char *newtempname()
     return strdup(temp);
 }
 
-
-SymbolTableEntry *curr_temp(){
+SymbolTableEntry *curr_temp()
+{
     return lookup(curr_temp_name, scope);
 }
 
@@ -228,7 +229,7 @@ unsigned int nextquadlabel()
 void patchlabel(unsigned int quadNo, unsigned int label)
 {
     assert(quadNo < currQuad);
-    quads[quadNo].label = label+1;
+    quads[quadNo].label = label + 1;
 }
 
 expr *newexpr_conststring(char *s)
@@ -247,8 +248,9 @@ expr *newexpr_constnum(double x)
     return e;
 }
 
-expr* newexpr_constbool(unsigned char b){
-    expr* e = newexpr(constbool_e);
+expr *newexpr_constbool(unsigned char b)
+{
+    expr *e = newexpr(constbool_e);
     e->sym = NULL;
     e->boolConst = b;
     return e;
@@ -261,7 +263,7 @@ expr *newexpr_bool(char *s)
     // printf("s: %s\n", s);
     if (strcmp(s, "true") == 0)
     {
-        e->boolConst ="true";
+        e->boolConst = "true";
     }
     else if (strcmp(s, "false") == 0)
         e->boolConst = "false";
@@ -273,7 +275,7 @@ expr *newexpr_bool(char *s)
 expr *newexpr_nil()
 {
     expr *e = newexpr(nil_e);
-    //e->strConst = strdup(s);
+    // e->strConst = strdup(s);
     e->sym = NULL;
     return e;
 }
@@ -291,17 +293,18 @@ expr *emit_iftableitem(expr *e)
     }
 }
 
-expr *backpatching(expr *e){
-    if(e->type == boolexpr_e || e->type == constbool_e){
+expr *backpatching(expr *e)
+{
+    if (e->type == boolexpr_e || e->type == constbool_e)
+    {
         patchlist(e->truelist, nextquadlabel());
-        patchlist(e->falselist, nextquadlabel()+2);
+        patchlist(e->falselist, nextquadlabel() + 2);
 
-        expr* tmp = newexpr(var_e);
+        expr *tmp = newexpr(var_e);
         tmp->sym = newtemp();
 
-
         emit(assign, newexpr_constbool(1), NULL, tmp, 0, currQuad);
-        emit(jump, NULL, NULL, NULL, nextquadlabel() + 3 , currQuad);
+        emit(jump, NULL, NULL, NULL, nextquadlabel() + 3, currQuad);
         emit(assign, newexpr_constbool(0), NULL, tmp, 0, currQuad);
 
         return tmp;
@@ -386,12 +389,13 @@ void print_expression(expr *expr, FILE *f)
         fprintf(f, "%-8s", "");
         return;
     }
-    if (expr == NULL) {
+    if (expr == NULL)
+    {
         fprintf(f, "NULL expression\n");
         return;
     }
     // printf("expr: %p\n", (void *)expr);
-     if (expr != NULL && expr->type == nil_e)
+    if (expr != NULL && expr->type == nil_e)
     {
         fprintf(f, "%-8s", "NIL");
         return;
@@ -409,7 +413,7 @@ void print_expression(expr *expr, FILE *f)
         fprintf(f, "%-8.2f", expr->numConst);
         break;
     case constbool_e:
-        if(expr->boolConst)
+        if (expr->boolConst)
             fprintf(f, "%-8s", "true");
         else
             fprintf(f, "%-8s", "false");
@@ -424,7 +428,7 @@ void print_expression(expr *expr, FILE *f)
         fprintf(f, "%-8s", expr->sym->value.funcVal->name);
         break;
     case arithexpr_e:
-        if(expr->sym->value.varVal)
+        if (expr->sym->value.varVal)
         {
             fprintf(f, "%-8s", expr->sym->value.varVal->name);
         }
@@ -433,9 +437,9 @@ void print_expression(expr *expr, FILE *f)
             fprintf(f, "%-8s", "var");
         }
         break;
-    
+
     case assignexpr_e:
-        if(expr->sym->value.varVal)
+        if (expr->sym->value.varVal)
         {
             fprintf(f, "%-8s", expr->sym->value.varVal->name);
         }
@@ -475,12 +479,12 @@ void print_quads()
 
     while (i < currQuad)
     {
-        if (quads[i].op == assign || quads[i].op == uminus || quads[i].op == not)
+        if (quads[i].op == assign || quads[i].op == uminus || quads[i].op == not )
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
             print_expression(quads[i].arg1, f);
-            //print_expression(quads[i].arg2, f);
+            // print_expression(quads[i].arg2, f);
             fprintf(f, "%-8s", "");
             fprintf(f, "%-8s%-8d", "", quads[i].line);
             fprintf(f, "\n");
@@ -488,7 +492,7 @@ void print_quads()
         else if (quads[i].op == jump)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n","", "", "", quads[i].label, quads[i].line);
+            fprintf(f, "%-8s%-8s%-8s%-8d%-8d\n", "", "", "", quads[i].label, quads[i].line);
         }
 
         else if (quads[i].op == ret || quads[i].op == tablecreate)
@@ -496,9 +500,9 @@ void print_quads()
 
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
-            fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
+            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
         }
-        else if ( quads[i].op == funcstart || quads[i].op == funcend  )
+        else if (quads[i].op == funcstart || quads[i].op == funcend)
 
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
@@ -508,13 +512,12 @@ void print_quads()
         else if (quads[i].op == if_eq || quads[i].op == if_greater || quads[i].op == if_greatereq || quads[i].op == if_less || quads[i].op == if_lesseq || quads[i].op == if_noteq || quads[i].op == and || quads[i].op == or)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
-            fprintf(f,"%-8s", "");
+            fprintf(f, "%-8s", "");
             print_expression(quads[i].arg1, f);
             print_expression(quads[i].arg2, f);
             fprintf(f, "%-8d%-8d\n", quads[i].label, quads[i].line);
-            
         }
-        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem )
+        else if (quads[i].op == add || quads[i].op == sub || quads[i].op == mul || quads[i].op == divv || quads[i].op == mod || quads[i].op == tablegetelem)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].result, f);
@@ -522,43 +525,48 @@ void print_quads()
             print_expression(quads[i].arg2, f);
 
             fprintf(f, "%-8s%-8d\n", "", quads[i].line);
-        } 
-        else if(quads[i].op == tablesetelem){ 
-            if(quads[i].line>2000){
+        }
+        else if (quads[i].op == tablesetelem)
+        {
+            if (quads[i].line > 2000)
+            {
                 fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
                 print_expression(quads[i].arg2, f);
                 print_expression(quads[i].arg1, f);
                 print_expression(quads[i].result, f);
-                fprintf(f, "%-8s%-8d\n", "", quads[i].line-2000);
-            }else if(quads[i].line>1000){
+                fprintf(f, "%-8s%-8d\n", "", quads[i].line - 2000);
+            }
+            else if (quads[i].line > 1000)
+            {
                 fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
                 print_expression(quads[i].arg1, f);
                 print_expression(quads[i].arg2, f);
                 print_expression(quads[i].result, f);
-                fprintf(f, "%-8s%-8d\n", "", quads[i].line-1000);
-            }else{
+                fprintf(f, "%-8s%-8d\n", "", quads[i].line - 1000);
+            }
+            else
+            {
                 fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
                 print_expression(quads[i].result, f);
                 print_expression(quads[i].arg1, f);
                 print_expression(quads[i].arg2, f);
                 fprintf(f, "%-8s%-8d\n", "", quads[i].line);
-
             }
-
         }
         else if (quads[i].op == param || quads[i].op == call)
         {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             print_expression(quads[i].arg1, f);
-            fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
+            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
         }
-        
-        else if (quads[i].op == getretval ){
+
+        else if (quads[i].op == getretval)
+        {
             fprintf(f, "%-8d%-16s", i + 1, opcode_to_string(quads[i].op));
             struct expr *tmp = newexpr(var_e);
             tmp->sym = newtemp();
             print_expression(tmp, f);
-            fprintf(f, "%-8s%-8s%-8s%-8d\n","", "", "", quads[i].line);
+            fprintf(f, "%-8s%-8s%-8s%-8d\n", "", "", "", quads[i].line);
         }
         i++;
     }
@@ -593,8 +601,8 @@ expr *Manage_operations(expr *arg1, iopcode op, expr *arg2)
     //     printf("arg2: %s\n", "NULL");
     // }
 
-   temp = (arg1->sym && arg1->sym->type <2 && arg1->sym->value.varVal->name[0] == '_') ? arg1->sym : 
-    (arg2->sym && arg2->sym->type <2 && arg2->sym->value.varVal->name[0] == '_') ? arg2->sym : newtemp();
+    temp = (arg1->sym && arg1->sym->type < 2 && arg1->sym->value.varVal->name[0] == '_') ? arg1->sym : (arg2->sym && arg2->sym->type < 2 && arg2->sym->value.varVal->name[0] == '_') ? arg2->sym
+                                                                                                                                                                                     : newtemp();
 
     result = lvalue_expr(temp);
     result->sym = temp;
@@ -645,54 +653,54 @@ expr *Manage_comparisonopers(expr *arg1, char *op, expr *arg2)
     {
     case '=':
         tmp->type = boolexpr_e;
-        emit(if_eq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
-        emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
-        tmp->truelist = newlist(nextquadlabel()-2);
+        emit(if_eq, arg1, arg2, NULL, nextquadlabel() + 2, yylineno);
+        emit(jump, NULL, NULL, NULL, nextquadlabel() + 3, yylineno);
+        tmp->truelist = newlist(nextquadlabel() - 2);
         // printf("truelist%d\n", tmp->truelist);
-        tmp->falselist = newlist(nextquadlabel()-1);
+        tmp->falselist = newlist(nextquadlabel() - 1);
         // printf("falselist%d\n", tmp->falselist);
         break;
     case '!':
         tmp->type = boolexpr_e;
-        emit(if_noteq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
-        emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
-        tmp->truelist = newlist(nextquadlabel()-2);
+        emit(if_noteq, arg1, arg2, NULL, nextquadlabel() + 2, yylineno);
+        emit(jump, NULL, NULL, NULL, nextquadlabel() + 3, yylineno);
+        tmp->truelist = newlist(nextquadlabel() - 2);
         // printf("truelist%d\n", tmp->truelist);
-        tmp->falselist = newlist(nextquadlabel()-1);
+        tmp->falselist = newlist(nextquadlabel() - 1);
         // printf("falselist%d\n", tmp->falselist);
         break;
     case '<':
         tmp->type = boolexpr_e;
         if (strcmp(op, "<") == 0)
         {
-            emit(if_less, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
-            emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
+            emit(if_less, arg1, arg2, NULL, nextquadlabel() + 2, yylineno);
+            emit(jump, NULL, NULL, NULL, nextquadlabel() + 3, yylineno);
         }
         else if (strcmp(op, "<=") == 0)
         {
-            emit(if_lesseq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
-            emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
+            emit(if_lesseq, arg1, arg2, NULL, nextquadlabel() + 2, yylineno);
+            emit(jump, NULL, NULL, NULL, nextquadlabel() + 3, yylineno);
         }
-        tmp->truelist = newlist(nextquadlabel()-2);
+        tmp->truelist = newlist(nextquadlabel() - 2);
         // printf("truelist%d\n", tmp->truelist);
-        tmp->falselist = newlist(nextquadlabel()-1);
+        tmp->falselist = newlist(nextquadlabel() - 1);
         // printf("falselist%d\n", tmp->falselist);
         break;
     case '>':
         tmp->type = boolexpr_e;
         if (strcmp(op, ">") == 0)
         {
-            emit(if_greater, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
-            emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
+            emit(if_greater, arg1, arg2, NULL, nextquadlabel() + 2, yylineno);
+            emit(jump, NULL, NULL, NULL, nextquadlabel() + 3, yylineno);
         }
         else if (strcmp(op, ">=") == 0)
         {
-            emit(if_greatereq, arg1, arg2, NULL, nextquadlabel()+2, yylineno);
-            emit(jump, NULL, NULL, NULL, nextquadlabel()+3, yylineno);
+            emit(if_greatereq, arg1, arg2, NULL, nextquadlabel() + 2, yylineno);
+            emit(jump, NULL, NULL, NULL, nextquadlabel() + 3, yylineno);
         }
-        tmp->truelist = newlist(nextquadlabel()-2);
+        tmp->truelist = newlist(nextquadlabel() - 2);
         // printf("truelist%d\n", tmp->truelist);
-        tmp->falselist = newlist(nextquadlabel()-1);
+        tmp->falselist = newlist(nextquadlabel() - 1);
         // printf("falselist%d\n", tmp->falselist);
         break;
     default:
@@ -740,13 +748,15 @@ expr *make_call(expr *lv, expr *reversed_elist)
     return result;
 }
 
-reversed_list *createExprNode(expr *item){
+reversed_list *createExprNode(expr *item)
+{
     reversed_list *node = malloc(sizeof(reversed_list));
     node->item = item;
     node->next = NULL;
     return node;
 }
-void addToExprList(reversed_list **head, expr *item){
+void addToExprList(reversed_list **head, expr *item)
+{
     reversed_list *node = createExprNode(item);
     node->next = *head;
     *head = node;
@@ -781,20 +791,24 @@ int mergelist(int l1, int l2)
     }
 }
 
-void patchlist(int list, int label){
-    while(list) {
+void patchlist(int list, int label)
+{
+    while (list)
     {
-        int next = quads[list].label;
-        quads[list].label = label+1;
-        list = next;
-    }
+        {
+            int next = quads[list].label;
+            quads[list].label = label + 1;
+            list = next;
+        }
     }
 }
 
-//fixed
-stmt_struct* make_stmt () { 
+// fixed
+stmt_struct *make_stmt()
+{
     stmt_struct *s = malloc(sizeof(stmt_struct));
-    if (s == NULL) {
+    if (s == NULL)
+    {
         fprintf(stderr, "Failed to allocate memory for stmt_struct\n");
         exit(EXIT_FAILURE);
     }
@@ -803,109 +817,170 @@ stmt_struct* make_stmt () {
     return s;
 }
 
-
-int newlist(int i){
-    quads[i].label = 0; 
-    return i; 
+int newlist(int i)
+{
+    quads[i].label = 0;
+    return i;
 }
 
-int true_test(expr* arg){
+int true_test(expr *arg)
+{
 
-    if(arg == NULL){
+    if (arg == NULL)
+    {
         return 0;
     }
-    else if(arg->type == boolexpr_e) {
+    else if (arg->type == boolexpr_e)
+    {
         return 0;
     }
-    //arg->type = boolexpr_e;
-    //if(arg->type != constbool_e){
-        arg->type = boolexpr_e;
+    // arg->type = boolexpr_e;
+    // if(arg->type != constbool_e){
+    arg->type = boolexpr_e;
     //}
-    emit(if_eq, arg, newexpr_constbool(1),NULL, 0, currQuad);
+    emit(if_eq, arg, newexpr_constbool(1), NULL, 0, currQuad);
     emit(jump, NULL, NULL, NULL, 0, currQuad);
     // printf("%d\n", nextquad()-2);
     // printf("%d\n", nextquad()-1);
-    arg->truelist = newlist(nextquadlabel()-2);
-    arg->falselist = newlist(nextquadlabel()-1);
+    arg->truelist = newlist(nextquadlabel() - 2);
+    arg->falselist = newlist(nextquadlabel() - 1);
     return 1;
 }
 
 /*Phase 4*/
-void make_operand(expr *e, vmarg *arg){
-    switch(e->type){
 
-        case var_e:
-        case tableitem_e:
-        case arithexpr_e:
-        case boolexpr_e:
-        case newtable_e: {
-            assert(e->sym);
-            arg->val = e->sym->offset;
-            switch(e->sym->space){
-                case programVar:
-                    arg->type = global_a;
-                    break;
-                case functionLocal:
-                    arg->type = local_a;
-                    break;
-                case formalArg:
-                    arg->type = formal_a;
-                    break;
-                default:
-                    assert(0);
-            }
-            break;
-        }
-        case constbool_e:
+void initialize_funcstack(FuncStack *fs)
+{
+    fs->top = -1;
+}
+
+int isEmpty_funcstack(FuncStack *fs)
+{
+    return (fs->top == -1);
+}
+
+int isFull_funcstack(FuncStack *fs)
+{
+    return (fs->top == MAX_SIZE - 1);
+}
+
+void push_funcstack(FuncStack *fs, SymbolTableEntry value)
+{
+    if (isFull_funcstack(fs))
+    {
+        printf("Error: funcstack overflow\n");
+        return;
+    }
+    fs->arr[fs->top + 1] = (SymbolTableEntry *)malloc(sizeof(SymbolTableEntry));
+    if (fs->arr[fs->top + 1] == NULL)
+    {
+        printf("Error: memory allocation failed\n");
+        return;
+    }
+    *fs->arr[++fs->top] = value;
+}
+
+SymbolTableEntry *pop_funcstack(FuncStack *fs)
+{
+    if (isEmpty_funcstack(fs))
+    {
+        printf("Error: funcstack underflow\n");
+        return -1;
+    }
+    return fs->arr[funcstack->top--];
+}
+
+SymbolTableEntry *top_funcstack(FuncStack *fs)
+{
+    if (isEmpty(fs))
+    {
+        printf("Error: funcstack is empty\n");
+        return -1;
+    }
+    return fs->arr[fs->top];
+}
+
+void make_operand(expr *e, vmarg *arg)
+{
+    switch (e->type)
+    {
+
+    case var_e:
+    case tableitem_e:
+    case arithexpr_e:
+    case boolexpr_e:
+    case newtable_e:
+    {
+        assert(e->sym);
+        arg->val = e->sym->offset;
+        switch (e->sym->space)
         {
-            arg->val = e->boolConst;
-            arg->type = bool_a;
+        case programVar:
+            arg->type = global_a;
             break;
-        }
-        case conststring_e:
-        {
-            arg->val = consts_newstring(e->strConst);
-            arg->type = string_a;
+        case functionLocal:
+            arg->type = local_a;
             break;
-        }
-        case constnum_e:
-        {
-            arg->val = consts_newnumber(e->numConst);
-            arg->type = number_a;
+        case formalArg:
+            arg->type = formal_a;
             break;
-        }
-        case nil_e:
-        {
-            arg->type = nil_a;
-            break;
-        }
-        case programfunc_e:
-        {
-            arg->val = e->sym->taddress;
-            arg->type = userfunc_a;
-            break;
-        }
-        case libraryfunc_e:
-        {
-            arg->val = libfuncs_newused(e->sym->value.funcVal->name);
-            arg->type = libfunc_a;
-            break;
-        }
         default:
             assert(0);
+        }
+        break;
+    }
+    case constbool_e:
+    {
+        arg->val = e->boolConst;
+        arg->type = bool_a;
+        break;
+    }
+    case conststring_e:
+    {
+        arg->val = consts_newstring(e->strConst);
+        arg->type = string_a;
+        break;
+    }
+    case constnum_e:
+    {
+        arg->val = consts_newnumber(e->numConst);
+        arg->type = number_a;
+        break;
+    }
+    case nil_e:
+    {
+        arg->type = nil_a;
+        break;
+    }
+    case programfunc_e:
+    {
+        arg->val = e->sym->taddress;
+        arg->type = userfunc_a;
+        break;
+    }
+    case libraryfunc_e:
+    {
+        arg->val = libfuncs_newused(e->sym->value.funcVal->name);
+        arg->type = libfunc_a;
+        break;
+    }
+    default:
+        assert(0);
     }
 }
 
-
-void make_numberoperand(vmarg *arg, double val){
+void make_numberoperand(vmarg *arg, double val)
+{
     arg->val = consts_newnumber(val);
     arg->type = number_a;
 }
-void make_booloperand(vmarg *arg, unsigned val){
+void make_booloperand(vmarg *arg, unsigned val)
+{
     arg->val = val;
     arg->type = bool_a;
 }
-void make_retvaloperand(vmarg *arg){
+void make_retvaloperand(vmarg *arg)
+{
     arg->type = retval_a;
 }
 
@@ -917,15 +992,17 @@ char **namedLibfuncs = (char **)0;
 unsigned int totalNamedLibfuncs = 0;
 unsigned int totalUserFuncs = 0;
 userfunc *userFuncs = (userfunc *)0;
+unsigned int curr_userfuncs = 0;
 
-incomplete_jump * ij_head = (incomplete_jump*)0;
+incomplete_jump *ij_head = (incomplete_jump *)0;
 unsigned int ij_total = 0;
 unsigned int curr_instr = 0;
 unsigned int totalInstr = 0;
-instruction *instructions = (instruction*)0;
+instruction *instructions = (instruction *)0;
 
-void add_incomplete_jump(unsigned int instrNo, unsigned int iaddress){
-    incomplete_jump *new = (incomplete_jump*)malloc(sizeof(incomplete_jump));
+void add_incomplete_jump(unsigned int instrNo, unsigned int iaddress)
+{
+    incomplete_jump *new = (incomplete_jump *)malloc(sizeof(incomplete_jump));
     new->instrNo = instrNo;
     new->iaddress = iaddress;
     new->next = ij_head;
@@ -933,40 +1010,47 @@ void add_incomplete_jump(unsigned int instrNo, unsigned int iaddress){
     ij_total++;
 }
 
-void patch_incomplete_jumps(){ /*INCOMPLETE*/
+void patch_incomplete_jumps()
+{ /*INCOMPLETE*/
     incomplete_jump *current = ij_head;
-    while(current){
-        if(current->iaddress == 0){
+    while (current)
+    {
+        if (current->iaddress == 0)
+        {
             current->iaddress = currQuad;
         }
-        else{
+        else
+        {
             quads[current->instrNo].arg1->sym->iaddress = currQuad;
         }
         current = current->next;
     }
 }
 
-void generate(void){
-    for (unsigned int i = 0; i < total; i++){
-        (*generators[quads[i].op])(quads+i);
+void generate(void)
+{
+    for (unsigned int i = 0; i < total; i++)
+    {
+        (*generators[quads[i].op])(quads + i);
     }
 }
 
-void emit_instruction(instruction *t){
+void emit_instruction(instruction *t)
+{
     if (curr_instr == totalInstr)
     {
         /*expand size*/
         assert(totalInstr == curr_instr);
         instruction *temp = (instruction *)malloc(1024 * sizeof(instruction) + (totalInstr * sizeof(instruction)));
-        if(instructions){
+        if (instructions)
+        {
             memcpy(temp, instructions, totalInstr * sizeof(instruction));
             free(instructions);
         }
         instructions = temp;
         totalInstr += 1024;
-      
     }
-    instruction * tmp = instructions + curr_instr++;
+    instruction *tmp = instructions + curr_instr++;
     tmp->opcode = t->opcode;
     tmp->result = t->result;
     tmp->arg1 = t->arg1;
@@ -979,10 +1063,13 @@ unsigned int nextinstrlabel()
     return curr_instr;
 }
 
-void generate_op(vm_opcode op, quad *q){
+void generate_op(vm_opcode op, quad *q)
+{
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
     t->opcode = op;
+    t->srcLine = q->line;
+
     make_operand(q->arg1, &t->arg1);
     make_operand(q->arg2, &t->arg2);
     make_operand(q->result, &t->result);
@@ -990,20 +1077,25 @@ void generate_op(vm_opcode op, quad *q){
     emit_instruction(t);
 }
 
-void generate_ADD(quad *q){
+void generate_ADD(quad *q)
+{
     generate_op(add_v, q);
 }
 
-void generate_SUB(quad *q){
+void generate_SUB(quad *q)
+{
     generate_op(sub_v, q);
 }
-void generate_MUL(quad *q){
+void generate_MUL(quad *q)
+{
     generate_op(mul_v, q);
 }
-void generate_DIV(quad *q){
+void generate_DIV(quad *q)
+{
     generate_op(div_v, q);
 }
-void generate_MOD(quad *q){
+void generate_MOD(quad *q)
+{
     generate_op(mod_v, q);
 }
 void generate_NEWTABLE(quad *q) { generate_op(newtable_v, q); }
@@ -1014,22 +1106,31 @@ void generate_TABLESETELEM(quad *q) { generate_op(tablesetelem_v, q); }
 
 void generate_ASSIGN(quad *q) { generate_op(assign_v, q) }
 
-void generate_NOP(){ instruction *t = (instruction *)malloc(sizeof(instruction));
+void generate_NOP()
+{
+    instruction *t = (instruction *)malloc(sizeof(instruction));
     t->opcode = nop_v;
+    t->srcLine = q->line;
+
     emit_instruction(t);
 }
 
-void generate_relational(vm_opcode op, quad *q){
+void generate_relational(vm_opcode op, quad *q)
+{
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
     t->opcode = op;
+    t->srcLine = q->line;
+
     make_operand(q->arg1, &t->arg1);
     make_operand(q->arg2, &t->arg2);
     t->result.type = label_a;
-    if(q->label < currQuad){
+    if (q->label < currQuad)
+    {
         t->result.val = quads[q->label].taddress;
     }
-    else{
+    else
+    {
         add_incomplete_jump(nextinstrlabel(), q->label);
     }
     q->taddress = nextinstrlabel();
@@ -1076,6 +1177,7 @@ void generate_NOT(quad *q)
     q->taddress = nextinstrlabel();
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
+    t->srcLine = q->line;
 
     t->opcode = jeq_v;
     make_operand(q->arg1, &t->arg1);
@@ -1104,10 +1206,12 @@ void generate_NOT(quad *q)
     emit_instruction(t);
 }
 
-void generate_OR(quad *q){
+void generate_OR(quad *q)
+{
     q->taddress = nextinstrlabel();
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
+    t->srcLine = q->line;
 
     t->opcode = jeq_v;
     make_operand(q->arg1, &t->arg1);
@@ -1140,10 +1244,12 @@ void generate_OR(quad *q){
     emit_instruction(t);
 }
 
-void generate_AND(quad *q){
+void generate_AND(quad *q)
+{
     q->taddress = nextinstrlabel();
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
+    t->srcLine = q->line;
 
     t->opcode = jeq_v;
     make_operand(q->arg1, &t->arg1);
@@ -1176,44 +1282,163 @@ void generate_AND(quad *q){
     emit_instruction(t);
 }
 
-void generate_PARAM(quad *q){
+void generate_PARAM(quad *q)
+{
     q->taddress = nextinstrlabel();
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
     t->opcode = pusharg_v;
+    t->srcLine = q->line;
+
     make_operand(q->arg1, &t->arg1);
     emit_instruction(t);
 }
 
-void generate_CALL(quad *q){
+void generate_CALL(quad *q)
+{
     q->taddress = nextinstrlabel();
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
     t->opcode = callfunc_v;
+    t->srcLine = q->line;
+
     make_operand(q->arg1, &t->arg1);
     // reset_operand(&t->arg2);
     // reset_operand(&t->result);
     emit_instruction(t);
 }
 
-void generate_GETRETVAL(quad *q){
+void generate_GETRETVAL(quad *q)
+{
     q->taddress = nextinstrlabel();
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
     t->opcode = assign_v;
+    t->srcLine = q->line;
     make_operand(q->result, &t->result);
     make_retvaloperand(&t->arg1);
     emit_instruction(t);
 }
 
-void generate_FUNCSTART(quad *q){
+void generate_FUNCSTART(quad *q)
+{
     SymbolTableEntry *sym = q->result->sym;
     sym->taddress = nextinstrlabel();
     q->taddress = nextinstrlabel();
-    
+
+    /*ADD to userfuncs new node*/
+    /*expand size*/
+    assert(totalUserFuncs == curr_userfuncs);
+    userfunc *temp = (userfunc *)malloc(1024 * sizeof(userfunc) + (totalUserFuncs * sizeof(userfunc)));
+    if (userFuncs)
+    {
+        memcpy(temp, userFuncs, totalUserFuncs * sizeof(userfunc));
+        free(userFuncs);
+    }
+    userFuncs = temp;
+    totalUserFuncs += 1024;
+
+    userFuncs[curr_userfuncs].id = sym->value.funcVal->name;
+    userFuncs[curr_userfuncs].address = sym->taddress;
+    userFuncs[curr_userfuncs].localSize = sym->totalLocals;
+
+    push(funcstack, sym);
+
     instruction *t;
     t = (instruction *)malloc(sizeof(instruction));
     t->opcode = enterfunc_v;
+    t->srcLine = q->line;
     make_operand(q->result, &t->result);
+    emit_instruction(t);
+}
+
+void reset_operand(vmarg *arg)
+{
+    arg->val = 0;
+}
+
+void generate_RETURN(quad *q)
+{
+    q->taddress = nextinstrlabel();
+    instruction *t;
+    t = (instruction *)malloc(sizeof(instruction));
+    t->opcode = assign_v;
+    t->srcLine = q->line;
+    make_retvaloperand(&t->result);
+    make_operand(q->arg1, &t->arg1);
+    emit_instruction(t);
+
+    SymbolTableEntry *f = top_funcstack(funcstack);
+
+    if (!f)
+    {
+        fprintf(stderr, "Error:  stack returned NULL top\n");
+        exit(EXIT_FAILURE);
+    }
+    returnList *rl = f->value.funcVal->returnList;
+    if (!rl)
+    {
+        rl = malloc(sizeof(returnList));
+        rl->ret = nextinstrlabel();
+        rl->next = NULL;
+        f->value.funcVal->returnList = rl;
+    }
+    else
+    {
+        while (rl->next)
+        {
+            rl = rl->next;
+        }
+        rl->ret = nextinstrlabel();
+    }
+
+    t->opcode = jump_v;
+    reset_operand(&t->arg1);
+    reset_operand(&t->arg2);
+    t->result.type = label_a;
+    emit_instruction(t);
+}
+void backpatch_ret_list(returnList *list, unsigned int label)
+{
+    if (!list)
+    {
+        fprintf(stderr, "cannot patch empty return list\n");
+        exit(EXIT_FAILURE);
+    }
+    while (list)
+    {
+        instructions[list->ret].result.val = label;
+        list = list->next;
+    }
+}
+
+void generate_FUNCEND(quad *q)
+{
+    SymbolTableEntry *sym = pop_funcstack(funcstack);
+
+    backpatch_ret_list(sym->value.funcVal->returnList, nextinstrlabel());
+
+    q->taddress = nextinstrlabel();
+    instruction *t;
+    t = (instruction *)malloc(sizeof(instruction));
+    t->opcode = exitfunc_v;
+    t->srcLine = q->line;
+
+    make_operand(q->result, &t->result);
+    emit_instruction(t);
+}
+
+void generate_UMINUS(quad *q)
+{
+
+    instruction *t;
+    t = (instruction *)malloc(sizeof(instruction));
+    t->opcode = mul_v;
+    t->srcLine = q->line;
+    make_operand(q->arg1, &t->arg1);
+    make_numberoperand(q->arg2, -1);
+
+    make_operand(q->result, &t->result);
+    q->taddress = nextinstrlabel();
     emit_instruction(t);
 }

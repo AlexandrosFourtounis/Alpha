@@ -4,6 +4,21 @@
 #define CURR_SIZE (total * sizeof(quad))
 #define NEW_SIZE (EXPAND_SIZE * sizeof(quad) + CURR_SIZE)
 
+#define MAX_SIZE 10000
+
+typedef struct FuncStack
+{
+    SymbolTableEntry arr[MAX_SIZE];
+    int top;
+} FuncStack;
+
+void initialize_funcstack(FuncStack *fs);
+int isEmpty_funcstack(FuncStack *fs);
+int isFull_funcstack(FuncStack *fs);
+void push_funcstack(FuncStack *fs, SymbolTableEntry value);
+SymbolTableEntry* pop_funcstack(FuncStack *fs);
+SymbolTableEntry *top_funcstack(FuncStack *fs);
+
 typedef enum expr_t
 {
     var_e,
@@ -232,7 +247,7 @@ typedef struct userfunc
     char *id;
 } userfunc;
 
-consts_newstring(char *s);
+unsigned int consts_newstring(char *s);
 unsigned int consts_newnumber(double n);
 unsigned int libfuncs_newused(char *s);
 unsigned int userfuncs_newfunc(SymbolTableEntry *sym);
@@ -278,7 +293,7 @@ void generate_TABLECREATE(quad *);
 void generate_TABLEGETELEM(quad *);
 void generate_TABLESETELEM(quad *);
 void generate_ASSIGN(quad *);
-void generate_NOP(quad *);
+void generate_NOP();
 
 typedef void (*generator_func_t)(quad *);
 
@@ -320,3 +335,7 @@ unsigned int nextinstrlabel();
 void generate_op(vm_opcode op, quad *q);
 
 void generate_relational(vm_opcode op, quad *q);
+
+void reset_operand(vmarg *arg);
+
+void backpatch_ret_list(returnList *list, unsigned int label);

@@ -3,8 +3,9 @@
 typedef struct
 {
     int arr[MAX_SIZE];
-    int top;
+    SymbolTableEntry *top;
 } funcstack;
+
 
 void initialize_funcstack(funcstack *funcstack);
 int isEmpty_funcstack(funcstack *funcstack);
