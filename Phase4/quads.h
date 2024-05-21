@@ -8,7 +8,7 @@
 
 typedef struct FuncStack
 {
-    SymbolTableEntry arr[MAX_SIZE];
+    SymbolTableEntry *arr[MAX_SIZE];
     int top;
 } FuncStack;
 
@@ -293,40 +293,12 @@ void generate_TABLECREATE(quad *);
 void generate_TABLEGETELEM(quad *);
 void generate_TABLESETELEM(quad *);
 void generate_ASSIGN(quad *);
-void generate_NOP();
+void generate_NOP(quad *q);
+
+
 
 typedef void (*generator_func_t)(quad *);
-
-generator_func_t generators[] = {
-    generate_ASSIGN,
-    generate_JUMP,
-    generate_ADD,
-    generate_SUB,
-    generate_MUL,
-    generate_DIV,
-    generate_MOD,
-    generate_UMINUS,
-    generate_AND,
-    generate_OR,
-    generate_NOT,
-    generate_IF_EQ,
-    generate_IF_NOTEQ,
-    generate_IF_LESSEQ,
-    generate_IF_GREATEREQ,
-    generate_IF_LESS,
-    generate_IF_GREATER,
-    generate_CALL,
-    generate_PARAM,
-    generate_RET,
-    generate_GETRETVAL,
-    generate_FUNCSTART,
-    generate_FUNCEND,
-    generate_TABLECREATE,
-    generate_TABLEGETELEM,
-    generate_TABLESETELEM,
-    generate_NOP
-};
-
+extern generator_func_t generators[];
 void generate(void);
 
 void emit_instruction(instruction *t);

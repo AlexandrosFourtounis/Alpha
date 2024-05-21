@@ -849,6 +849,35 @@ int true_test(expr *arg)
 
 /*Phase 4*/
 
+generator_func_t generators[] = {
+    generate_ASSIGN,
+    generate_JUMP,
+    generate_ADD,
+    generate_SUB,
+    generate_MUL,
+    generate_DIV,
+    generate_MOD,
+    generate_UMINUS,
+    generate_AND,
+    generate_OR,
+    generate_NOT,
+    generate_IF_EQ,
+    generate_IF_NOTEQ,
+    generate_IF_LESSEQ,
+    generate_IF_GREATEREQ,
+    generate_IF_LESS,
+    generate_IF_GREATER,
+    generate_CALL,
+    generate_PARAM,
+    generate_RET,
+    generate_GETRETVAL,
+    generate_FUNCSTART,
+    generate_FUNCEND,
+    generate_TABLECREATE,
+    generate_TABLEGETELEM,
+    generate_TABLESETELEM,
+    generate_NOP};
+
 void initialize_funcstack(FuncStack *fs)
 {
     fs->top = -1;
@@ -899,8 +928,53 @@ SymbolTableEntry *top_funcstack(FuncStack *fs)
     }
     return fs->arr[fs->top];
 }
+double *numConsts = (double *)0;
+unsigned int totalNumConsts = 0;
+char **stringConsts = (char **)0;
+unsigned int totalStringConsts = 0;
+char **namedLibfuncs = (char **)0;
+unsigned int totalNamedLibfuncs = 0;
+unsigned int totalUserFuncs = 0;
+userfunc *userFuncs = (userfunc *)0;
+unsigned int curr_userfuncs = 0;
 
-void make_operand(expr *e, vmarg *arg)
+void reset_operand(vmarg *arg)
+{
+    arg->val = 0;
+}
+
+unsigned int consts_newstring(char *s){
+    if(totalStringConsts == 0){
+        stringConsts = (char **)malloc(1024 * sizeof(char *));
+    }
+    if (totalStringConsts % 1024 == 0)
+        stringConsts = realloc(stringConsts, sizeof(*stringConsts) * (totalStringConsts + 1024));
+    stringConsts[totalStringConsts++] = strdup(s);
+    return totalStringConsts - 1;
+}
+
+unsigned int consts_newnumber(double n){
+    if(totalNumConsts == 0){
+        numConsts = (double *)malloc(1024 * sizeof(double));
+    }
+    if (totalNumConsts % 1024 == 0)
+        numConsts = realloc(numConsts, sizeof(*numConsts) * (totalNumConsts + 1024));
+    numConsts[totalNumConsts++] = n;
+    return totalNumConsts - 1;
+}
+
+unsigned int libfuncs_newused(char *s){
+    if(totalNamedLibfuncs == 0){
+        namedLibfuncs = (char **)malloc(1024 * sizeof(char *));
+    }
+    if (totalNamedLibfuncs % 1024 == 0)
+        namedLibfuncs = realloc(namedLibfuncs, sizeof(*namedLibfuncs) * (totalNamedLibfuncs + 1024));
+    namedLibfuncs[totalNamedLibfuncs++] = strdup(s);
+    return totalNamedLibfuncs - 1;
+}
+
+void
+    make_operand(expr *e, vmarg *arg)
 {
     switch (e->type)
     {
@@ -984,15 +1058,7 @@ void make_retvaloperand(vmarg *arg)
     arg->type = retval_a;
 }
 
-double *numConsts = (double *)0;
-unsigned int totalNumConsts = 0;
-char **stringConsts = (char **)0;
-unsigned int totalStringConsts = 0;
-char **namedLibfuncs = (char **)0;
-unsigned int totalNamedLibfuncs = 0;
-unsigned int totalUserFuncs = 0;
-userfunc *userFuncs = (userfunc *)0;
-unsigned int curr_userfuncs = 0;
+
 
 incomplete_jump *ij_head = (incomplete_jump *)0;
 unsigned int ij_total = 0;
@@ -1098,15 +1164,15 @@ void generate_MOD(quad *q)
 {
     generate_op(mod_v, q);
 }
-void generate_NEWTABLE(quad *q) { generate_op(newtable_v, q); }
+void generate_TABLECREATE(quad *q) { generate_op(newtable_v, q); }
 
 void generate_TABLEGETELEM(quad *q) { generate_op(tablegetelem_v, q); }
 
 void generate_TABLESETELEM(quad *q) { generate_op(tablesetelem_v, q); }
 
-void generate_ASSIGN(quad *q) { generate_op(assign_v, q) }
+void generate_ASSIGN(quad *q) { generate_op(assign_v, q); }
 
-void generate_NOP()
+void generate_NOP(quad *q)
 {
     instruction *t = (instruction *)malloc(sizeof(instruction));
     t->opcode = nop_v;
@@ -1352,12 +1418,9 @@ void generate_FUNCSTART(quad *q)
     emit_instruction(t);
 }
 
-void reset_operand(vmarg *arg)
-{
-    arg->val = 0;
-}
 
-void generate_RETURN(quad *q)
+
+void generate_RET(quad *q)
 {
     q->taddress = nextinstrlabel();
     instruction *t;
