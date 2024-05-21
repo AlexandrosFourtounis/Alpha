@@ -1436,7 +1436,7 @@ void generate_UMINUS(quad *q)
     t->opcode = mul_v;
     t->srcLine = q->line;
     make_operand(q->arg1, &t->arg1);
-    make_numberoperand(q->arg2, -1);
+    make_numberoperand(&t->arg2, -1);
 
     make_operand(q->result, &t->result);
     q->taddress = nextinstrlabel();
