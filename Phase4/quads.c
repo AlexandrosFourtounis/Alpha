@@ -1553,7 +1553,7 @@ void print_instructions()
 
     while (i < curr_instr)
     {   
-       fprintf(f, "%-12d%-12s%-12s%-12d%-12s%-12d%-12s%-12d%-12d\n", i, vmopcode_to_string(instructions[i].opcode), print_instructions_helper(&instructions[i].result), instructions[i].result.val, print_instructions_helper(&instructions[i].arg1), instructions[i].arg1.val, print_instructions_helper(&instructions[i].arg2), instructions[i].arg2.val, yylineno);        
+       fprintf(f, "%-12d%-12s%-12s%-12d%-12s%-12d%-12s%-12d%-12d\n", i, vmopcode_to_string(instructions[i].opcode), print_instructions_helper(&instructions[i].result), instructions[i].result.val, print_instructions_helper(&instructions[i].arg1), instructions[i].arg1.val, print_instructions_helper(&instructions[i].arg2), instructions[i].arg2.val, instructions[i].srcLine);        
         i++;
     }
 }
