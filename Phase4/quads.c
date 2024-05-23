@@ -1217,3 +1217,111 @@ void generate_FUNCSTART(quad *q){
     make_operand(q->result, &t->result);
     emit_instruction(t);
 }
+
+const char *vmopcode_to_string(vm_opcode vmopcode)
+{
+    switch (vmopcode){
+        case assign_v:
+            return "assign";
+        case jump_v:
+            return "jump";
+        case add_v:
+            return "add";
+        case sub_v:
+            return "sub";
+        case mul_v:
+            return "mul";
+        case div_v:
+            return "divv";
+        case mod_v:
+            return "mod";
+        case uminus_v:
+            return "uminus";
+        case and_v:
+            return "and";
+        case or_v:
+            return "or";
+        case not_v:
+            return "not";
+        case jeq_v:
+            return "if_eq";
+        case jne_v:
+            return "if_noteq";
+        case jle_v:
+            return "if_lesseq";
+        case jge_v:
+            return "if_greatereq";
+        case jlt_v:
+            return "if_less";
+        case jgt_v:
+            return "if_greater";
+        case callfunc_v:
+            return "call";
+        case pusharg_v:
+            return "param";
+        case exitfunc_v:
+            return "return";
+        case enterfunc_v:
+            return "funcstart";
+        case nop_v:
+            return "funcend";
+        case newtable_v:
+            return "tablecreate";
+        case tablegetelem_v:
+            return "tablegetelem";
+        case tablesetelem_v:
+            return "tablesetelem";
+        default:
+            return "unknown opcode";
+    }
+}
+
+const char *print_instructions_helper(vmarg *vmarg)
+{
+    if (!vmarg) return "";
+    switch (vmarg->type == label_a){
+        case label_a:
+            return "LABEL";
+        case global_a:
+            return "GLOBAL";
+        case formal_a:
+            return "FORMAL";
+        case local_a:
+            return "LOCAL";
+        case number_a:
+            return "NUMBER";
+        case string_a:
+            return "STRING";
+        case bool_a:
+            return "BOOL";
+        case nil_a:
+            return "NIL";
+        case userfunc_a:
+            return "USERFUNC";
+        case libfunc_a:
+            return "LIBFUNC";
+        case retval_a:
+            return "RETVAL";
+    }
+}
+
+
+void print_instructions()
+{
+    unsigned int i = 0U;
+    FILE *f = fopen("instructions.txt", "w");
+    FILE *f_binary = fopen("instructions_binary.bin", "wb");
+
+    if (f == NULL || f_binary == NULL) {
+        perror("Error opening file: ");
+        return EXIT_FAILURE;
+    }
+    fprintf(f, "%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s\n",  "INSTRUCTION", "OPCODE", "RESULT TYPE", "RESULT VAL", "ARG1 TYPE", "ARG1 VAL", "ARG2 TYPE", "ARG2 VAL", "LINE");
+    fprintf(f, "---------------------------------------------------------------------------------------\n");
+
+    while (i < nextinstrlabel())
+    {   
+       fprintf(f, "%-12d%-12s%-12s%-12d%-12s%-12d%-12s%-12d%-12d", i, vmopcode_to_string(instructions[i].opcode), print_instructions_helper(&instructions[i].result), instructions[i].result.val, print_instructions_helper(&instructions[i].arg1), instructions[i].arg1.val, print_instructions_helper(&instructions[i].arg2), instructions[i].arg2.val, yylineno);        
+        i++;
+    }
+}

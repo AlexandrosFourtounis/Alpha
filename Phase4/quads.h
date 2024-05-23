@@ -279,6 +279,9 @@ void generate_TABLEGETELEM(quad *);
 void generate_TABLESETELEM(quad *);
 void generate_ASSIGN(quad *);
 void generate_NOP(quad *);
+void print_instructions();
+const char *print_instructions_helper(vmarg *vmarg);
+const char *vmopcode_to_string(vm_opcode vmopcode);
 
 typedef void (*generator_func_t)(quad *);
 
