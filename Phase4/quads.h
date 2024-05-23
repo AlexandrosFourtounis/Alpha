@@ -12,7 +12,7 @@ typedef struct FuncStack
     int top;
 } FuncStack;
 
-void initialize_funcstack(FuncStack *fs);
+void initialize_funcstack();
 int isEmpty_funcstack(FuncStack *fs);
 int isFull_funcstack(FuncStack *fs);
 void push_funcstack(FuncStack *fs, SymbolTableEntry *value);

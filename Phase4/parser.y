@@ -63,8 +63,8 @@
 
 
 
-%type <stringv> program parsing  number whilestmt forstmt 
-%type <expression>elist elist_help term lvalue assignexpr expr primary  member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
+%type <stringv> program parsing whilestmt forstmt 
+%type <expression>elist elist_help term lvalue assignexpr expr primary number member const call  exprlist   returnstmt  objectdef obj indexed indexedelem indexedelem_list
 
 
 %type <unsignedv> funcbody  whilestart whilecond N M ifprefix elseprefix
@@ -676,7 +676,7 @@ funcdef:   funcprefix funcargs funcbody  {
 }                         
            ;
 
-const:              number                  
+const:              number                    {$$ = $1;}
                     | STRING                { $$ = newexpr_conststring(yylval.stringv); }
                     | KEYWORD_NIL           {$$ = newexpr_nil();}
                     | KEYWORD_TRUE          { 
@@ -890,6 +890,8 @@ int main(int argc,char **argv){
 
     printf("PRINTING QUADS\n");
     print_quads();
+    generate();
+    print_instructions();
 
     SymTable_free(symTable);
     free_scope_links();

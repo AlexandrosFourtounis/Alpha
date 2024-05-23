@@ -878,13 +878,28 @@ generator_func_t generators[] = {
     generate_TABLESETELEM,
     generate_NOP};
 
-void initialize_funcstack(FuncStack *fs)
+void initialize_funcstack()
 {
-    fs->top = -1;
+    if (funcstack == NULL)
+    {
+        funcstack = malloc(sizeof(FuncStack));
+        if (funcstack == NULL)
+        {
+            printf("Error: Out of memory\n");
+            return NULL;
+        }
+    }
+
+    funcstack->top = -1;
+    for (int i = 0; i < MAX_SIZE; i++)
+    {
+        funcstack->arr[i] = NULL;
+    }
 }
 
 int isEmpty_funcstack(FuncStack *fs)
 {
+
     return (fs->top == -1);
 }
 
@@ -960,7 +975,7 @@ unsigned int consts_newnumber(double n){
     if (totalNumConsts % 1024 == 0)
         numConsts = realloc(numConsts, sizeof(*numConsts) * (totalNumConsts + 1024));
     numConsts[totalNumConsts++] = n;
-    return totalNumConsts - 1;
+    return numConsts[totalNumConsts - 1];
 }
 
 unsigned int libfuncs_newused(char *s){
@@ -976,11 +991,20 @@ unsigned int libfuncs_newused(char *s){
 void
     make_operand(expr *e, vmarg *arg)
 {
+    if(!e){
+        fprintf(stderr, "null expr in make_operand\n");
+        return;
+    }
+    if(!e->type){
+        fprintf(stderr, "e->type empty\n");
+        return;
+    }
     switch (e->type)
     {
 
     case var_e:
     case tableitem_e:
+    case assignexpr_e:
     case arithexpr_e:
     case boolexpr_e:
     case newtable_e:
@@ -1095,7 +1119,11 @@ void patch_incomplete_jumps()
 
 void generate(void)
 {
-    for (unsigned int i = 0; i < total; i++)
+    initialize_funcstack(funcstack);
+    instruction *t;
+    emit_instruction(t);
+
+    for (unsigned int i = 0; i < currQuad; i++)
     {
         (*generators[quads[i].op])(quads + i);
     }
@@ -1104,6 +1132,7 @@ void generate(void)
 void emit_instruction(instruction *t)
 {
     if (curr_instr == totalInstr)
+
     {
         /*expand size*/
         assert(totalInstr == curr_instr);
@@ -1136,8 +1165,10 @@ void generate_op(vm_opcode op, quad *q)
     t->opcode = op;
     t->srcLine = q->line;
 
-    make_operand(q->arg1, &t->arg1);
-    make_operand(q->arg2, &t->arg2);
+    if(q->arg1)
+        make_operand(q->arg1, &t->arg1);
+    if(q->arg2)
+        make_operand(q->arg2, &t->arg2);
     make_operand(q->result, &t->result);
     q->taddress = nextinstrlabel();
     emit_instruction(t);
@@ -1388,7 +1419,7 @@ void generate_GETRETVAL(quad *q)
 
 void generate_FUNCSTART(quad *q)
 {
-    SymbolTableEntry *sym = q->result->sym;
+    SymbolTableEntry *sym = q->arg1->sym;
     sym->taddress = nextinstrlabel();
     q->taddress = nextinstrlabel();
 
@@ -1480,36 +1511,36 @@ const char *vmopcode_to_string(vm_opcode vmopcode)
 const char *print_instructions_helper(vmarg *vmarg)
 {
     if (!vmarg) return "";
-    switch (vmarg->type == label_a){
+    switch (vmarg->type){
         case label_a:
-            return "LABEL";
+            return "label_a";
         case global_a:
-            return "GLOBAL";
+            return "global_a";
         case formal_a:
-            return "FORMAL";
+            return "formal_a";
         case local_a:
-            return "LOCAL";
+            return "local_a";
         case number_a:
-            return "NUMBER";
+            return "number_a";
         case string_a:
-            return "STRING";
+            return "string_a";
         case bool_a:
-            return "BOOL";
+            return "bool_a";
         case nil_a:
-            return "NIL";
+            return "nil_a";
         case userfunc_a:
-            return "USERFUNC";
+            return "userfunc_a";
         case libfunc_a:
-            return "LIBFUNC";
+            return "libfunc_a";
         case retval_a:
-            return "RETVAL";
+            return "retval_a";
     }
 }
 
 
 void print_instructions()
 {
-    unsigned int i = 0U;
+    unsigned int i = 1U;
     FILE *f = fopen("instructions.txt", "w");
     FILE *f_binary = fopen("instructions_binary.bin", "wb");
 
@@ -1520,12 +1551,12 @@ void print_instructions()
     fprintf(f, "%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s\n",  "INSTRUCTION", "OPCODE", "RESULT TYPE", "RESULT VAL", "ARG1 TYPE", "ARG1 VAL", "ARG2 TYPE", "ARG2 VAL", "LINE");
     fprintf(f, "---------------------------------------------------------------------------------------\n");
 
-    while (i < nextinstrlabel())
+    while (i < curr_instr)
     {   
-       fprintf(f, "%-12d%-12s%-12s%-12d%-12s%-12d%-12s%-12d%-12d", i, vmopcode_to_string(instructions[i].opcode), print_instructions_helper(&instructions[i].result), instructions[i].result.val, print_instructions_helper(&instructions[i].arg1), instructions[i].arg1.val, print_instructions_helper(&instructions[i].arg2), instructions[i].arg2.val, yylineno);        
+       fprintf(f, "%-12d%-12s%-12s%-12d%-12s%-12d%-12s%-12d%-12d\n", i, vmopcode_to_string(instructions[i].opcode), print_instructions_helper(&instructions[i].result), instructions[i].result.val, print_instructions_helper(&instructions[i].arg1), instructions[i].arg1.val, print_instructions_helper(&instructions[i].arg2), instructions[i].arg2.val, yylineno);        
         i++;
     }
-
+}
 
 
 void generate_RET(quad *q)
