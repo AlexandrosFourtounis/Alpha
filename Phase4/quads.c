@@ -1454,55 +1454,55 @@ const char *vmopcode_to_string(vm_opcode vmopcode)
 {
     switch (vmopcode){
         case assign_v:
-            return "assign";
+            return "assign_v";
         case jump_v:
-            return "jump";
+            return "jump_v";
         case add_v:
-            return "add";
+            return "add_v";
         case sub_v:
-            return "sub";
+            return "sub_v";
         case mul_v:
-            return "mul";
+            return "mul_v";
         case div_v:
-            return "divv";
+            return "div_v";
         case mod_v:
-            return "mod";
+            return "mod_v";
         case uminus_v:
-            return "uminus";
+            return "uminus_v";
         case and_v:
-            return "and";
+            return "and_v";
         case or_v:
-            return "or";
+            return "or_v";
         case not_v:
-            return "not";
+            return "not_v";
         case jeq_v:
-            return "if_eq";
+            return "jeq_v";
         case jne_v:
-            return "if_noteq";
+            return "jne_v";
         case jle_v:
-            return "if_lesseq";
+            return "jle_v";
         case jge_v:
-            return "if_greatereq";
+            return "jge_v";
         case jlt_v:
-            return "if_less";
+            return "jlt_v";
         case jgt_v:
-            return "if_greater";
+            return "jgt_v";
         case callfunc_v:
-            return "call";
+            return "callfunc_v";
         case pusharg_v:
-            return "param";
+            return "pusharg_v";
         case exitfunc_v:
-            return "return";
+            return "exitfunc_v";
         case enterfunc_v:
-            return "funcstart";
+            return "enterfunc_v";
         case nop_v:
-            return "funcend";
+            return "nop_v";
         case newtable_v:
-            return "tablecreate";
+            return "newtable_v";
         case tablegetelem_v:
-            return "tablegetelem";
+            return "tablegetelem_v";
         case tablesetelem_v:
-            return "tablesetelem";
+            return "tablesetelem_v";
         default:
             return "unknown opcode";
     }
