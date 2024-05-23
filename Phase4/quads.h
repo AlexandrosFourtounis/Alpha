@@ -4,6 +4,21 @@
 #define CURR_SIZE (total * sizeof(quad))
 #define NEW_SIZE (EXPAND_SIZE * sizeof(quad) + CURR_SIZE)
 
+#define MAX_SIZE 10000
+
+typedef struct FuncStack
+{
+    SymbolTableEntry *arr[MAX_SIZE];
+    int top;
+} FuncStack;
+
+void initialize_funcstack(FuncStack *fs);
+int isEmpty_funcstack(FuncStack *fs);
+int isFull_funcstack(FuncStack *fs);
+void push_funcstack(FuncStack *fs, SymbolTableEntry *value);
+SymbolTableEntry* pop_funcstack(FuncStack *fs);
+SymbolTableEntry *top_funcstack(FuncStack *fs);
+
 typedef enum expr_t
 {
     var_e,
@@ -232,7 +247,7 @@ typedef struct userfunc
     char *id;
 } userfunc;
 
-consts_newstring(char *s);
+unsigned int consts_newstring(char *s);
 unsigned int consts_newnumber(double n);
 unsigned int libfuncs_newused(char *s);
 unsigned int userfuncs_newfunc(SymbolTableEntry *sym);
@@ -278,43 +293,17 @@ void generate_TABLECREATE(quad *);
 void generate_TABLEGETELEM(quad *);
 void generate_TABLESETELEM(quad *);
 void generate_ASSIGN(quad *);
+
 void generate_NOP(quad *);
 void print_instructions();
 const char *print_instructions_helper(vmarg *vmarg);
 const char *vmopcode_to_string(vm_opcode vmopcode);
 
+
+
+
 typedef void (*generator_func_t)(quad *);
-
-generator_func_t generators[] = {
-    generate_ASSIGN,
-    generate_JUMP,
-    generate_ADD,
-    generate_SUB,
-    generate_MUL,
-    generate_DIV,
-    generate_MOD,
-    generate_UMINUS,
-    generate_AND,
-    generate_OR,
-    generate_NOT,
-    generate_IF_EQ,
-    generate_IF_NOTEQ,
-    generate_IF_LESSEQ,
-    generate_IF_GREATEREQ,
-    generate_IF_LESS,
-    generate_IF_GREATER,
-    generate_CALL,
-    generate_PARAM,
-    generate_RET,
-    generate_GETRETVAL,
-    generate_FUNCSTART,
-    generate_FUNCEND,
-    generate_TABLECREATE,
-    generate_TABLEGETELEM,
-    generate_TABLESETELEM,
-    generate_NOP
-};
-
+extern generator_func_t generators[];
 void generate(void);
 
 void emit_instruction(instruction *t);
@@ -323,3 +312,7 @@ unsigned int nextinstrlabel();
 void generate_op(vm_opcode op, quad *q);
 
 void generate_relational(vm_opcode op, quad *q);
+
+void reset_operand(vmarg *arg);
+
+void backpatch_ret_list(returnList *list, unsigned int label);

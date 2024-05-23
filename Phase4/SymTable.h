@@ -18,6 +18,12 @@ typedef enum scopespace_t
     formalArg
 } scopespace_t;
 
+typedef struct returnList
+{
+    unsigned int ret;
+    struct returnList *next;
+} returnList;
+
 typedef struct Variable {
     const char *name;
     unsigned int scope;
@@ -28,6 +34,7 @@ typedef struct Function {
     const char *name;
     unsigned int scope;
     unsigned int line;
+    struct returnList *returnList;
 } Function;
 
 typedef enum SymbolType{
