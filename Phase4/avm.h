@@ -151,9 +151,9 @@ void execute_cycle(void);
 
 typedef void (*memclear_func_t)(avm_memcell*);
 
-//to extern to elege stis diafaneies alla mporei na min xreiazetai
-extern void memclear_string(avm_memcell* m);
-extern void memclear_table(avm_memcell* m);
+//to to elege stis diafaneies alla mporei na min xreiazetai
+void memclear_string(avm_memcell* m);
+void memclear_table(avm_memcell* m);
 
 memclear_func_t memclearFuncs[] = {
     0, //number
@@ -168,15 +168,117 @@ memclear_func_t memclearFuncs[] = {
 
 void avm_memcellclear(avm_memcell* m);
 
-extern void avm_warning(char* format,...);
-extern void avm_assign(avm_memcell* lv,avm_memcell* rv);
+void avm_warning(char* format,...);
+void avm_assign(avm_memcell* lv,avm_memcell* rv);
 void execute_assign(instruction* instr);
 void execute_call(instruction* instr);
     
-extern void avm_error(char* format,...);
-extern void avm_callsaveenvironment(void);
-extern char* avm_tostring(avm_memcell* ); //caller frees
-extern void avm_calllibfunc(char *funcname);
-extern void avm_call_functor(avm_table* t);
-extern void avm_push_table_arg(avm_table* t);
+void avm_error(char* format,...);
+void avm_callsaveenvironment(void);
+char* avm_tostring(avm_memcell* ); //caller frees
+void avm_calllibfunc(char *funcname);
+void avm_call_functor(avm_table* t);
+void avm_push_table_arg(avm_table* t);
 
+void avm_push_envvalue(unsigned val);
+void avm_callsaveenvironment(void);
+void avm_dec_top(void);
+
+userfunc* avm_getfuncinfo(unsigned address);
+void execute_funcenter(instruction* instr);
+unsigned avm_get_envvalue(unsigned i);
+void execute_funcexit(instruction* unused);
+
+#define AVM_NUMACTUALS_OFFSET +4
+#define AVM_SAVEDPC_OFFSET +3
+#define AVM_SAVEDTOP_OFFSET +2
+#define AVM_SAVEDTOPSP_OFFSET +1
+
+void avm_calllinfunc(char* id);
+unsigned avm_totalactuals(void);
+avm_memcell* avm_getactual(unsigned i);
+void libfunc_print(void);
+void avm_registerlibfunc(char* id,library_func_t addr);
+
+void avm_push_table_arg(avm_table* t);
+void execute_pusharg(instruction* instr);
+
+typedef char* (*tostring_func_t)(avm_memcell*);
+char* number_tostring(avm_memcell*);
+char* string_tostring(avm_memcell*);
+char* bool_tostring(avm_memcell*);
+char* table_tostring(avm_memcell*);
+char* userfunc_tostring(avm_memcell*);
+char* libfunc_tostring(avm_memcell*);
+char* nil_tostring(avm_memcell*);
+char* undef_tostring(avm_memcell*);
+
+tostring_func_t tostringFuncs[] = {
+    number_tostring,
+    string_tostring,
+    bool_tostring,
+    table_tostring,
+    userfunc_tostring,
+    libfunc_tostring,
+    nil_tostring,
+    undef_tostring
+};
+
+char* avm_tostring(avm_memcell* m);
+
+#define execute_add execute_arithmetic
+#define execute_sub execute_arithmetic
+#define execute_mul execute_arithmetic
+#define execute_div execute_arithmetic
+#define execute_mod execute_arithmetic
+
+typedef double (*arithmetic_func_t)(double x,double y);
+double add_impl(double x,double y);
+double sub_impl(double x,double y);
+double mul_impl(double x,double y);
+double div_impl(double x,double y);
+double mod_impl(double x,double y);
+
+arithmetic_func_t arithmeticFuncs[] = {
+    add_impl,
+    sub_impl,
+    mul_impl,
+    div_impl,
+    mod_impl
+};
+
+void execute_arithmetic(instruction* instr);
+
+typedef unsigned char (*tobool_func_t)(avm_memcell*);
+
+unsigned char number_tobool(avm_memcell*);
+unsigned char string_tobool(avm_memcell*);
+unsigned char bool_tobool(avm_memcell*);
+unsigned char table_tobool(avm_memcell*);
+unsigned char userfunc_tobool(avm_memcell*);
+unsigned char libfunc_tobool(avm_memcell*);
+unsigned char nil_tobool(avm_memcell*);
+unsigned char undef_tobool(avm_memcell*);
+
+tobool_func_t toboolFuncs[] = {
+    number_tobool,
+    string_tobool,
+    bool_tobool,
+    table_tobool,
+    userfunc_tobool,
+    libfunc_tobool,
+    nil_tobool,
+    undef_tobool
+};
+
+unsigned char avm_tobool(avm_memcell* m);
+void libfunc_typeof(void);
+void execute_newtable(instruction* instr);
+
+avm_memcell* avm_tablegetelem(avm_table* table,avm_memcell* index);
+void avm_tablesetelem(avm_table* table,avm_memcell* index,avm_memcell* content);
+void execute_tablegetelem(instruction* instr);
+
+void execute_tablesetelem(instruction* instr)
+void avm_initialize(void);
+void library_totalarguments(void);
