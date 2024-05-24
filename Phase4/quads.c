@@ -886,7 +886,7 @@ void initialize_funcstack()
         if (funcstack == NULL)
         {
             printf("Error: Out of memory\n");
-            return NULL;
+            return;
         }
     }
 
@@ -1546,7 +1546,7 @@ void print_instructions()
 
     if (f == NULL || f_binary == NULL) {
         perror("Error opening file: ");
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     fprintf(f, "%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s\n",  "INSTRUCTION", "OPCODE", "RESULT TYPE", "RESULT VAL", "ARG1 TYPE", "ARG1 VAL", "ARG2 TYPE", "ARG2 VAL", "LINE");
     fprintf(f, "---------------------------------------------------------------------------------------\n");
