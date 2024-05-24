@@ -35,13 +35,14 @@ avm_table* avm_tablenew(void){
     return t;
 }
 
-//copilot did it
+/*copilot did it
 void avm_memcellclear(avm_memcell* m){
     if(m->type!=undef_m){
         m->type=undef_m;
         memset(&(m->data),0,sizeof(m->data));
     }
-}
+} to sosto dinetai sthn dialexh 15 kai to exoume valei grammh 139
+*/ 
 
 void avm_tablebucketdestroy(avm_table_bucket** p){
     for(unsigned i=0;i<AVM_TABLE_HASHSIZE;++i, ++p){
@@ -125,3 +126,93 @@ void execute_cycle(void){
         }
     }
 }
+
+extern void memclear_string(avm_memcell* m){
+    assert(m->data.strVal);
+    free(m->data.strVal);
+}
+
+extern void memclear_table(avm_memcell* m){
+    assert(m->data.tableVal);
+    avm_tabledecrefcounter(m->data.tableVal);
+}
+
+void avm_memcellclear(avm_memcell* m){
+    if(m->type!=undef_m){
+        memclear_func_t f = memclearFuncs[m->type];
+        if(f){
+            (*f)(m);
+        }
+        m->type = undef_m;
+    }
+}
+
+//sth diafaneia gia edo stack[AVM_STACKSIZE-1] leei stack[N-1]. to copilot eipe to 1o
+void execute_assign(instruction* instr){
+    avm_memcell* lv = avm_translate_operand(&instr->result,(avm_memcell*)0);
+    avm_memcell* rv = avm_translate_operand(&instr->arg1,&ax);
+    assert(lv && (&stack[AVM_STACKSIZE-1] >= lv && lv > &stack[top] || lv == &retval));
+    assert(rv); //should do similar assertion tests here
+    avm_assign(lv,rv);
+}
+
+void avm_assign(avm_memcell* lv,avm_memcell* rv){
+    if(lv == rv){
+        return;
+    }
+    if(lv->type == table_m && rv->type == table_m && lv->data.tableVal == rv->data.tableVal){
+        return;
+    }
+    if(rv->type == undef_m){
+        avm_warning("assigning from 'undef' content!");
+    }
+    avm_memcellclear(lv);
+    memcpy(lv,rv,sizeof(avm_memcell));
+    if(lv->type == string_m){
+        lv->data.strVal = strdup(rv->data.strVal);
+    }else if(lv->type == table_m){
+        avm_tableincrefcounter(lv->data.tableVal);
+    }
+}
+
+void execute_call(instruction* instr){
+    avm_memcell* func = avm_translate_operand(&instr->result,&ax);
+    assert(func);
+    switch(func->type){
+        case userfunc_m:{
+            avm_callsaveenvironment();
+            pc = func->data.funcVal;
+            assert(pc < AVM_ENDING_PC);
+            assert(code[pc].opcode == enterfunc_v);
+            break;
+        }
+        case string_m: avm_calllibfunc(func); break;
+        case libfunc_m: avm_calllibfunc(func); break;
+        case table_m: avm_calltablefunc(func); break;
+        default:{
+            char* s = avm_tostring(func);
+            avm_error("call: cannot bind '%s' to function!",s);
+            free(s);
+            executionFinished = 1;
+        }
+    }
+
+}
+
+void avm_call_functor(avm_table* t){
+    cx.type = table_m;
+    cx.data.strVal = "()";
+    avm_memcell* f = avm_tablegetelem(t,&cx);
+    if(!f){
+        avm_error("In calling table: no '()' element found!");
+    } else if(f->type == table_m){
+        avm_call_functor(f->data.tableVal);
+    } else if(f->type == userfunc_a){
+        avm_push_table_arg(t);
+        avm_callsaveenvironment();
+        pc = f->data.funcVal;
+        assert(pc < AVM_ENDING_PC && code[pc].opcode == enterfunc_v);
+    } else{
+        avm_error("In calling table: illegal '()' element value!");
+    }
+} 

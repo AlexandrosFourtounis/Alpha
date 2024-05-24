@@ -149,4 +149,34 @@ instruction* code = (instruction*) 0;
 
 void execute_cycle(void);
 
+typedef void (*memclear_func_t)(avm_memcell*);
+
+//to extern to elege stis diafaneies alla mporei na min xreiazetai
+extern void memclear_string(avm_memcell* m);
+extern void memclear_table(avm_memcell* m);
+
+memclear_func_t memclearFuncs[] = {
+    0, //number
+    memclear_string, //string
+    0, //bool
+    memclear_table, //table
+    0, //userfunc
+    0, //libfunc
+    0, //nil
+    0 //undef
+};
+
+void avm_memcellclear(avm_memcell* m);
+
+extern void avm_warning(char* format,...);
+extern void avm_assign(avm_memcell* lv,avm_memcell* rv);
+void execute_assign(instruction* instr);
+void execute_call(instruction* instr);
+    
+extern void avm_error(char* format,...);
+extern void avm_callsaveenvironment(void);
+extern char* avm_tostring(avm_memcell* ); //caller frees
+extern void avm_calllibfunc(char *funcname);
+extern void avm_call_functor(avm_table* t);
+extern void avm_push_table_arg(avm_table* t);
 
