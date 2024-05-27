@@ -993,12 +993,14 @@ void
 {
     if(!e){
         fprintf(stderr, "null expr in make_operand\n");
+        arg->type = -1;
+        arg->val = 0;
         return;
     }
-    if(!e->type){
-        fprintf(stderr, "e->type empty\n");
-        return;
-    }
+    if(e->sym && e->sym->value.varVal)
+        fprintf(stderr, "%s ",
+                e->sym->value.varVal->name);
+    fprintf(stderr, "e->type: %d\n", e->type);
     switch (e->type)
     {
 
@@ -1010,6 +1012,7 @@ void
     case newtable_e:
     {
         assert(e->sym);
+        arg->name = strdup(e->sym->value.varVal->name);
         arg->val = e->sym->offset;
         switch (e->sym->space)
         {
@@ -1029,41 +1032,58 @@ void
     }
     case constbool_e:
     {
+        memset(arg, 0, sizeof(vmarg));
         arg->val = e->boolConst;
         arg->type = bool_a;
         break;
     }
     case conststring_e:
     {
+        memset(arg, 0, sizeof(vmarg));
         arg->val = consts_newstring(e->strConst);
         arg->type = string_a;
         break;
     }
     case constnum_e:
     {
+        memset(arg, 0, sizeof(vmarg));
         arg->val = consts_newnumber(e->numConst);
         arg->type = number_a;
         break;
     }
     case nil_e:
     {
+        memset(arg, 0, sizeof(vmarg));
         arg->type = nil_a;
         break;
     }
     case programfunc_e:
     {
-        arg->val = e->sym->taddress;
+        arg->name = strdup(e->sym->value.funcVal->name);
+        // arg->val = e->sym->taddress;
+        arg->val = 0;
         arg->type = userfunc_a;
+        int i = 0;
+        // for (i = 0; i < totalUserFuncs; i++)
+        // {
+        //     if (strcmp(arg->name, userFuncs[i].id) == 0)
+        //     {
+        //         arg->val = i;
+        //     }
+        // }
         break;
     }
     case libraryfunc_e:
     {
         arg->val = libfuncs_newused(e->sym->value.funcVal->name);
         arg->type = libfunc_a;
+        arg->name = strdup(e->sym->value.funcVal->name);
         break;
     }
     default:
-        assert(0);
+        memset(arg, 0, sizeof(vmarg));
+        arg->type = -1;
+        break;
     }
 }
 

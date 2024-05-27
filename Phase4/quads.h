@@ -229,8 +229,8 @@ typedef struct vmarg
 {
     vmarg_t type;
     unsigned int val;
+    char *name;
 } vmarg;
-
 
 typedef struct instruction{
     vm_opcode opcode;
