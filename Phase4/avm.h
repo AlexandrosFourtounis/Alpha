@@ -91,16 +91,22 @@ userfunc *userfuncs_get(unsigned index);
 avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg);
 
 typedef void (*execute_func_t)(instruction *);
+// #define execute_add execute_arithmetic
+// #define execute_sub execute_arithmetic
+// #define execute_mul execute_arithmetic
+// #define execute_div execute_arithmetic
+// #define execute_mod execute_arithmetic
+// #define execute_uminus execute_arithmetic
 
 #define AVM_MAX_INSTRUCTIONS (unsigned)nop_v
 
 void execute_assign(instruction *);
-void execute_add(instruction *);
-void execute_sub(instruction *);
-void execute_mul(instruction *);
-void execute_div(instruction *);
-void execute_mod(instruction *);
-void execute_uminus(instruction *);
+void execute_add(instruction *instr);
+void execute_sub(instruction *instr);
+void execute_mul(instruction *instr);
+void execute_div(instruction *instr);
+void execute_mod(instruction *instr);
+void execute_uminus(instruction *instr);
 void execute_and(instruction *);
 void execute_or(instruction *);
 void execute_not(instruction *);
@@ -179,33 +185,33 @@ void avm_assign(avm_memcell *lv, avm_memcell *rv);
 void execute_assign(instruction *instr);
 void execute_call(instruction *instr);
 
-void avm_error(char *format,...);
+void avm_error(char *format, ...);
 void avm_callsaveenvironment(void);
 char *avm_tostring(avm_memcell *); // caller frees
 void avm_calllibfunc(char *funcname);
 void avm_call_functor(avm_table *t);
 void avm_push_table_arg(avm_table *t);
 void avm_calltablefunc(char *funcname);
-    void avm_push_envvalue(unsigned val);
-    void avm_callsaveenvironment(void);
-    void avm_dec_top(void);
+void avm_push_envvalue(unsigned val);
+void avm_callsaveenvironment(void);
+void avm_dec_top(void);
 
-    userfunc *avm_getfuncinfo(unsigned address);
-    void execute_funcenter(instruction * instr);
-    unsigned avm_get_envvalue(unsigned i);
-    void execute_funcexit(instruction * unused);
+userfunc *avm_getfuncinfo(unsigned address);
+void execute_funcenter(instruction *instr);
+unsigned avm_get_envvalue(unsigned i);
+void execute_funcexit(instruction *unused);
 
 #define AVM_NUMACTUALS_OFFSET +4
 #define AVM_SAVEDPC_OFFSET +3
 #define AVM_SAVEDTOP_OFFSET +2
 #define AVM_SAVEDTOPSP_OFFSET +1
 typedef void (*library_func_t)(void);
-
+void avm_registerlibfunc(char *id, library_func_t addr);
 void avm_calllinfunc(char *id);
 unsigned avm_totalactuals(void);
 avm_memcell *avm_getactual(unsigned i);
 void libfunc_print(void);
-void avm_registerlibfunc(char *id, library_func_t addr);
+
 
 void avm_push_table_arg(avm_table *t);
 void execute_pusharg(instruction *instr);
@@ -231,12 +237,6 @@ tostring_func_t tostringFuncs[] = {
     undef_tostring};
 
 char *avm_tostring(avm_memcell *m);
-
-#define execute_add execute_arithmetic
-#define execute_sub execute_arithmetic
-#define execute_mul execute_arithmetic
-#define execute_div execute_arithmetic
-#define execute_mod execute_arithmetic
 
 typedef double (*arithmetic_func_t)(double x, double y);
 double add_impl(double x, double y);
