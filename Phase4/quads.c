@@ -1537,7 +1537,7 @@ const char *print_instructions_helper(vmarg *vmarg)
     }
 }
 
-
+#define MAX_STRING_LENGTH 1024
 void print_instructions()
 {
     unsigned int i = 1U;
@@ -1553,7 +1553,44 @@ void print_instructions()
 
     while (i < curr_instr)
     {   
-       fprintf(f, "%-12d%-12s%-12s%-12d%-12s%-12d%-12s%-12d%-12d\n", i, vmopcode_to_string(instructions[i].opcode), print_instructions_helper(&instructions[i].result), instructions[i].result.val, print_instructions_helper(&instructions[i].arg1), instructions[i].arg1.val, print_instructions_helper(&instructions[i].arg2), instructions[i].arg2.val, instructions[i].srcLine);        
+        fprintf(f, "%-12d%-12s%-12s%-12d%-12s%-12d%-12s%-12d%-12d\n", 
+        i, 
+        vmopcode_to_string(instructions[i].opcode), 
+        print_instructions_helper(&instructions[i].result), 
+        instructions[i].result.val, 
+        print_instructions_helper(&instructions[i].arg1), 
+        instructions[i].arg1.val, 
+        print_instructions_helper(&instructions[i].arg2), 
+        instructions[i].arg2.val, 
+        instructions[i].srcLine);        
+        
+        struct {
+            unsigned int instr_num;
+            char opcode[MAX_STRING_LENGTH];
+            char result[MAX_STRING_LENGTH];
+            int result_val;
+            char arg1[MAX_STRING_LENGTH];
+            int arg1_val;
+            char arg2[MAX_STRING_LENGTH];
+            int arg2_val;
+            int src_line;
+        } binary_instruction;
+
+        binary_instruction.instr_num = i;
+        strncpy(binary_instruction.opcode, vmopcode_to_string(instructions[i].opcode), MAX_STRING_LENGTH - 1);
+        binary_instruction.opcode[MAX_STRING_LENGTH - 1] = '\0';
+        strncpy(binary_instruction.result, print_instructions_helper(&instructions[i].result), MAX_STRING_LENGTH - 1);
+        binary_instruction.result[MAX_STRING_LENGTH - 1] = '\0';
+        binary_instruction.result_val = instructions[i].result.val;
+        strncpy(binary_instruction.arg1, print_instructions_helper(&instructions[i].arg1), MAX_STRING_LENGTH - 1);
+        binary_instruction.arg1[MAX_STRING_LENGTH - 1] = '\0';
+        binary_instruction.arg1_val = instructions[i].arg1.val;
+        strncpy(binary_instruction.arg2, print_instructions_helper(&instructions[i].arg2), MAX_STRING_LENGTH - 1);
+        binary_instruction.arg2[MAX_STRING_LENGTH - 1] = '\0';
+        binary_instruction.arg2_val = instructions[i].arg2.val;
+        binary_instruction.src_line = instructions[i].srcLine;
+
+        fwrite(&binary_instruction, sizeof(binary_instruction), 1, f_binary);
         i++;
     }
 }
