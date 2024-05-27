@@ -4,6 +4,16 @@
 #include <string.h>
 #include <stdio.h>
 
+char *typeStrings[] = {
+    "number",
+    "string",
+    "bool",
+    "table",
+    "userfunc",
+    "libfunc",
+    "nil",
+    "undef"};
+
 void avm_tableincrefcounter(avm_table* t){
     ++t->refCounter;
 }
@@ -68,6 +78,54 @@ void avm_tabledestroy(avm_table* t){
     avm_tablebucketdestroy(t->undefIndexed);
     free(t);
 }
+
+char *libfuncs_getused(unsigned index){
+    //to be completed
+}
+
+userfunc *userfuncs_get(unsigned index){
+    //t2be completed
+}
+
+void avm_warning(char *format){
+
+}
+
+void avm_error(char *format,...){
+    //to be completed
+}
+void avm_calllibfunc(char *funcname){
+    //to be completed
+}
+
+void avm_calltablefunc(char *funcname){
+    //to be completed
+}
+char *string_tostring(avm_memcell *){
+}
+
+char *number_tostring(avm_memcell *){}
+char *bool_tostring(avm_memcell *){}
+char *table_tostring(avm_memcell *){}
+char *userfunc_tostring(avm_memcell *){}
+char *libfunc_tostring(avm_memcell *){}
+char *nil_tostring(avm_memcell *){}
+char *undef_tostring(avm_memcell *){}
+void execute_assign(instruction *){}
+void execute_mod(instruction *){}
+void execute_uminus(instruction *){}
+void execute_and(instruction *){}
+void execute_or(instruction *){}
+void execute_not(instruction *){}
+void execute_jne(instruction *){}
+void execute_jle(instruction *){}
+void execute_jge(instruction *){}
+void execute_jlt(instruction *){}
+void execute_jgt(instruction *){}
+void execute_call(instruction *){}
+void execute_enterfunc(instruction *){}
+void execute_exitfunc(instruction *){}
+void execute_nop(instruction *){}
 
 avm_memcell* avm_translate_operand(vmarg* arg,avm_memcell* reg){
     switch(arg->type){
@@ -456,7 +514,7 @@ void execute_tablegetelem(instruction* instr){
     avm_memcell* t = avm_translate_operand(&instr->arg1,(avm_memcell*)0);
     avm_memcell* i = avm_translate_operand(&instr->arg2,&ax);
     assert(lv && (&stack[AVM_STACKSIZE-1] >= lv && lv > &stack[top] || lv == &retval));
-    assert(t && stack[AVM_STACKSIZE-1] >= t && t > &stack[top]);
+    assert(t && &stack[AVM_STACKSIZE-1] >= t && t > &stack[top]);
     assert(i);
     avm_memcellclear(lv);
     lv->type = nil_m;
@@ -480,7 +538,7 @@ void execute_tablesetelem(instruction* instr){
     avm_memcell* t = avm_translate_operand(&instr->result,(avm_memcell*)0);
     avm_memcell* i = avm_translate_operand(&instr->arg1,&ax);
     avm_memcell* c = avm_translate_operand(&instr->arg2,&bx);
-    assert(t && stack[AVM_STACKSIZE-1] >= t && t > &stack[top]);
+    assert(t && &stack[AVM_STACKSIZE-1] >= t && t > &stack[top]);
     assert(i && c);
     if(t->type != table_m){
         avm_error("illegal use of type %s as table!",typeStrings[t->type]);

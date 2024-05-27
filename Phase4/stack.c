@@ -2,15 +2,15 @@
 #include <stdio.h>
 
 void initialize(Stack *stack) {
-    stack->top = -1;
+    stack->topp = -1;
 }
 
 int isEmpty(Stack *stack) {
-    return (stack->top == -1);
+    return (stack->topp == -1);
 }
 
 int isFull(Stack *stack) {
-    return (stack->top == MAX_SIZE - 1);
+    return (stack->topp == MAX_SIZE - 1);
 }
 
 void push(Stack *stack, int value) {
@@ -18,7 +18,7 @@ void push(Stack *stack, int value) {
         printf("Error: Stack overflow\n");
         return;
     }
-    stack->arr[++stack->top] = value;
+    stack->arr[++stack->topp] = value;
 }
 
 int pop(Stack *stack) {
@@ -26,15 +26,15 @@ int pop(Stack *stack) {
         printf("Error: Stack underflow\n");
         return -1;
     }
-    return stack->arr[stack->top--];
+    return stack->arr[stack->topp--];
 }
 
-int top(Stack *stack) {
+int topp(Stack *stack) {
     if (isEmpty(stack)) {
         printf("Error: Stack is empty\n");
         return -1;
     }
-    return stack->arr[stack->top];
+    return stack->arr[stack->topp];
 }
 
 void print(Stack *stack) {
@@ -43,7 +43,7 @@ void print(Stack *stack) {
         return;
     }
     printf("Stack elements: ");
-    for (int i = stack->top; i >= 0; i--) {
+    for (int i = stack->topp; i >= 0; i--) {
         printf("%d ", stack->arr[i]);
     }
     printf("\n");
