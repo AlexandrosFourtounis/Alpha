@@ -1630,8 +1630,26 @@ void print_instructions()
     }
 }
 
+void appendReturnList(returnList **head, unsigned int label){
+    returnList *tmp = *head, *entry;
+    entry = malloc(sizeof(returnList));
+    entry->ret = label;
+    entry->next = NULL;
+    if (*head == NULL)
+    {
+        *head = entry;
 
-void generate_RET(quad *q)
+        return;
+    }
+    while (tmp->next != NULL)
+    {
+
+        tmp = tmp->next;
+    }
+    tmp->next = entry;
+}
+
+    void generate_RET(quad *q)
 {
     q->taddress = nextinstrlabel();
     instruction *t;
@@ -1649,22 +1667,9 @@ void generate_RET(quad *q)
         fprintf(stderr, "Error:  stack returned NULL top\n");
         exit(EXIT_FAILURE);
     }
-    returnList *rl = f->value.funcVal->returnList;
-    if (!rl)
-    {
-        rl = malloc(sizeof(returnList));
-        rl->ret = nextinstrlabel();
-        rl->next = NULL;
-        f->value.funcVal->returnList = rl;
-    }
-    else
-    {
-        while (rl->next)
-        {
-            rl = rl->next;
-        }
-        rl->ret = nextinstrlabel();
-    }
+
+    if(f && f->value.funcVal)
+        appendReturnList(&f->value.funcVal->returnList, nextinstrlabel());
 
     t->opcode = jump_v;
     reset_operand(&t->arg1);
