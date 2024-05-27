@@ -1012,11 +1012,12 @@ void
     case newtable_e:
     {
         assert(e->sym);
+        memset(arg, 0, sizeof(vmarg));
         arg->name = strdup(e->sym->value.varVal->name);
         arg->val = e->sym->offset;
         switch (e->sym->space)
         {
-        case programVar:
+        case programVar: 
             arg->type = global_a;
             break;
         case functionLocal:
@@ -1532,29 +1533,43 @@ const char *print_instructions_helper(vmarg *vmarg)
 {
     if (!vmarg) return "";
     switch (vmarg->type){
-        case label_a:
-            return "label_a";
         case global_a:
             return "global_a";
+            break;
         case formal_a:
             return "formal_a";
+            break;
         case local_a:
             return "local_a";
+            break;
         case number_a:
             return "number_a";
+            break;
         case string_a:
             return "string_a";
+            break;
         case bool_a:
             return "bool_a";
+            break;
         case nil_a:
             return "nil_a";
+            break;
         case userfunc_a:
             return "userfunc_a";
+            break;
         case libfunc_a:
             return "libfunc_a";
+            break;
         case retval_a:
             return "retval_a";
-    }
+            break;
+        case label_a:
+            return "label_a";
+            break;
+        default:
+            return "type not match";
+            break;
+        }
 }
 
 #define MAX_STRING_LENGTH 1024
@@ -1568,7 +1583,7 @@ void print_instructions()
         perror("Error opening file: ");
         exit(EXIT_FAILURE);
     }
-    fprintf(f, "%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s\n",  "INSTRUCTION", "OPCODE", "RESULT TYPE", "RESULT VAL", "ARG1 TYPE", "ARG1 VAL", "ARG2 TYPE", "ARG2 VAL", "LINE");
+    fprintf(f, "%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s%-12s\n",  "INSTRUCTION", "OPCODE", "RESULT", "", "ARG1 ", "", "ARG2 ", " ", "LINE");
     fprintf(f, "---------------------------------------------------------------------------------------\n");
 
     while (i < curr_instr)
