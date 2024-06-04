@@ -87,6 +87,10 @@ void avm_tabledestroy(avm_table *t)
     free(t);
 }
 
+char *userfunc_tostring(avm_memcell *) 
+{
+}
+
 char *libfuncs_getused(unsigned index)
 {
     // to be completed
@@ -95,6 +99,14 @@ char *libfuncs_getused(unsigned index)
 userfunc *userfuncs_get(unsigned index)
 {
     // t2be completed
+}
+
+void execute_enterfunc(instruction *) 
+{
+}
+
+void execute_exitfunc(instruction *) 
+{
 }
 
 void avm_warning(char *format)
@@ -114,33 +126,153 @@ void avm_calltablefunc(char *funcname)
 {
     // to be completed
 }
-char *string_tostring(avm_memcell *)
-{
+char *string_tostring(avm_memcell *mem) {
+    return mem->data.strVal;
 }
 
-char *number_tostring(avm_memcell *) {}
-char *bool_tostring(avm_memcell *) {}
-char *table_tostring(avm_memcell *) {}
-char *userfunc_tostring(avm_memcell *) {}
-char *libfunc_tostring(avm_memcell *) {}
-char *nil_tostring(avm_memcell *) {}
-char *undef_tostring(avm_memcell *) {}
+char *number_tostring(avm_memcell *mem) {
+    char* buff;
+    buff = malloc(sizeof(char*));
+    sprintf(buff, "%.3f", mem->data.numVal);
+    return buff;
+}
+
+char *bool_tostring(avm_memcell *mem) {
+    return mem->data.boolVal?"TRUE":"FALSE";
+}
+
+char *table_tostring(avm_memcell *mem) {
+    char* buff;
+    char* buffbuff;
+    buff = malloc(8 * sizeof(char*));
+    buffbuff = malloc(sizeof(char*));
+    strcat(buff, "[ ");
+    int i;
+    for (i = 0; i < AVM_TABLE_HASHSIZE; i++) {
+        avm_table_bucket* temp = mem->data.tableVal->strIndexed[i];
+        while (temp != NULL) {
+            strcat(buff, "{\"");
+            strcat(buff, temp->key.data.strVal);
+            strcat(buff, "\":");
+            strcat(buff, avm_tostring(&(temp->value)));
+            strcat(buff, "} ");
+            temp = temp->next;
+        }
+
+        temp = mem->data.tableVal->numIndexed[i];
+        while (temp != NULL) {
+            strcat(buff, "{");
+            sprintf(buffbuff, "%d", (int)temp->key.data.numVal);
+            strcat(buff, buffbuff);
+            strcat(buff, ":");
+            strcat(buff, avm_tostring(&(temp->value)));
+            strcat(buff, "} ");
+
+            temp = temp->next;
+        }
+    }
+
+    strcat(buff, "]");
+
+    return buff;
+}
+
+char *libfunc_tostring(avm_memcell *mem) {
+    char* buff = malloc(sizeof(char*));
+    sprintf(buff, "Library Function : %s", mem->data.libfuncVal);
+    return buff;
+}
+
+char *nil_tostring(avm_memcell *mem) {
+    return "NIL";
+}
+
+char *undef_tostring(avm_memcell *mem) {
+    return "UNDEFINED";
+}
+
 // void execute_mod(instruction *){}
 // void execute_uminus(instruction *) {}
-void execute_and(instruction *) {}
-void execute_or(instruction *) {}
-void execute_not(instruction *) {}
-void execute_jne(instruction *) {}
-void execute_jle(instruction *) {}
-void execute_jge(instruction *) {}
-void execute_jlt(instruction *) {}
-void execute_jgt(instruction *) {}
-void execute_enterfunc(instruction *) {}
-void execute_exitfunc(instruction *) {}
-void execute_nop(instruction *) {}
+//void execute_and(instruction *) {}
+//void execute_or(instruction *) {}
+//void execute_not(instruction *) {}
+void execute_jne(instruction *i) {
+    printf("execute_jne\n");
+    assert(i->result.type == label_a);
 
-double consts_getnumber(unsigned index){}
-char *consts_getstring(unsigned index){}
+    avm_memcell* mem1 = avm_translate_operand(&i->arg1, &ax);
+    avm_memcell* mem2 = avm_translate_operand(&i->arg2, &bx);
+
+    unsigned char result = 0;
+
+    if (mem1->type == undef_m || mem2->type == undef_m) {
+        avm_error("undefined operand comparison");
+    } else if (mem1->type == nil_m || mem2->type == nil_m) {
+        result = mem1->type == nil_m && mem2->type == nil_m;
+    } else if (mem1->type == bool_m || mem2->type == bool_m) {
+        result = (avm_tobool(mem1) != avm_tobool(mem2));
+    } else if (mem1->type != mem2->type) {
+        avm_error("Comparison between ");
+        printf("%s and %s is illegal because they're different", typeStrings[mem1->type], typeStrings[mem2->type]);
+    } else {
+        result = avm_tobool(mem1) != avm_tobool(mem2);
+    }
+
+    if (!executionFinished && !result) {
+        pc = i->result.val;
+    }
+}
+typedef unsigned char (*comp_func)(double x, double y);
+unsigned char less_eq(double x, double y) { return x <= y; }
+unsigned char greater_eq(double x, double y) { return x >= y; }
+unsigned char less(double x, double y) { return x < y; }
+unsigned char greater(double x, double y) { return x > y; }
+comp_func comparisonFuncs[] = {less_eq, greater_eq, less, greater};
+
+void execute_jle(instruction *i) {
+    assert(i->result.type == label_a);
+
+    avm_memcell* mem1 = avm_translate_operand(&i->arg1, &ax);
+    avm_memcell* mem2 = avm_translate_operand(&i->arg2, &bx);
+    assert(mem1 && mem2);
+
+    unsigned char result = 0;
+
+    if (mem1->type == undef_m || mem2->type == undef_m) {
+        avm_error("undefined operand comparison");
+    } else if (mem1->type == nil_m || mem2->type == nil_m) {
+        result = mem1->type == nil_m && mem2->type == nil_m;
+    } else if (mem1->type == bool_m || mem2->type == bool_m) {
+        result = (avm_tobool(mem1) == avm_tobool(mem2));
+    } else if (mem1->type != mem2->type) {
+        avm_error("Comparison between ");
+        printf("%s and %s is illegal because they're different", typeStrings[mem1->type], typeStrings[mem2->type]);
+    } else {
+        comp_func op = comparisonFuncs[i->opcode - jle_v];
+        result = (*op)(mem1->data.numVal, mem2->data.numVal);
+    }
+
+    if (!executionFinished && result) {
+        pc = i->result.val;
+    }
+}
+
+void execute_jge(instruction *i) {
+    execute_jle(i);
+}
+
+void execute_jlt(instruction *i) {
+    execute_jle(i);
+}
+
+void execute_jgt(instruction *i) {
+    execute_jle(i);
+}
+
+
+//void execute_nop(instruction *) {}
+double consts_getnumber(unsigned index){} //needs file parsing to find numbers 
+char *consts_getstring(unsigned index){} //needs file parsing to find strings
 
 
 avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
@@ -504,13 +636,13 @@ double mod_impl(double x, double y)
 void execute_arithmetic(instruction *instr)
 {
     avm_memcell *lv = avm_translate_operand(&instr->result, (avm_memcell *)0);
-    avm_memcell *rv1 = avm_translate_operand(&instr->arg1, &ax);
-    avm_memcell *rv2 = avm_translate_operand(&instr->arg2, &bx);
+    avm_memcell *mem1 = avm_translate_operand(&instr->arg1, &ax);
+    avm_memcell *mem2 = avm_translate_operand(&instr->arg2, &bx);
 
     assert(lv && (&stack[AVM_STACKSIZE - 1] >= lv && lv > &stack[top] || lv == &retval));
-    assert(rv1 && rv2);
+    assert(mem1 && mem2);
 
-    if (rv1->type != number_m || rv2->type != number_m)
+    if (mem1->type != number_m || mem2->type != number_m)
     {
         avm_error("not a number in arithmetic!");
         executionFinished = 1;
@@ -520,7 +652,7 @@ void execute_arithmetic(instruction *instr)
         arithmetic_func_t op = arithmeticFuncs[instr->opcode - add_v];
         avm_memcellclear(lv);
         lv->type = number_m;
-        lv->data.numVal = (*op)(rv1->data.numVal, rv2->data.numVal);
+        lv->data.numVal = (*op)(mem1->data.numVal, mem2->data.numVal);
     }
 }
 
@@ -581,40 +713,40 @@ unsigned char avm_tobool(avm_memcell *m)
 void execute_jeq(instruction *instr)
 {
     assert(instr->result.type == label_a);
-    avm_memcell *rv1 = avm_translate_operand(&instr->arg1, &ax);
-    avm_memcell *rv2 = avm_translate_operand(&instr->arg2, &bx);
+    avm_memcell *mem1 = avm_translate_operand(&instr->arg1, &ax);
+    avm_memcell *mem2 = avm_translate_operand(&instr->arg2, &bx);
     unsigned char result = 0;
-    if (rv1->type == undef_m || rv2->type == undef_m)
+    if (mem1->type == undef_m || mem2->type == undef_m)
     {
         avm_error("undef in equality!");
         executionFinished = 1;
     }
-    else if (rv1->type == nil_m || rv2->type == nil_m)
+    else if (mem1->type == nil_m || mem2->type == nil_m)
     {
-        result = rv1->type == nil_m && rv2->type == nil_m;
+        result = mem1->type == nil_m && mem2->type == nil_m;
     }
-    else if (rv1->type == bool_m && rv2->type == bool_m)
+    else if (mem1->type == bool_m && mem2->type == bool_m)
     {
-        result = rv1->data.boolVal == rv2->data.boolVal;
+        result = mem1->data.boolVal == mem2->data.boolVal;
     }
-    else if (rv1->type == number_m && rv2->type == number_m)
+    else if (mem1->type == number_m && mem2->type == number_m)
     {
-        result = rv1->data.numVal == rv2->data.numVal;
+        result = mem1->data.numVal == mem2->data.numVal;
     }
-    else if (rv1->type == string_m && rv2->type == string_m)
+    else if (mem1->type == string_m && mem2->type == string_m)
     {
-        result = !strcmp(rv1->data.strVal, rv2->data.strVal);
+        result = !strcmp(mem1->data.strVal, mem2->data.strVal);
     }
-    else if (rv1->type != rv2->type)
+    else if (mem1->type != mem2->type)
     {
-        avm_error("%s == %s is illegal!", avm_tostring(rv1), avm_tostring(rv2));
+        avm_error("%s == %s is illegal!", avm_tostring(mem1), avm_tostring(mem2));
         executionFinished = 1;
     }
     else
     {
         // equality check with  Αρκεί να
         // κάνετε dispatching ως
-        // προς τον τύπο του rv1
+        // προς τον τύπο του mem1
     }
     if (!executionFinished && result)
     {
