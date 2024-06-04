@@ -250,7 +250,7 @@ typedef struct userfunc
 unsigned int consts_newstring(char *s);
 unsigned int consts_newnumber(double n);
 unsigned int libfuncs_newused(char *s);
-unsigned int userfuncs_newfunc(SymbolTableEntry *sym);
+unsigned int userfuncs_newfunc(char *id,unsigned int address,unsigned int localsize);
 
 void make_operand(expr *e, vmarg *arg);
 void make_numberoperand(vmarg *arg, double val);
@@ -316,3 +316,4 @@ void generate_relational(vm_opcode op, quad *q);
 void reset_operand(vmarg *arg);
 
 void backpatch_ret_list(returnList *list, unsigned int label);
+void print_instruction_tables();

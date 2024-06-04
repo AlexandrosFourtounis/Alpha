@@ -892,6 +892,7 @@ int main(int argc,char **argv){
     print_quads();
     generate();
     print_instructions();
+    print_instruction_tables();
 
     SymTable_free(symTable);
     free_scope_links();

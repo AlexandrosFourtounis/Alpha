@@ -988,6 +988,21 @@ unsigned int libfuncs_newused(char *s){
     return totalNamedLibfuncs - 1;
 }
 
+unsigned int userfuncs_newfunc(char *id,unsigned int address,unsigned int localsize){
+    if(totalUserFuncs == 0){
+        userFuncs = (userfunc *)malloc(1024 * sizeof(userfunc));
+    }
+    if (totalUserFuncs % 1024 == 0)
+        userFuncs = realloc(userFuncs, sizeof(*userFuncs) * (totalUserFuncs + 1024));
+    userFuncs[totalUserFuncs].address = address;
+    userFuncs[totalUserFuncs].localSize = localsize;
+    userFuncs[totalUserFuncs].id = strdup(id);
+    totalUserFuncs++;
+    return totalUserFuncs -1;
+
+}
+
+
 void
     make_operand(expr *e, vmarg *arg)
 {
@@ -1061,17 +1076,16 @@ void
     case programfunc_e:
     {
         arg->name = strdup(e->sym->value.funcVal->name);
-        // arg->val = e->sym->taddress;
         arg->val = 0;
         arg->type = userfunc_a;
         int i = 0;
-        // for (i = 0; i < totalUserFuncs; i++)
-        // {
-        //     if (strcmp(arg->name, userFuncs[i].id) == 0)
-        //     {
-        //         arg->val = i;
-        //     }
-        // }
+        for (i = 0; i < totalUserFuncs; i++)
+        {
+            if (strcmp(arg->name, userFuncs[i].id) == 0)
+            {
+                arg->val = i;
+            }
+        }
         break;
     }
     case libraryfunc_e:
@@ -1441,24 +1455,11 @@ void generate_GETRETVAL(quad *q)
 void generate_FUNCSTART(quad *q)
 {
     SymbolTableEntry *sym = q->arg1->sym;
+    if(!sym) return;
     sym->taddress = nextinstrlabel();
     q->taddress = nextinstrlabel();
 
-    /*ADD to userfuncs new node*/
-    /*expand size*/
-    assert(totalUserFuncs == curr_userfuncs);
-    userfunc *temp = (userfunc *)malloc(1024 * sizeof(userfunc) + (totalUserFuncs * sizeof(userfunc)));
-    if (userFuncs)
-    {
-        memcpy(temp, userFuncs, totalUserFuncs * sizeof(userfunc));
-        free(userFuncs);
-    }
-    userFuncs = temp;
-    totalUserFuncs += 1024;
-
-    userFuncs[curr_userfuncs].id = sym->value.funcVal->name;
-    userFuncs[curr_userfuncs].address = sym->taddress;
-    userFuncs[curr_userfuncs].localSize = sym->totalLocals;
+    userfuncs_newfunc(sym->value.funcVal->name,sym->taddress,sym->totalLocals); 
 
     push_funcstack(funcstack, sym);
 
@@ -1466,7 +1467,7 @@ void generate_FUNCSTART(quad *q)
     t = (instruction *)malloc(sizeof(instruction));
     t->opcode = enterfunc_v;
     t->srcLine = q->line;
-    make_operand(q->result, &t->result);
+    make_operand(q->arg1, &t->result);
     emit_instruction(t);
 }
 
@@ -1567,7 +1568,7 @@ const char *print_instructions_helper(vmarg *vmarg)
             return "label_a";
             break;
         default:
-            return "type not match";
+            return "(null)";
             break;
         }
 }
@@ -1721,4 +1722,44 @@ void generate_UMINUS(quad *q)
     q->taddress = nextinstrlabel();
     emit_instruction(t);
 
+}
+
+void print_instruction_tables(){
+    int i = 0;  
+    FILE *f_tables = fopen("tables.txt", "w");
+    if (f_tables == NULL) {
+        exit(EXIT_FAILURE);
+    }
+
+    fprintf(f_tables, "\nConstant String Table:\n");
+    fprintf(f_tables, "----------------------------------------\n");
+    fprintf(f_tables,"Total string consts: %d\n", totalStringConsts);
+    for (i = 0; i < totalStringConsts; i++) {
+        fprintf(f_tables, "%s\n", stringConsts[i]);
+    }
+
+    fprintf(f_tables, "\nNamed Library Functions Table:\n");
+    fprintf(f_tables, "----------------------------------------\n");
+    fprintf(f_tables,"Total lib funcs: %d\n",totalNamedLibfuncs);
+    for (i = 0; i < totalNamedLibfuncs; i++) {
+        fprintf(f_tables, "%s\n", namedLibfuncs[i]);
+    }
+
+    fprintf(f_tables, "\n User Funcs Table:\n");
+    fprintf(f_tables, "----------------------------------------\n");
+    fprintf(f_tables,"Total user funcs: %d\n",curr_userfuncs);
+    for (i = 0; i < curr_userfuncs; i++)
+    {
+        fprintf(f_tables, "address: %d local size: %d id: %s\n", userFuncs[i].address, userFuncs[i].localSize, userFuncs[i].id);
+    }
+
+    fprintf(f_tables, "\nConstant Num Consts Table:\n");
+    fprintf(f_tables, "----------------------------------------\n");
+    fprintf(f_tables,"Total num consts: %d\n",totalNumConsts);
+    for (i = 0; i < totalNumConsts; i++)
+    {
+        fprintf(f_tables, "%f\n", numConsts[i]);
+    }
+
+    fclose(f_tables);
 }
