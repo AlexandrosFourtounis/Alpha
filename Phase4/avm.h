@@ -1,5 +1,11 @@
 #include "quads.h"
 
+#define AVM_NUMACTUALS_OFFSET +4
+#define AVM_SAVEDPC_OFFSET +3
+#define AVM_SAVEDTOP_OFFSET +2
+#define AVM_SAVEDTOPSP_OFFSET +1
+typedef void (*library_func_t)(void);
+
 typedef enum avm_memecell_t
 {
     number_m,
@@ -180,14 +186,15 @@ memclear_func_t memclearFuncs[] = {
 
 void avm_memcellclear(avm_memcell *m);
 
-void avm_warning(char *format);
+void avm_warning(char *warning, instruction *q);
 void avm_assign(avm_memcell *lv, avm_memcell *rv);
 void execute_assign(instruction *instr);
 void execute_call(instruction *instr);
 
-void avm_error(char *format, ...);
+void avm_error(char *format, instruction *q);
 void avm_callsaveenvironment(void);
 char *avm_tostring(avm_memcell *); // caller frees
+library_func_t avm_getlibraryfunc(char* id);
 void avm_calllibfunc(char *funcname);
 void avm_call_functor(avm_table *t);
 void avm_push_table_arg(avm_table *t);
@@ -201,11 +208,7 @@ void execute_funcenter(instruction *instr);
 unsigned avm_get_envvalue(unsigned i);
 void execute_funcexit(instruction *unused);
 
-#define AVM_NUMACTUALS_OFFSET +4
-#define AVM_SAVEDPC_OFFSET +3
-#define AVM_SAVEDTOP_OFFSET +2
-#define AVM_SAVEDTOPSP_OFFSET +1
-typedef void (*library_func_t)(void);
+
 void avm_registerlibfunc(char *id, library_func_t addr);
 void avm_calllinfunc(char *id);
 unsigned avm_totalactuals(void);
@@ -286,3 +289,9 @@ void execute_tablegetelem(instruction *instr);
 void execute_tablesetelem(instruction *instr);
 void avm_initialize(void);
 void library_totalarguments(void);
+
+typedef struct libfuncp{
+    char *id;
+    library_func_t address;
+    struct libfuncp *next;
+} libfuncp;

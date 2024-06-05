@@ -4,6 +4,15 @@
 #include <string.h>
 #include <stdio.h>
 
+#define HASH_MULTIPLIER 65599
+
+unsigned int totalActuals = 0;
+libfuncp *libfuncslist = NULL;
+char **libfuncst ;
+char **stringslist ;
+double *numberconstslist;
+userfunc *userFuncs;
+
 char *typeStrings[] = {
     "number",
     "string",
@@ -89,42 +98,76 @@ void avm_tabledestroy(avm_table *t)
 
 char *userfunc_tostring(avm_memcell *) 
 {
+    //not needed i think
 }
 
 char *libfuncs_getused(unsigned index)
 {
-    // to be completed
+    return libfuncst[index];
 }
 
 userfunc *userfuncs_get(unsigned index)
 {
-    // t2be completed
+    // not needed kratame to proto
 }
 
 void execute_enterfunc(instruction *) 
 {
+    //not needed
 }
 
 void execute_exitfunc(instruction *) 
 {
+    //not needed
 }
 
-void avm_warning(char *format)
+void avm_warning(char *warning, instruction *q)
 {
+     fprintf(stderr, "\033[1;33mWARNING: \033[0;33m%s in line: %u\n\033[0m", warning, code->srcLine);
 }
 
-void avm_error(char *format, ...)
+
+void avm_error(char *format, instruction *q)
 {
-    // to be completed
+    fprintf(stderr, "\033[1;31mERROR: \033[0;31m");
+    fprintf(stderr, format, code->srcLine);
+    fprintf(stderr, "\033[0m\n");
+    executionFinished = 1;
 }
+
+library_func_t avm_getlibraryfunc(char* id){
+    libfuncp *curr = libfuncslist;
+    while(curr){
+        if(strcmp(curr->id, id) == 0){
+            return curr->address;
+        }
+        curr = curr->next;
+    }
+    return NULL;
+}
+
 void avm_calllibfunc(char *funcname)
 {
-    // to be completed
+    library_func_t f = avm_getlibraryfunc(funcname);
+    if (!f)
+    {
+        avm_error("unsupported lib func '%s' called!", funcname);
+    }
+    else
+    {
+        topsp = top;
+        totalActuals = 0;
+        (*f)();
+        if (!executionFinished)
+        {
+            execute_funcexit((instruction *)0);
+        }
+    }
 }
 
 void avm_calltablefunc(char *funcname)
 {
-    // to be completed
+    // einai gia functors ara pros to paron den ginetai 
 }
 char *string_tostring(avm_memcell *mem) {
     return mem->data.strVal;
@@ -206,13 +249,13 @@ void execute_jne(instruction *i) {
     unsigned char result = 0;
 
     if (mem1->type == undef_m || mem2->type == undef_m) {
-        avm_error("undefined operand comparison");
+        avm_error("undefined operand comparison", &code[pc]);
     } else if (mem1->type == nil_m || mem2->type == nil_m) {
         result = mem1->type == nil_m && mem2->type == nil_m;
     } else if (mem1->type == bool_m || mem2->type == bool_m) {
         result = (avm_tobool(mem1) != avm_tobool(mem2));
     } else if (mem1->type != mem2->type) {
-        avm_error("Comparison between ");
+        avm_error("Comparison between ", &code[pc]);
         printf("%s and %s is illegal because they're different", typeStrings[mem1->type], typeStrings[mem2->type]);
     } else {
         result = avm_tobool(mem1) != avm_tobool(mem2);
@@ -239,13 +282,13 @@ void execute_jle(instruction *i) {
     unsigned char result = 0;
 
     if (mem1->type == undef_m || mem2->type == undef_m) {
-        avm_error("undefined operand comparison");
+        avm_error("undefined operand comparison", &code[pc]);
     } else if (mem1->type == nil_m || mem2->type == nil_m) {
         result = mem1->type == nil_m && mem2->type == nil_m;
     } else if (mem1->type == bool_m || mem2->type == bool_m) {
         result = (avm_tobool(mem1) == avm_tobool(mem2));
     } else if (mem1->type != mem2->type) {
-        avm_error("Comparison between ");
+        avm_error("Comparison between ", &code[pc]);
         printf("%s and %s is illegal because they're different", typeStrings[mem1->type], typeStrings[mem2->type]);
     } else {
         comp_func op = comparisonFuncs[i->opcode - jle_v];
@@ -271,8 +314,12 @@ void execute_jgt(instruction *i) {
 
 
 void execute_nop(instruction *) {}
-double consts_getnumber(unsigned index){} //needs file parsing to find numbers 
-char *consts_getstring(unsigned index){} //needs file parsing to find strings
+double consts_getnumber(unsigned index){
+    return numberconstslist[index];
+} //needs file parsing to find numbers 
+char *consts_getstring(unsigned index){
+     return stringslist[index];
+} //needs file parsing to find strings
 
 
 avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
@@ -312,7 +359,7 @@ avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
     {
         reg->type = userfunc_m;
         reg->data.funcVal = arg->val; // h ayto h apo kato
-        reg->data.funcVal = userfuncs_get(arg->val)->address;
+        //reg->data.funcVal = userfuncs_get(arg->val)->address;
         return reg;
     }
     case libfunc_a:
@@ -402,7 +449,7 @@ void avm_assign(avm_memcell *lv, avm_memcell *rv)
     }
     if (rv->type == undef_m)
     {
-        avm_warning("assigning from 'undef' content!");
+        avm_warning("assigning from 'undef' content!", &code[pc]);
     }
     avm_memcellclear(lv);
     memcpy(lv, rv, sizeof(avm_memcell));
@@ -449,7 +496,120 @@ void execute_call(instruction *instr)
     }
 }
 
-avm_memcell *avm_tablegetelem(avm_table *table, avm_memcell *index){}
+/* Return a hash code for pcKey. */
+static unsigned int SymTable_hash(const char *pcKey)
+{
+	size_t ui;
+	unsigned int uiHash = 0U;
+	for (ui = 0U; pcKey[ui] != '\0'; ui++)
+		uiHash = uiHash * HASH_MULTIPLIER + pcKey[ui];
+	return uiHash;
+}
+
+unsigned int hasfornum(double x)
+{
+    unsigned long z = abs((int)x);
+    return z % 211;
+}
+
+avm_memcell *avm_tablegetelem(avm_table *table, avm_memcell *index){
+    unsigned int ix = 0;
+    avm_table_bucket *curr, *prev = NULL, *pair;
+    assert(table && index);
+
+    switch (index->type)
+    {
+    case string_m:
+        ix = SymTable_hash(index->data.strVal);
+        curr = table->strIndexed[ix];
+        while (curr)
+        {
+            prev = curr;
+            if (!strcmp((curr->key).data.strVal, index->data.strVal))
+            {
+                return &(curr->value);
+            }
+            curr = curr->next;
+        }
+        break;
+    case number_m:
+        ix = hasfornum(index->data.numVal);
+        curr = table->numIndexed[ix];
+        while (curr)
+        {
+            prev = curr;
+            if ((curr->key).data.numVal == index->data.numVal)
+            {
+                return &(curr->value);
+            }
+            curr = curr->next;
+        }
+        break;
+    case bool_m:
+        ix = index->data.boolVal;
+        curr = table->boolIndexed[ix];
+        if (curr != NULL)
+        {
+            //avm_tableincrefcounter(curr->value.data.tableVal);
+            return &(curr->value);
+        }
+        break;
+    case userfunc_m:
+        ix = SymTable_hash(userFuncs[index->data.funcVal].id);
+        curr = table->userfuncIndexed[ix];
+        while (curr)
+        {
+            prev = curr;
+            if (!strcmp(userFuncs[index->data.funcVal].id, userFuncs[curr->key.data.funcVal].id) && userFuncs[index->data.funcVal].address == userFuncs[curr->key.data.funcVal].address) //address needless?
+            {
+                /*if (curr->value.type == table_m)
+                {
+                    avm_tableincrefcounter(curr->value.data.tableVal);
+                }*/
+                return &(curr->value);
+            }
+            curr = curr->next;
+        }
+        break;
+    case libfunc_m:
+        ix = SymTable_hash(index->data.libfuncVal);
+        curr = table->libfuncIndexed;
+        while (curr)
+        {
+            prev = curr;
+            if (!strcmp(index->data.libfuncVal, (curr->key).data.libfuncVal))
+            {
+                /*if (curr->value.type == table_m)
+                {
+                    avm_tableincrefcounter(curr->value.data.tableVal);
+                }*/
+                return &(curr->value);
+            }
+            curr = curr->next;
+        }
+        break;
+    case table_m:
+        ix = index->data.tableVal->refCounter % 211;
+        curr = table->tableIndexed[ix];
+        while (curr)
+        {
+            prev = curr;
+
+            if (index->data.tableVal == (curr->key).data.tableVal)
+            {
+                /*if (curr->value.type == table_m)
+                {
+                    avm_tableincrefcounter(curr->value.data.tableVal);
+                }*/
+                return &(curr->value);
+            }
+            curr = curr->next;
+        }
+        break;
+    }
+
+    return NULL;
+}
 
 void avm_call_functor(avm_table *t)
 {
@@ -458,7 +618,7 @@ void avm_call_functor(avm_table *t)
     avm_memcell *f = avm_tablegetelem(t, &cx);
     if (!f)
     {
-        avm_error("In calling table: no '()' element found!");
+        avm_error("In calling table: no '()' element found!", &code[pc]);
     }
     else if (f->type == table_m)
     {
@@ -473,17 +633,15 @@ void avm_call_functor(avm_table *t)
     }
     else
     {
-        avm_error("In calling table: illegal '()' element value!");
+        avm_error("In calling table: illegal '()' element value!", &code[pc]);
     }
 }
-
-unsigned int totalActuals = 0;
 
 void avm_dec_top(void)
 {
     if (!top)
     {
-        avm_error("stack overflow");
+        avm_error("stack overflow", &code[pc]);
         executionFinished = 1;
     }
     else
@@ -543,7 +701,7 @@ void execute_funcexit(instruction *unused)
 void avm_calllinfunc(char *id)
 {
     library_func_t f = NULL;
-    // avm_getlibraryfunc(id);
+    f = avm_getlibraryfunc(id);
     if (!f)
     {
         avm_error("unsupported lib func '%s' called!", id);
@@ -644,7 +802,7 @@ void execute_arithmetic(instruction *instr)
 
     if (mem1->type != number_m || mem2->type != number_m)
     {
-        avm_error("not a number in arithmetic!");
+        avm_error("not a number in arithmetic!", &code[pc]);
         executionFinished = 1;
     }
     else
@@ -718,7 +876,7 @@ void execute_jeq(instruction *instr)
     unsigned char result = 0;
     if (mem1->type == undef_m || mem2->type == undef_m)
     {
-        avm_error("undef in equality!");
+        avm_error("undef in equality!", &code[pc]);
         executionFinished = 1;
     }
     else if (mem1->type == nil_m || mem2->type == nil_m)
@@ -739,8 +897,7 @@ void execute_jeq(instruction *instr)
     }
     else if (mem1->type != mem2->type)
     {
-        avm_error("%s == %s is illegal!", avm_tostring(mem1), avm_tostring(mem2));
-        executionFinished = 1;
+        avm_error("%s == %s is illegal!", &code[pc]);
     }
     else
     {
@@ -804,14 +961,16 @@ void execute_tablegetelem(instruction *instr)
         {
             char *ts = avm_tostring(t);
             char *is = avm_tostring(i);
-            avm_error("element %s not found in table %s!", is, ts);
+            avm_error("element %s not found in table %s!",&code[pc]);
             free(ts);
             free(is);
         }
     }
 }
 
-void avm_tablesetelem(avm_table *table, avm_memcell *index, avm_memcell *content){}
+void avm_tablesetelem(avm_table *table, avm_memcell *index, avm_memcell *content){
+    // prepei na doume test kai meta gia to content 
+}
 
 void execute_tablesetelem(instruction *instr)
 {
@@ -829,7 +988,13 @@ void execute_tablesetelem(instruction *instr)
         avm_tablesetelem(t->data.tableVal, i, c);
     }
 }
-void avm_registerlibfunc(char *id, library_func_t addr){}
+void avm_registerlibfunc(char *id, library_func_t addr){
+    libfuncp *new = malloc(sizeof(libfuncp));
+    new->id = strdup(id);
+    new->address = addr;
+    new->next = libfuncslist;
+    libfuncslist = new;
+}
 void avm_initialize(void)
 {
     avm_initstack();
@@ -843,7 +1008,7 @@ void library_totalarguments(void)
     avm_memcellclear(&retval);
     if (!p_topsp)
     {
-        avm_error("totalarguments called outside a function!");
+        avm_error("totalarguments called outside a function!", &code[pc]);
         retval.type = nil_m;
     }
     else
