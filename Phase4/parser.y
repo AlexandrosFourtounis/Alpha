@@ -359,28 +359,28 @@ lvalue:             IDENTIFIER          {
                                         }   
 
                     | KEYWORD_LOCAL IDENTIFIER {  
-                                                    int flag = 0;                                               
-                                                    entry = lookup($2, scope);
-                                                    if(entry != NULL){
-                                                        if(entry->type == LIBFUNC) yyerror("Cannot shadow a library function");                                                                      
-                                                        // else if(scope == 0){
-                                                        //     yyerror("Cannot shadow a global variable");
-                                                        // }
-                                                        else flag =1;
-                                                        goto end;
-                                                    }
-                                                    else {
-                                                        //if(scope==0) yyerror("Cannot shadow a global variable");
-                                                        flag = 1;
-                                                        goto end;
-                                                    }
+                                                    // int flag = 0;                                               
+                                                    // entry = lookup($2, scope);
+                                                    // if(entry != NULL){
+                                                    //     if(entry->type == LIBFUNC) yyerror("Cannot shadow a library function");                                                                      
+                                                    //     // else if(scope == 0){
+                                                    //     //     yyerror("Cannot shadow a global variable");
+                                                    //     // }
+                                                    //     else flag =1;
+                                                    //     goto end;
+                                                    // }
+                                                    // else {
+                                                    //     //if(scope==0) yyerror("Cannot shadow a global variable");
+                                                    //     flag = 1;
+                                                    //     goto end;
+                                                    // }
                                                 
-                                                    end:
-                                                    if(flag == 1) {
-                                                        entry = lookup_in_scope($2, scope);
-                                                        if(entry == NULL) entry = insert($2, LOCAL, scope, yylineno);                                                   
-                                                        else yyerror("Cannot shadow a local variable"); 
-                                                    }
+                                                    // end:
+                                                    // if(flag == 1) {
+                                                    //     entry = lookup_in_scope($2, scope);
+                                                    //     if(entry == NULL) entry = insert($2, LOCAL, scope, yylineno);                                                   
+                                                    //     else yyerror("Cannot shadow a local variable"); 
+                                                    // }
 
                                                     //phase 3
                                                     sym = lookup_in_scope($2, scope);
