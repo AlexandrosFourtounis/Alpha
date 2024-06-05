@@ -1747,8 +1747,8 @@ void print_instruction_tables(){
 
     fprintf(f_tables, "\n User Funcs Table:\n");
     fprintf(f_tables, "----------------------------------------\n");
-    fprintf(f_tables,"Total user funcs: %d\n",curr_userfuncs);
-    for (i = 0; i < curr_userfuncs; i++)
+    fprintf(f_tables,"Total user funcs: %d\n",totalUserFuncs);
+    for (i = 0; i < totalUserFuncs; i++)
     {
         fprintf(f_tables, "address: %d local size: %d id: %s\n", userFuncs[i].address, userFuncs[i].localSize, userFuncs[i].id);
     }

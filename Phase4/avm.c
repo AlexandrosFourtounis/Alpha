@@ -193,9 +193,9 @@ char *undef_tostring(avm_memcell *mem) {
 
 // void execute_mod(instruction *){}
 // void execute_uminus(instruction *) {}
-//void execute_and(instruction *) {}
-//void execute_or(instruction *) {}
-//void execute_not(instruction *) {}
+void execute_and(instruction *) {}
+void execute_or(instruction *) {}
+void execute_not(instruction *) {}
 void execute_jne(instruction *i) {
     printf("execute_jne\n");
     assert(i->result.type == label_a);
@@ -270,7 +270,7 @@ void execute_jgt(instruction *i) {
 }
 
 
-//void execute_nop(instruction *) {}
+void execute_nop(instruction *) {}
 double consts_getnumber(unsigned index){} //needs file parsing to find numbers 
 char *consts_getstring(unsigned index){} //needs file parsing to find strings
 
