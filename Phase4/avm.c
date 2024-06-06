@@ -96,11 +96,10 @@ void avm_tabledestroy(avm_table *t)
     free(t);
 }
 
-char *userfunc_tostring(avm_memcell *) 
+char *userfunc_tostring(avm_memcell *mem)
 {
     //not needed i think
-    avm_memcell *mem = malloc(sizeof(avm_memcell));
-    return mem->data.strVal;
+    return userFuncs[mem->data.funcVal].id;
 }
 
 char *libfuncs_getused(unsigned index)
@@ -113,16 +112,23 @@ userfunc *userfuncs_get(unsigned index)
     // not needed kratame to proto
 }
 
-void execute_enterfunc(instruction *) 
+void execute_enterfunc(instruction *instr)
 {
-    //not needed
-    instruction *func = code + pc;
+    userfunc *funcInfo = userfuncs_get(instr->result.val);
+    topsp = top;
+    top = top - funcInfo->localSize;
 }
 
-void execute_exitfunc(instruction *) 
+void execute_exitfunc(instruction *i) 
 {
-    //not needed
-    instruction *func = code + pc;
+    unsigned oldTop = top;
+    top = avm_get_envvalue(topsp + AVM_SAVEDTOP_OFFSET);
+    pc = avm_get_envvalue(topsp + AVM_SAVEDPC_OFFSET);
+    topsp = avm_get_envvalue(topsp + AVM_SAVEDTOP_OFFSET);
+    while (++oldTop <= top)
+    {
+        avm_memcellclear(&stack[oldTop]);
+    }
 }
 
 void avm_warning(char *warning, instruction *q)
@@ -240,9 +246,9 @@ char *undef_tostring(avm_memcell *mem) {
 
 // void execute_mod(instruction *){}
 // void execute_uminus(instruction *) {}
-void execute_and(instruction *) {}
-void execute_or(instruction *) {}
-void execute_not(instruction *) {}
+void execute_and(instruction *in) {  assert(0); return; }
+void execute_or(instruction *in) { assert(0); return;}
+void execute_not(instruction *in) {assert(0); return;}
 void execute_jne(instruction *i) {
     printf("execute_jne\n");
     assert(i->result.type == label_a);
