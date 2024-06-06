@@ -328,7 +328,7 @@ void execute_jgt(instruction *i) {
 }
 
 
-void execute_nop(instruction *) {}
+void execute_nop(instruction *i) {}
 double consts_getnumber(unsigned index){
     return numberconstslist[index];
 } //needs file parsing to find numbers 

@@ -1763,3 +1763,44 @@ void print_instruction_tables(){
 
     fclose(f_tables);
 }
+
+void create_avm_binary(){
+    unsigned magicnumber = 340200501;
+    FILE *f_binary = fopen("avm_binary.abc", "wb");
+    if (f_binary == NULL) {
+        exit(EXIT_FAILURE);
+    }
+
+    fwrite(&magicnumber, sizeof(magicnumber), 1, f_binary);
+    fwrite(&totalStringConsts, sizeof(totalStringConsts), 1, f_binary);
+    for (int i = 0; i < totalStringConsts; i++) {
+        fwrite(stringConsts[i], sizeof(char), strlen(stringConsts[i]), f_binary);
+    }
+    fwrite(&totalNamedLibfuncs, sizeof(totalNamedLibfuncs), 1, f_binary);
+    for (int i = 0; i < totalNamedLibfuncs; i++) {
+        fwrite(namedLibfuncs[i], sizeof(char), strlen(namedLibfuncs[i]), f_binary);
+    }
+    fwrite(&totalUserFuncs, sizeof(totalUserFuncs), 1, f_binary);
+    for (int i = 0; i < totalUserFuncs; i++) {
+        fwrite(userFuncs[i].id, sizeof(char), strlen(userFuncs[i].id), f_binary);
+        fwrite(&userFuncs[i].address, sizeof(userFuncs[i].address), 1, f_binary);
+        fwrite(&userFuncs[i].localSize, sizeof(userFuncs[i].localSize), 1, f_binary);
+    }
+    fwrite(&totalNumConsts, sizeof(totalNumConsts), 1, f_binary);
+    for (int i = 0; i < totalNumConsts; i++) {
+        fwrite(&numConsts[i], sizeof(numConsts[i]), 1, f_binary);
+    }
+    fwrite(&curr_instr, sizeof(curr_instr), 1, f_binary);
+    for (int i = 0; i < curr_instr; i++) {
+        fwrite(instructions[i].opcode, sizeof(instructions[i].opcode), 1, f_binary);
+        fwrite(&instructions[i].result.type, sizeof(instructions[i].result.type), 1, f_binary);
+        fwrite(&instructions[i].result.val, sizeof(instructions[i].result.val), 1, f_binary);
+        fwrite(&instructions[i].arg1.type, sizeof(instructions[i].arg1.type), 1, f_binary);
+        fwrite(&instructions[i].arg1.val, sizeof(instructions[i].arg1.val), 1, f_binary);
+        fwrite(&instructions[i].arg2.type, sizeof(instructions[i].arg2.type), 1, f_binary);
+        fwrite(&instructions[i].arg2.val, sizeof(instructions[i].arg2.val), 1, f_binary);
+        fwrite(&instructions[i].srcLine, sizeof(instructions[i].srcLine), 1, f_binary);
+    }
+    fclose(f_binary);
+
+}
