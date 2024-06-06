@@ -39,7 +39,7 @@ typedef struct avm_memcell
     } data;
 } avm_memcell;
 
-extern avm_memcell stack[AVM_STACKSIZE];
+avm_memcell stack[AVM_STACKSIZE];
 static void avm_initstack(void)
 {
     for (unsigned i = 0; i < AVM_STACKSIZE; ++i)
@@ -87,9 +87,9 @@ void avm_tablebucketdestroy(avm_table_bucket **p);
 void avm_tabledestroy(avm_table *t);
 
 #define AVM_STACKENV_SIZE 4
-extern avm_memcell ax, bx, cx;
-extern avm_memcell retval;
-extern unsigned top, topsp;
+avm_memcell ax, bx, cx;
+avm_memcell retval;
+unsigned top, topsp;
 
 double consts_getnumber(unsigned index);
 char *consts_getstring(unsigned index);

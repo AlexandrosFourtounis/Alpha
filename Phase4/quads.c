@@ -1726,11 +1726,15 @@ void generate_UMINUS(quad *q)
 
 void print_instruction_tables(){
     int i = 0;  
-    FILE *f_tables = fopen("tables.txt", "w");
+    unsigned magicnumber = 340200501;
+    FILE *f_tables = fopen("tables.txt", "w+");
     if (f_tables == NULL) {
         exit(EXIT_FAILURE);
     }
-
+    fprintf(f_tables, "Magic Number: %d\n", magicnumber);
+    fprintf(f_tables, "\nInstructions Table:\n");
+    fprintf(f_tables, "----------------------------------------\n");
+    
     fprintf(f_tables, "\nConstant String Table:\n");
     fprintf(f_tables, "----------------------------------------\n");
     fprintf(f_tables,"Total string consts: %d\n", totalStringConsts);
@@ -1764,43 +1768,50 @@ void print_instruction_tables(){
     fclose(f_tables);
 }
 
-void create_avm_binary(){
+void create_avm_binary() {
     unsigned magicnumber = 340200501;
     FILE *f_binary = fopen("avm_binary.abc", "wb");
+
     if (f_binary == NULL) {
+        perror("Error opening file");
         exit(EXIT_FAILURE);
     }
 
     fwrite(&magicnumber, sizeof(magicnumber), 1, f_binary);
+
     fwrite(&totalStringConsts, sizeof(totalStringConsts), 1, f_binary);
     for (int i = 0; i < totalStringConsts; i++) {
-        fwrite(stringConsts[i], sizeof(char), strlen(stringConsts[i]), f_binary);
+        size_t length = strlen(stringConsts[i]) + 1; // +1 for null
+        fwrite(&length, sizeof(length), 1, f_binary); 
+        fwrite(stringConsts[i], sizeof(char), length, f_binary); 
     }
+
     fwrite(&totalNamedLibfuncs, sizeof(totalNamedLibfuncs), 1, f_binary);
     for (int i = 0; i < totalNamedLibfuncs; i++) {
-        fwrite(namedLibfuncs[i], sizeof(char), strlen(namedLibfuncs[i]), f_binary);
+        size_t length = strlen(namedLibfuncs[i]) + 1; // +1 for null terminator
+        fwrite(&length, sizeof(length), 1, f_binary); 
+        fwrite(namedLibfuncs[i], sizeof(char), length, f_binary); 
     }
+
     fwrite(&totalUserFuncs, sizeof(totalUserFuncs), 1, f_binary);
     for (int i = 0; i < totalUserFuncs; i++) {
-        fwrite(userFuncs[i].id, sizeof(char), strlen(userFuncs[i].id), f_binary);
-        fwrite(&userFuncs[i].address, sizeof(userFuncs[i].address), 1, f_binary);
-        fwrite(&userFuncs[i].localSize, sizeof(userFuncs[i].localSize), 1, f_binary);
+        size_t length = strlen(userFuncs[i].id) + 1; 
+        fwrite(&length, sizeof(length), 1, f_binary); 
+        fwrite(userFuncs[i].id, sizeof(char), length, f_binary); 
+        fwrite(&userFuncs[i].address, sizeof(userFuncs[i].address), 1, f_binary); 
+        fwrite(&userFuncs[i].localSize, sizeof(userFuncs[i].localSize), 1, f_binary); 
     }
+
     fwrite(&totalNumConsts, sizeof(totalNumConsts), 1, f_binary);
     for (int i = 0; i < totalNumConsts; i++) {
         fwrite(&numConsts[i], sizeof(numConsts[i]), 1, f_binary);
     }
+
     fwrite(&curr_instr, sizeof(curr_instr), 1, f_binary);
     for (int i = 0; i < curr_instr; i++) {
-        fwrite(instructions[i].opcode, sizeof(instructions[i].opcode), 1, f_binary);
-        fwrite(&instructions[i].result.type, sizeof(instructions[i].result.type), 1, f_binary);
-        fwrite(&instructions[i].result.val, sizeof(instructions[i].result.val), 1, f_binary);
-        fwrite(&instructions[i].arg1.type, sizeof(instructions[i].arg1.type), 1, f_binary);
-        fwrite(&instructions[i].arg1.val, sizeof(instructions[i].arg1.val), 1, f_binary);
-        fwrite(&instructions[i].arg2.type, sizeof(instructions[i].arg2.type), 1, f_binary);
-        fwrite(&instructions[i].arg2.val, sizeof(instructions[i].arg2.val), 1, f_binary);
-        fwrite(&instructions[i].srcLine, sizeof(instructions[i].srcLine), 1, f_binary);
+        //nomizo prepei na grafei kathe pedio
+        fwrite(&instructions[i], sizeof(instruction), 1, f_binary); 
     }
-    fclose(f_binary);
 
+    fclose(f_binary);
 }
