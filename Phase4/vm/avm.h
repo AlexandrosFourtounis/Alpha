@@ -135,6 +135,7 @@ void execute_nop(instruction *);
 
 execute_func_t executeFuncs[] = {
     execute_assign,
+    execute_nop, //execute_jump should be here
     execute_add,
     execute_sub,
     execute_mul,

@@ -790,7 +790,7 @@ void avm_push_table_arg(avm_table *t)
 
 void execute_pusharg(instruction *instr)
 {
-    avm_memcell *arg = avm_translate_operand(&instr->result, &ax);
+    avm_memcell *arg = avm_translate_operand(&instr->arg1, &ax);
     assert(arg);
     avm_assign(&stack[top], arg);
     ++totalActuals;
@@ -1107,7 +1107,6 @@ void get_binary(){
         fread(&numberconstslist[i], sizeof(numberconstslist[i]), 1, bin);
     }
 
-    //fread(&totalglobalv, sizeof(int), 1, bin);  
     fread(&totallibfuncs, sizeof(unsigned int), 1, bin);
     fprintf(stderr, "total lib funcs %u\n", totallibfuncs);
     libfuncst = malloc(totallibfuncs * sizeof(char*));
@@ -1169,19 +1168,22 @@ void get_binary(){
 
     fclose(bin);
     fprintf(stderr,"PRINTING TABLES FROM BINARY\n\n");
+    fprintf(stderr, "total libs %u\n", totallibfuncs);
     for (int i = 0; i < totallibfuncs; i++)
     {
         fprintf(stderr, "%s\n", libfuncst[i]);
     }
+    fprintf(stderr, "total user funcs %u\n", totaluserfuncs);
     for (int i = 0; i < totaluserfuncs; i++)
     {
         fprintf(stderr, "%s\n", userFuncs[i].id);
     }
-
+    fprintf(stderr, "total strings %u\n", totalstringconsts);
     for (int i = 0; i < totalstringconsts; i++)
     {
         fprintf(stderr, "%s\n", stringslist[i]);
     }
+    fprintf(stderr, "total numbers %u\n", totalnumconst);
     for (int i = 0; i < totalnumconst; i++)
     {
         fprintf(stderr, "%s\n", numberconstslist[i]);
