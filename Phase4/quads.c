@@ -1128,11 +1128,22 @@ instruction *instructions = (instruction *)0;
 void add_incomplete_jump(unsigned int instrNo, unsigned int iaddress)
 {
     incomplete_jump *new = (incomplete_jump *)malloc(sizeof(incomplete_jump));
+    
     new->instrNo = instrNo;
     new->iaddress = iaddress;
-    new->next = ij_head;
-    ij_head = new;
+    new->next = NULL;
+    incomplete_jump *tmp = (incomplete_jump *)malloc(sizeof(incomplete_jump));
+    tmp = ij_head;
     ij_total++;
+    if(!ij_head){
+        ij_head = new;
+        return;
+    }
+    while (tmp->next)
+    {
+        tmp = tmp->next;
+    }
+    tmp->next = new;
 }
 
 void patch_incomplete_jumps()
@@ -1140,13 +1151,13 @@ void patch_incomplete_jumps()
     incomplete_jump *current = ij_head;
     while (current)
     {
-        if (current->iaddress == 0)
+        if (current->iaddress == currQuad)
         {
-            current->iaddress = currQuad;
+            instructions[current->instrNo].result.val = curr_instr;
         }
         else
         {
-            quads[current->instrNo].arg1->sym->iaddress = currQuad;
+            instructions[current->instrNo].result.val = quads[current->iaddress].taddress;
         }
         current = current->next;
     }
@@ -1157,6 +1168,8 @@ void generate(void)
     initialize_funcstack(funcstack);
     instruction *t;
     emit_instruction(t);
+
+    patch_incomplete_jumps();
 
     for (unsigned int i = 0; i < currQuad; i++)
     {
@@ -1263,7 +1276,7 @@ void generate_relational(vm_opcode op, quad *q)
     }
     else
     {
-        add_incomplete_jump(nextinstrlabel(), q->label);
+        add_incomplete_jump(curr_instr, q->label);
     }
     q->taddress = nextinstrlabel();
     emit_instruction(t);
