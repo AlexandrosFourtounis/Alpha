@@ -1591,9 +1591,8 @@ void print_instructions()
 {
     unsigned int i = 1U;
     FILE *f = fopen("instructions.txt", "w");
-    FILE *f_binary = fopen("instructions_binary.bin", "wb");
 
-    if (f == NULL || f_binary == NULL) {
+    if (f == NULL) {
         perror("Error opening file: ");
         exit(EXIT_FAILURE);
     }
@@ -1611,35 +1610,7 @@ void print_instructions()
         instructions[i].arg1.val, 
         print_instructions_helper(&instructions[i].arg2), 
         instructions[i].arg2.val, 
-        instructions[i].srcLine);        
-        
-        struct {
-            unsigned int instr_num;
-            char opcode[MAX_STRING_LENGTH];
-            char result[MAX_STRING_LENGTH];
-            int result_val;
-            char arg1[MAX_STRING_LENGTH];
-            int arg1_val;
-            char arg2[MAX_STRING_LENGTH];
-            int arg2_val;
-            int src_line;
-        } binary_instruction;
-
-        binary_instruction.instr_num = i;
-        strncpy(binary_instruction.opcode, vmopcode_to_string(instructions[i].opcode), MAX_STRING_LENGTH - 1);
-        binary_instruction.opcode[MAX_STRING_LENGTH - 1] = '\0';
-        strncpy(binary_instruction.result, print_instructions_helper(&instructions[i].result), MAX_STRING_LENGTH - 1);
-        binary_instruction.result[MAX_STRING_LENGTH - 1] = '\0';
-        binary_instruction.result_val = instructions[i].result.val;
-        strncpy(binary_instruction.arg1, print_instructions_helper(&instructions[i].arg1), MAX_STRING_LENGTH - 1);
-        binary_instruction.arg1[MAX_STRING_LENGTH - 1] = '\0';
-        binary_instruction.arg1_val = instructions[i].arg1.val;
-        strncpy(binary_instruction.arg2, print_instructions_helper(&instructions[i].arg2), MAX_STRING_LENGTH - 1);
-        binary_instruction.arg2[MAX_STRING_LENGTH - 1] = '\0';
-        binary_instruction.arg2_val = instructions[i].arg2.val;
-        binary_instruction.src_line = instructions[i].srcLine;
-
-        fwrite(&binary_instruction, sizeof(binary_instruction), 1, f_binary);
+        instructions[i].srcLine);
         i++;
     }
 }
@@ -1799,6 +1770,12 @@ void create_avm_binary() {
         fwrite(stringConsts[i], sizeof(char), length, f_binary); 
     }
 
+    fwrite(&totalNumConsts, sizeof(totalNumConsts), 1, f_binary);
+    for (int i = 0; i < totalNumConsts; i++)
+    {
+        fwrite(&numConsts[i], sizeof(numConsts[i]), 1, f_binary);
+    }
+
     fwrite(&totalNamedLibfuncs, sizeof(totalNamedLibfuncs), 1, f_binary);
     for (int i = 0; i < totalNamedLibfuncs; i++) {
         size_t length = strlen(namedLibfuncs[i]) + 1; // +1 for null terminator
@@ -1815,15 +1792,18 @@ void create_avm_binary() {
         fwrite(&userFuncs[i].localSize, sizeof(userFuncs[i].localSize), 1, f_binary); 
     }
 
-    fwrite(&totalNumConsts, sizeof(totalNumConsts), 1, f_binary);
-    for (int i = 0; i < totalNumConsts; i++) {
-        fwrite(&numConsts[i], sizeof(numConsts[i]), 1, f_binary);
-    }
+    
 
     fwrite(&curr_instr, sizeof(curr_instr), 1, f_binary);
     for (int i = 0; i < curr_instr; i++) {
         //nomizo prepei na grafei kathe pedio
-        fwrite(&instructions[i], sizeof(instruction), 1, f_binary); 
+        fwrite(&instructions[i].opcode, sizeof(vm_opcode), 1, f_binary);
+        fwrite(&instructions[i].result.type, sizeof(vmarg), 1, f_binary);
+        fwrite(&instructions[i].result.val, sizeof(unsigned), 1, f_binary);
+        fwrite(&instructions[i].arg1.type, sizeof(vmarg), 1, f_binary);
+        fwrite(&instructions[i].arg1.val, sizeof(unsigned), 1, f_binary);
+        fwrite(&instructions[i].arg2.type, sizeof(vmarg), 1, f_binary);
+        fwrite(&instructions[i].arg2.val, sizeof(unsigned), 1, f_binary);
     }
 
     fclose(f_binary);

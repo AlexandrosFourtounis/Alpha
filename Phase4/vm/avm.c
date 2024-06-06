@@ -1061,6 +1061,18 @@ void get_binary(){
         printf("Magic number is: %u\n", magicnumber);
         return;
     }
+    fprintf(stderr, "magic number %u\n", magicnumber);
+
+    fread(&totalstringconsts, sizeof(int), 1, bin);
+    fprintf(stderr, "total string %u\n", totalstringconsts);
+    stringslist = malloc(totalstringconsts * sizeof(char *));
+    for (int i = 0; i < totalstringconsts; i++)
+    {
+        int len;
+        fread(&len, sizeof(int), 1, bin);
+        stringslist[i] = malloc(len * sizeof(char));
+        fread(stringslist[i], sizeof(char), len, bin);
+    }
 
     fread(&totalnumconst, sizeof(int), 1, bin);
     numberconstslist = malloc(totalnumconst * sizeof(double));
@@ -1069,19 +1081,9 @@ void get_binary(){
         fread(&numberconstslist[i], sizeof(double), 1, bin);
     }
 
-    fread(&totalstringconsts, sizeof(int), 1, bin);
-    stringslist = malloc(totalstringconsts * sizeof(char*));
-    for(int i = 0; i < totalstringconsts; i++)
-    {
-        int len;
-        fread(&len, sizeof(int), 1, bin);
-        stringslist[i] = malloc(len * sizeof(char));
-        fread(stringslist[i], sizeof(char), len, bin);
-    }
-
     //fread(&totalglobalv, sizeof(int), 1, bin);  
-
-    fread(&totallibfuncs, sizeof(int), 1, bin);
+    fread(&totallibfuncs, sizeof(unsigned int), 1, bin);
+    fprintf(stderr, "total lib funcs %u\n", totallibfuncs);
     libfuncst = malloc(totallibfuncs * sizeof(char*));
     for(int i = 0; i < totallibfuncs; i++)
     {
@@ -1093,6 +1095,7 @@ void get_binary(){
 
     fread(&totaluserfuncs, sizeof(int), 1, bin);
     userFuncs = malloc(totaluserfuncs * sizeof(userfunc));
+    fprintf(stderr, "total user funcs %u\n", totaluserfuncs);
     for(int i = 0; i < totaluserfuncs; i++)
     {
         int len;
@@ -1107,11 +1110,13 @@ void get_binary(){
     code = malloc(codeSize * sizeof(instruction));
     for(int i = 0; i < codeSize; i++)
     {
-        fread(&code[i].opcode, sizeof(unsigned), 1, bin);
-        fread(&code[i].result, sizeof(vmarg), 1, bin);
-        fread(&code[i].arg1, sizeof(vmarg), 1, bin);
-        fread(&code[i].arg2, sizeof(vmarg), 1, bin);
-        fread(&code[i].srcLine, sizeof(unsigned), 1, bin);
+        fread(&code[i].opcode, sizeof(vm_opcode), 1, bin);
+        fread(&code[i].result.type, sizeof(vmarg), 1, bin);
+        fread(&code[i].result.val, sizeof(unsigned), 1, bin);
+        fread(&code[i].arg1.type, sizeof(vmarg), 1, bin);
+        fread(&code[i].arg1.val, sizeof(unsigned), 1, bin);
+        fread(&code[i].arg2.type, sizeof(vmarg), 1, bin);
+        fread(&code[i].arg2.val, sizeof(unsigned), 1, bin);
     }
 
     fclose(bin);
