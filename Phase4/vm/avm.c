@@ -17,6 +17,7 @@ unsigned int totalnumconst;
 double *numberconstslist;
 unsigned int totaluserfuncs;
 userfunc *userFuncs;
+instruction *G_code = NULL;
 
 char *typeStrings[] = {
     "number",
@@ -354,7 +355,7 @@ avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
     case number_a:
     {
         reg->type = number_m;
-        reg->data.numVal = consts_getnumber(arg->val);
+        reg->data.numVal = numberconstslist[arg->val];
         return reg;
     }
     case string_a:
@@ -409,15 +410,17 @@ void execute_cycle(void)
         if (!(pc < AVM_ENDING_PC)) {
             printf("Debug: pc = %d, AVM_ENDING_PC = %d\n", pc, AVM_ENDING_PC);
         }
+
         assert(pc < AVM_ENDING_PC);
-        instruction *instr = &code[pc];
+        instruction *instr = G_code + pc;
         assert(instr->opcode >= 0 && instr->opcode <= AVM_MAX_INSTRUCTIONS);
         if (instr->srcLine)
         {
             currLine = instr->srcLine;
         }
         unsigned oldPC = pc;
-        executeFuncs[instr->opcode](instr);
+        
+        (*executeFuncs[instr->opcode])(instr);
         if (pc == oldPC)
         {
             ++pc;
@@ -1031,15 +1034,9 @@ void avm_registerlibfunc(char *id, library_func_t addr){
 }
 void avm_initialize(void)
 {
-    //debug
-    printf("in initialize\n");
     avm_initstack();
     avm_registerlibfunc("print", libfunc_print);
     avm_registerlibfunc("typeof", libfunc_typeof);
-
-    topsp = AVM_STACKSIZE-1;
-    top   = AVM_STACKSIZE-1-totalglobalv;
-    pc = 1;
 }
 
 void library_totalarguments(void)
@@ -1057,6 +1054,22 @@ void library_totalarguments(void)
         retval.data.numVal = avm_get_envvalue(p_topsp + AVM_NUMACTUALS_OFFSET);
     }
 }
+
+void push_global_to_stack(vmarg *vmarg)
+{
+    static int i = 0;
+    if (AVM_STACKSIZE - top - 1 > vmarg->val)
+        return;
+
+    fprintf(stderr, "push_global_to_stack offset %u\n", vmarg->val);
+    avm_memcell *arg = avm_translate_operand(vmarg, &ax);
+    i++;
+    assert(arg);
+    avm_assign(&stack[top], arg);
+    avm_dec_top();
+    topsp = top;
+}
+
 void get_binary(){
     FILE *bin = fopen("../avm_binary.abc", "rb");
     if (bin == NULL)
@@ -1120,6 +1133,7 @@ void get_binary(){
     }
 
     fread(&codeSize, sizeof(unsigned int), 1, bin);
+    codeSize -= 1;
     code = malloc(codeSize * sizeof(instruction));
     for(int i = 0; i < codeSize; i++)
     {
@@ -1130,17 +1144,56 @@ void get_binary(){
         fread(&code[i].arg1.val, sizeof(unsigned), 1, bin);
         fread(&code[i].arg2.type, sizeof(vmarg), 1, bin);
         fread(&code[i].arg2.val, sizeof(unsigned), 1, bin);
+        if (code[i].result.type == global_a)
+        {
+            push_global_to_stack(&code[i].result);
+        }
+        if (code[i].arg1.type == global_a)
+        {
+            push_global_to_stack(&code[i].arg1);
+        }
+        if (code[i].arg2.type == global_a)
+        {
+            push_global_to_stack(&code[i].arg2);
+        }
+        fprintf(stderr, "opcode %d\n", code[i].opcode);
+        fprintf(stderr, "result type %d\n", code[i].result.type);
+        fprintf(stderr, "result val %d\n", code[i].result.val);
+        fprintf(stderr, "arg1 type %d\n", code[i].arg1.type);
+        fprintf(stderr, "arg1 val %d\n", code[i].arg1.val);
+        fprintf(stderr, "arg2 type %d\n", code[i].arg2.type);
+        fprintf(stderr, "arg2 val %d\n", code[i].arg2.val);
+
     }
+    G_code = code;
 
     fclose(bin);
+    fprintf(stderr,"PRINTING TABLES FROM BINARY\n\n");
+    for (int i = 0; i < totallibfuncs; i++)
+    {
+        fprintf(stderr, "%s\n", libfuncst[i]);
+    }
+    for (int i = 0; i < totaluserfuncs; i++)
+    {
+        fprintf(stderr, "%s\n", userFuncs[i].id);
+    }
 
+    for (int i = 0; i < totalstringconsts; i++)
+    {
+        fprintf(stderr, "%s\n", stringslist[i]);
+    }
+    for (int i = 0; i < totalnumconst; i++)
+    {
+        fprintf(stderr, "%s\n", numberconstslist[i]);
+    }
+    fprintf(stderr, "END OF TABLES\n\n");
 }
 
 int main()
 {
     //AVM_ENDING_PC = codeSize;
-    avm_initialize();
     get_binary();
+    avm_initialize();
     //printf(" executionFinished %d : \n", executionFinished);
     while (executionFinished == 0)
     {
