@@ -7,11 +7,6 @@ phase4:
 	@flex --outfile=scanner.c scanner.l 
 	@gcc -o parser parser.c scanner.c SymTable.c symtablehash.c quads.c stack.c -g
 
-avm:
-	@echo "Building AVM..."
-	@gcc -o avm avm.c stack.c -g
-
-
 clean:
 	@echo "Cleaning up..."
 	@rm -f parser.c parser.h scanner.c parser.output parser
