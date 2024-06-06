@@ -401,15 +401,19 @@ void execute_cycle(void)
     }
     else
     {
+        //debug
+        if (!(pc < AVM_ENDING_PC)) {
+            printf("Debug: pc = %d, AVM_ENDING_PC = %d\n", pc, AVM_ENDING_PC);
+        }
         assert(pc < AVM_ENDING_PC);
-        instruction *instr = code + pc;
+        instruction *instr = &code[pc];
         assert(instr->opcode >= 0 && instr->opcode <= AVM_MAX_INSTRUCTIONS);
         if (instr->srcLine)
         {
             currLine = instr->srcLine;
         }
         unsigned oldPC = pc;
-        (*executeFuncs[instr->opcode])(instr);
+        executeFuncs[instr->opcode](instr);
         if (pc == oldPC)
         {
             ++pc;
@@ -1016,9 +1020,9 @@ void avm_initialize(void)
     avm_registerlibfunc("print", libfunc_print);
     avm_registerlibfunc("typeof", libfunc_typeof);
 
-    topsp = AVM_STACKSIZE-1;
-    top   = AVM_STACKSIZE-1-totalglobalv;
-    pc = 1;
+    // topsp = AVM_STACKSIZE-1;
+    // top   = AVM_STACKSIZE-1-totalglobalv;
+    // pc = 1;
 }
 
 void library_totalarguments(void)
@@ -1037,7 +1041,7 @@ void library_totalarguments(void)
     }
 }
 void get_binary(){
-    FILE *bin = fopen("instructions_binary.bin", "rb");
+    FILE *bin = fopen("avm_binary.abc", "rb");
     if (bin == NULL)
     {
         printf("Error opening the binary file\n");
@@ -1049,6 +1053,74 @@ void get_binary(){
     if (magicnumber != 340200501) 
     {
         printf("Error: Magic number is not correct\n");
+        printf("Magic number is: %u\n", magicnumber);
         return;
     }
+
+    fread(&totalnumconst, sizeof(int), 1, bin);
+    numberconstslist = malloc(totalnumconst * sizeof(double));
+    for(int i = 0; i < totalnumconst; i++)
+    {
+        fread(&numberconstslist[i], sizeof(double), 1, bin);
+    }
+
+    fread(&totalstringconsts, sizeof(int), 1, bin);
+    stringslist = malloc(totalstringconsts * sizeof(char*));
+    for(int i = 0; i < totalstringconsts; i++)
+    {
+        int len;
+        fread(&len, sizeof(int), 1, bin);
+        stringslist[i] = malloc(len * sizeof(char));
+        fread(stringslist[i], sizeof(char), len, bin);
+    }
+
+    //fread(&totalglobalv, sizeof(int), 1, bin);  
+
+    fread(&totallibfuncs, sizeof(int), 1, bin);
+    libfuncst = malloc(totallibfuncs * sizeof(char*));
+    for(int i = 0; i < totallibfuncs; i++)
+    {
+        int len;
+        fread(&len, sizeof(int), 1, bin);
+        libfuncst[i] = malloc(len * sizeof(char));
+        fread(libfuncst[i], sizeof(char), len, bin);
+    }
+
+    fread(&totaluserfuncs, sizeof(int), 1, bin);
+    userFuncs = malloc(totaluserfuncs * sizeof(userfunc));
+    for(int i = 0; i < totaluserfuncs; i++)
+    {
+        int len;
+        fread(&len, sizeof(int), 1, bin);
+        userFuncs[i].id = malloc(len * sizeof(char));
+        fread(userFuncs[i].id, sizeof(char), len, bin);
+        fread(&userFuncs[i].address, sizeof(unsigned), 1, bin);
+        fread(&userFuncs[i].localSize, sizeof(unsigned), 1, bin);
+    }
+
+    fread(&codeSize, sizeof(int), 1, bin);
+    code = malloc(codeSize * sizeof(instruction));
+    for(int i = 0; i < codeSize; i++)
+    {
+        fread(&code[i].opcode, sizeof(unsigned), 1, bin);
+        fread(&code[i].result, sizeof(vmarg), 1, bin);
+        fread(&code[i].arg1, sizeof(vmarg), 1, bin);
+        fread(&code[i].arg2, sizeof(vmarg), 1, bin);
+        fread(&code[i].srcLine, sizeof(unsigned), 1, bin);
+    }
+
+    fclose(bin);
+
 }
+
+int main()
+{
+    get_binary();
+    AVM_ENDING_PC = codeSize;
+    avm_initialize();
+    while (!executionFinished)
+    {
+        execute_cycle();
+    }
+    return 0;
+}   
