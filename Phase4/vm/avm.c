@@ -8,14 +8,14 @@
 
 unsigned int totalActuals = 0;
 libfuncp *libfuncslist = NULL;
-int totallibfuncs;
+unsigned int totallibfuncs;
 char **libfuncst;
-int totalstringconsts;
+unsigned int totalstringconsts;
 char **stringslist ;
-int totalglobalv;
-int totalnumconst;
+unsigned int totalglobalv;
+unsigned int totalnumconst;
 double *numberconstslist;
-int totaluserfuncs;
+unsigned int totaluserfuncs;
 userfunc *userFuncs;
 
 char *typeStrings[] = {
@@ -1072,6 +1072,7 @@ void get_binary(){
         fread(&len, sizeof(int), 1, bin);
         stringslist[i] = malloc(len * sizeof(char));
         fread(stringslist[i], sizeof(char), len, bin);
+        fprintf(stderr, "string %s\n", stringslist[i]);
     }
 
     fread(&totalnumconst, sizeof(int), 1, bin);
@@ -1093,13 +1094,13 @@ void get_binary(){
         fread(libfuncst[i], sizeof(char), len, bin);
     }
 
-    fread(&totaluserfuncs, sizeof(int), 1, bin);
+    fread(&totaluserfuncs, sizeof(unsigned int), 1, bin);
     userFuncs = malloc(totaluserfuncs * sizeof(userfunc));
     fprintf(stderr, "total user funcs %u\n", totaluserfuncs);
     for(int i = 0; i < totaluserfuncs; i++)
     {
-        int len;
-        fread(&len, sizeof(int), 1, bin);
+        size_t len;
+        fread(&len, sizeof(size_t), 1, bin);
         userFuncs[i].id = malloc(len * sizeof(char));
         fread(userFuncs[i].id, sizeof(char), len, bin);
         fread(&userFuncs[i].address, sizeof(unsigned), 1, bin);
