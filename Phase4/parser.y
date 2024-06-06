@@ -893,6 +893,7 @@ int main(int argc,char **argv){
     generate();
     print_instructions();
     print_instruction_tables();
+    create_avm_binary();
 
     SymTable_free(symTable);
     free_scope_links();
