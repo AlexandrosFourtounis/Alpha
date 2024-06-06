@@ -4,7 +4,12 @@
 #define AVM_SAVEDPC_OFFSET +3
 #define AVM_SAVEDTOP_OFFSET +2
 #define AVM_SAVEDTOPSP_OFFSET +1
+#define AVM_STACKSIZE 4096
+#define AVM_WIPEOUT(m) memset(&(m), 0, sizeof(m))
+
+
 typedef void (*library_func_t)(void);
+
 
 typedef enum avm_memecell_t
 {
@@ -34,10 +39,7 @@ typedef struct avm_memcell
     } data;
 } avm_memcell;
 
-#define AVM_STACKSIZE 4096
-#define AVM_WIPEOUT(m) memset(&(m), 0, sizeof(m))
-
-avm_memcell stack[AVM_STACKSIZE];
+extern avm_memcell stack[AVM_STACKSIZE];
 static void avm_initstack(void)
 {
     for (unsigned i = 0; i < AVM_STACKSIZE; ++i)
@@ -85,9 +87,9 @@ void avm_tablebucketdestroy(avm_table_bucket **p);
 void avm_tabledestroy(avm_table *t);
 
 #define AVM_STACKENV_SIZE 4
-avm_memcell ax, bx, cx;
-avm_memcell retval;
-unsigned top, topsp;
+extern avm_memcell ax, bx, cx;
+extern avm_memcell retval;
+extern unsigned top, topsp;
 
 double consts_getnumber(unsigned index);
 char *consts_getstring(unsigned index);

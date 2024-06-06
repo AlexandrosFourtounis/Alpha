@@ -8,9 +8,14 @@
 
 unsigned int totalActuals = 0;
 libfuncp *libfuncslist = NULL;
-char **libfuncst ;
+int totallibfuncs;
+char **libfuncst;
+int totalstringconsts;
 char **stringslist ;
+int totalglobalv;
+int totalnumconst;
 double *numberconstslist;
+int totaluserfuncs;
 userfunc *userFuncs;
 
 char *typeStrings[] = {
@@ -1010,6 +1015,10 @@ void avm_initialize(void)
     avm_initstack();
     avm_registerlibfunc("print", libfunc_print);
     avm_registerlibfunc("typeof", libfunc_typeof);
+
+    topsp = AVM_STACKSIZE-1;
+    top   = AVM_STACKSIZE-1-totalglobalv;
+    pc = 1;
 }
 
 void library_totalarguments(void)
@@ -1025,5 +1034,21 @@ void library_totalarguments(void)
     {
         retval.type = number_m;
         retval.data.numVal = avm_get_envvalue(p_topsp + AVM_NUMACTUALS_OFFSET);
+    }
+}
+void get_binary(){
+    FILE *bin = fopen("instructions_binary.bin", "rb");
+    if (bin == NULL)
+    {
+        printf("Error opening the binary file\n");
+        return;
+    }
+
+    unsigned magicnumber;
+    fread(&magicnumber, sizeof(unsigned), 1, bin);
+    if (magicnumber != 340200501) 
+    {
+        printf("Error: Magic number is not correct\n");
+        return;
     }
 }
