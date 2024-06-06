@@ -489,21 +489,21 @@ void execute_call(instruction *instr)
 {
     avm_memcell *func = avm_translate_operand(&instr->result, &ax);
     assert(func);
+    avm_callsaveenvironment();
     switch (func->type)
     {
     case userfunc_m:
     {
-        avm_callsaveenvironment();
-        pc = func->data.funcVal;
+        pc = userFuncs[func->data.funcVal].address;
         assert(pc < AVM_ENDING_PC);
         assert(code[pc].opcode == enterfunc_v);
         break;
     }
     case string_m:
-        avm_calllibfunc(func);
+        avm_calllibfunc(func->data.strVal);
         break;
     case libfunc_m:
-        avm_calllibfunc(func);
+        avm_calllibfunc(func->data.libfuncVal);
         break;
     case table_m:
         avm_calltablefunc(func);
@@ -511,7 +511,7 @@ void execute_call(instruction *instr)
     default:
     {
         char *s = avm_tostring(func);
-        avm_error("call: cannot bind '%s' to function!", s);
+        avm_error("call: cannot bind '%s' to function!", &code[pc]);
         free(s);
         executionFinished = 1;
     }
@@ -755,14 +755,16 @@ avm_memcell *avm_getactual(unsigned i)
 
 void libfunc_print(void)
 {
+    printf("in print");
     unsigned n = avm_totalactuals();
     unsigned i;
     for (i = 0; i < n; ++i)
     {
         char *s = avm_tostring(avm_getactual(i));
-        puts(s);
+        printf("%s", s);
         free(s);
     }
+    printf("end print");
 }
 
 void avm_push_table_arg(avm_table *t)
