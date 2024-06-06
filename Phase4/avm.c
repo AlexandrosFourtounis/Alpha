@@ -99,6 +99,8 @@ void avm_tabledestroy(avm_table *t)
 char *userfunc_tostring(avm_memcell *) 
 {
     //not needed i think
+    avm_memcell *mem = malloc(sizeof(avm_memcell));
+    return mem->data.strVal;
 }
 
 char *libfuncs_getused(unsigned index)
@@ -114,11 +116,13 @@ userfunc *userfuncs_get(unsigned index)
 void execute_enterfunc(instruction *) 
 {
     //not needed
+    instruction *func = code + pc;
 }
 
 void execute_exitfunc(instruction *) 
 {
     //not needed
+    instruction *func = code + pc;
 }
 
 void avm_warning(char *warning, instruction *q)
