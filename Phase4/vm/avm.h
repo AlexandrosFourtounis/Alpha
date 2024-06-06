@@ -126,8 +126,8 @@ void execute_jlt(instruction *);
 void execute_jgt(instruction *);
 void execute_call(instruction *);
 void execute_pusharg(instruction *);
-void execute_enterfunc(instruction *);
-void execute_exitfunc(instruction *);
+void execute_funcenter(instruction *);
+void execute_funcexit(instruction *);
 void execute_newtable(instruction *);
 void execute_tablegetelem(instruction *);
 void execute_tablesetelem(instruction *);
@@ -152,8 +152,8 @@ execute_func_t executeFuncs[] = {
     execute_jgt,
     execute_call,
     execute_pusharg,
-    execute_enterfunc,
-    execute_exitfunc,
+    execute_funcenter,
+    execute_funcexit,
     execute_newtable,
     execute_tablegetelem,
     execute_tablesetelem,
@@ -206,9 +206,9 @@ void avm_callsaveenvironment(void);
 void avm_dec_top(void);
 
 userfunc *avm_getfuncinfo(unsigned address);
-void execute_funcenter(instruction *instr);
+//void execute_funcenter(instruction *instr);
 unsigned avm_get_envvalue(unsigned i);
-void execute_funcexit(instruction *unused);
+//void execute_funcexit(instruction *unused);
 
 
 void avm_registerlibfunc(char *id, library_func_t addr);

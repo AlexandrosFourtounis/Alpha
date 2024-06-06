@@ -689,13 +689,21 @@ void avm_callsaveenvironment(void)
     avm_push_envvalue(top + totalActuals + 2);
     avm_push_envvalue(topsp);
 }
-userfunc *avm_getfuncinfo(unsigned address){}
+
+userfunc *avm_getfuncinfo(unsigned address){
+    for(int i = 0; i < totaluserfuncs; i++){
+        if(userFuncs[i].address == address){
+            return &userFuncs[i];
+        }
+    }
+    return NULL;
+}
 
 void execute_funcenter(instruction *instr)
 {
     avm_memcell *func = avm_translate_operand(&instr->result, &ax);
     assert(func);
-    assert(pc == func->data.funcVal);
+    assert(userFuncs[func->data.funcVal].address);
     totalActuals = 0;
     userfunc *funcInfo = avm_getfuncinfo(pc);
     topsp = top;
