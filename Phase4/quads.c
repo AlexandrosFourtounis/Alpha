@@ -1166,7 +1166,7 @@ void patch_incomplete_jumps()
 void generate(void)
 {
     initialize_funcstack(funcstack);
-    instruction *t;
+    instruction *t; 
     emit_instruction(t);
 
     patch_incomplete_jumps();
@@ -1217,7 +1217,8 @@ void generate_op(vm_opcode op, quad *q)
         make_operand(q->arg1, &t->arg1);
     if(q->arg2)
         make_operand(q->arg2, &t->arg2);
-    make_operand(q->result, &t->result);
+    if(q->result)
+        make_operand(q->result, &t->result);
     q->taddress = nextinstrlabel();
     emit_instruction(t);
 }
@@ -1793,7 +1794,7 @@ void create_avm_binary() {
     }
 
     fwrite(&curr_instr, sizeof(curr_instr), 1, f_binary);
-    for (int i = 0; i < curr_instr; i++) {
+    for (int i = 1; i < curr_instr; i++) {
         fwrite(&instructions[i].opcode, sizeof(vm_opcode), 1, f_binary);
         fwrite(&instructions[i].result.type, sizeof(vmarg), 1, f_binary);
         fwrite(&instructions[i].result.val, sizeof(unsigned), 1, f_binary);
