@@ -8,14 +8,14 @@
 
 unsigned int totalActuals = 0;
 libfuncp *libfuncslist = NULL;
-int totallibfuncs;
+unsigned int totallibfuncs;
 char **libfuncst;
-int totalstringconsts;
+unsigned int totalstringconsts;
 char **stringslist ;
-int totalglobalv;
-int totalnumconst;
+unsigned int totalglobalv;
+unsigned int totalnumconst;
 double *numberconstslist;
-int totaluserfuncs;
+unsigned int totaluserfuncs;
 userfunc *userFuncs;
 
 char *typeStrings[] = {
@@ -120,6 +120,8 @@ userfunc *userfuncs_get(unsigned index)
 void execute_enterfunc(instruction *instr)
 {
     userfunc *funcInfo = userfuncs_get(instr->result.val);
+    if(!funcInfo)
+        avm_error("funcInfo is null in enterfunc", &code[pc]);
     topsp = top;
     top = top - funcInfo->localSize;
 }
@@ -1065,22 +1067,23 @@ void get_binary(){
     }
     fprintf(stderr, "magic number %u\n", magicnumber);
 
-    fread(&totalstringconsts, sizeof(int), 1, bin);
+    fread(&totalstringconsts, sizeof(unsigned int), 1, bin);
     fprintf(stderr, "total string %u\n", totalstringconsts);
-    stringslist = malloc(totalstringconsts * sizeof(char *));
+    stringslist = malloc(totalstringconsts * sizeof(char));
     for (int i = 0; i < totalstringconsts; i++)
     {
-        int len;
-        fread(&len, sizeof(int), 1, bin);
+        size_t len;
+        fread(&len, sizeof(size_t), 1, bin);
         stringslist[i] = malloc(len * sizeof(char));
         fread(stringslist[i], sizeof(char), len, bin);
+        fprintf(stderr, "string %s\n", stringslist[i]);
     }
 
-    fread(&totalnumconst, sizeof(int), 1, bin);
+    fread(&totalnumconst, sizeof(unsigned int), 1, bin);
     numberconstslist = malloc(totalnumconst * sizeof(double));
     for(int i = 0; i < totalnumconst; i++)
     {
-        fread(&numberconstslist[i], sizeof(double), 1, bin);
+        fread(&numberconstslist[i], sizeof(numberconstslist[i]), 1, bin);
     }
 
     //fread(&totalglobalv, sizeof(int), 1, bin);  
@@ -1089,26 +1092,26 @@ void get_binary(){
     libfuncst = malloc(totallibfuncs * sizeof(char*));
     for(int i = 0; i < totallibfuncs; i++)
     {
-        int len;
-        fread(&len, sizeof(int), 1, bin);
+        size_t len;
+        fread(&len, sizeof(len), 1, bin);
         libfuncst[i] = malloc(len * sizeof(char));
         fread(libfuncst[i], sizeof(char), len, bin);
     }
 
-    fread(&totaluserfuncs, sizeof(int), 1, bin);
+    fread(&totaluserfuncs, sizeof(unsigned int), 1, bin);
     userFuncs = malloc(totaluserfuncs * sizeof(userfunc));
     fprintf(stderr, "total user funcs %u\n", totaluserfuncs);
     for(int i = 0; i < totaluserfuncs; i++)
     {
-        int len;
-        fread(&len, sizeof(int), 1, bin);
+        size_t len;
+        fread(&len, sizeof(size_t), 1, bin);
         userFuncs[i].id = malloc(len * sizeof(char));
         fread(userFuncs[i].id, sizeof(char), len, bin);
-        fread(&userFuncs[i].address, sizeof(unsigned), 1, bin);
-        fread(&userFuncs[i].localSize, sizeof(unsigned), 1, bin);
+        fread(&userFuncs[i].address, sizeof(userFuncs[i].address), 1, bin);
+        fread(&userFuncs[i].localSize, sizeof(userFuncs[i].localSize), 1, bin);
     }
 
-    fread(&codeSize, sizeof(int), 1, bin);
+    fread(&codeSize, sizeof(unsigned int), 1, bin);
     code = malloc(codeSize * sizeof(instruction));
     for(int i = 0; i < codeSize; i++)
     {
