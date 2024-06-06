@@ -1792,11 +1792,8 @@ void create_avm_binary() {
         fwrite(&userFuncs[i].localSize, sizeof(userFuncs[i].localSize), 1, f_binary); 
     }
 
-    
-
     fwrite(&curr_instr, sizeof(curr_instr), 1, f_binary);
     for (int i = 0; i < curr_instr; i++) {
-        //nomizo prepei na grafei kathe pedio
         fwrite(&instructions[i].opcode, sizeof(vm_opcode), 1, f_binary);
         fwrite(&instructions[i].result.type, sizeof(vmarg), 1, f_binary);
         fwrite(&instructions[i].result.val, sizeof(unsigned), 1, f_binary);
