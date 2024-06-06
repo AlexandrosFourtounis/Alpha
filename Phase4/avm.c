@@ -151,7 +151,7 @@ void avm_calllibfunc(char *funcname)
     library_func_t f = avm_getlibraryfunc(funcname);
     if (!f)
     {
-        avm_error("unsupported lib func '%s' called!", funcname);
+        avm_error("unsupported lib func '%s' called!", &code[pc]);
     }
     else
     {
@@ -948,7 +948,7 @@ void execute_tablegetelem(instruction *instr)
     lv->type = nil_m;
     if (t->type != table_m)
     {
-        avm_error("illegal use of type %s as table!", typeStrings[t->type]);
+        avm_error("illegal use of type %s as table!", &code[pc]);
     }
     else
     {
@@ -981,7 +981,7 @@ void execute_tablesetelem(instruction *instr)
     assert(i && c);
     if (t->type != table_m)
     {
-        avm_error("illegal use of type %s as table!", typeStrings[t->type]);
+        avm_error("illegal use of type %s as table!", &code[pc]);
     }
     else
     {
