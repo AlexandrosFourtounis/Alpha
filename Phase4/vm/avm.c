@@ -746,7 +746,7 @@ avm_memcell *avm_getactual(unsigned i)
 
 void libfunc_print(void)
 {
-    printf("in print\n");
+    //printf("in print\n");
     unsigned n = avm_totalactuals();
     unsigned i;
     for (i = 0; i < n; ++i)
@@ -755,7 +755,7 @@ void libfunc_print(void)
         printf("%s\n", s);
         free(s);
     }
-    printf("end print\n");
+    //printf("end print\n");
 }
 
 void avm_push_table_arg(avm_table *t)
@@ -1070,8 +1070,6 @@ void avm_initialize(void)
     avm_registerlibfunc("sqrt", libfunc_sqrt);
     avm_registerlibfunc("sin", libfunc_sin);
     avm_registerlibfunc("cos", libfunc_cos);
-    // topsp = AVM_STACKSIZE-1;
-    // top   = AVM_STACKSIZE-1-totalglobalv;
     // printf("top:%d\n", top);
     // pc = 1;
 }
