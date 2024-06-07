@@ -4,18 +4,24 @@ Alpha is a compiler project made for the needs of CS-340, 2023-2024 at the Compu
 Phase 3 consists of the intermediate code using flex/yacc/bison. 
 
 ## Features
- *  Function calls are working
- * The output is the desired one, as said in the assignment
- * Functions are implemented correctly
- * Partial evaluation is implemented
- * tables are working correctly
- * some jumps are not correct in while and for loops.
+ * Libfunc print works correctly for strings and numbers
+ * Libfunc typeof works correctly
+ * The same for libfuncs sin, cos, sqrt
+ * We have a custom test to check these
+ * The rest of the features are not completed 
 
 ## Installation
 We have a Makefile 
 Alternatively, run the following commands:
 * run : make
 * clean : make clean
+
+## Test vm
+* make in phase4 
+* ./parser customtest.asc
+* cd vm
+* make
+* ./avm
 
 ## Authors
 This project was made in collaboration with [Georgia Tsanta / csd5020](https://github.com/georgiats0) and [Dimitris Asimakopoulos / csd4845](https://github.com/mitsosasim).
