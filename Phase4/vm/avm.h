@@ -173,7 +173,7 @@ unsigned currLine = 0;
 unsigned codeSize = 0;
 instruction *code = (instruction *)0;
 
-#define AVM_ENDING_PC codeSize+1
+#define AVM_ENDING_PC codeSize
 
 void execute_cycle(void);
 
@@ -290,6 +290,8 @@ tobool_func_t toboolFuncs[] = {
 
 unsigned char avm_tobool(avm_memcell *m);
 void libfunc_sqrt(void);
+void libfunc_sin(void);
+void libfunc_cos(void);
 void libfunc_typeof(void);
 void execute_newtable(instruction *instr);
 

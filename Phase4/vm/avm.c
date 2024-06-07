@@ -6,6 +6,7 @@
 
 
 #define HASH_MULTIPLIER 65599
+#define PI 3.14159265
 
 unsigned int totalActuals = 0;
 libfuncp *libfuncslist = NULL;
@@ -439,13 +440,13 @@ void execute_cycle(void)
     printf("done withe execution_CYCLE\n");
 }
 
-extern void memclear_string(avm_memcell *m)
+void memclear_string(avm_memcell *m)
 {
     assert(m->data.strVal);
-    free(m->data.strVal);
+    //free(m->data.strVal);
 }
 
-extern void memclear_table(avm_memcell *m)
+void memclear_table(avm_memcell *m)
 {
     assert(m->data.tableVal);
     avm_tabledecrefcounter(m->data.tableVal);
@@ -1047,6 +1048,43 @@ void libfunc_sqrt(void){
     }
 }
 
+void libfunc_sin(void){
+    unsigned n = avm_totalactuals();
+    if(n != 1){
+        avm_error("sin takes one argument", &code[pc]);
+        retval.type=nil_m;
+    }
+    else if(avm_getactual(0)->type != number_m){
+        avm_error("input not a number in sin", &code[pc]);
+        retval.type=nil_m;
+    }
+    else{
+        avm_memcellclear(&retval);
+        retval.type = number_m;
+        double tmp = avm_getactual(0)->data.numVal;
+        retval.data.numVal = sin((tmp*PI)/180);
+    }    
+}
+
+void libfunc_cos(void){
+    unsigned n = avm_totalactuals();
+    if(n != 1){
+        avm_error("cos takes one argument", &code[pc]);
+        retval.type=nil_m;
+    }
+    else if(avm_getactual(0)->type != number_m){
+        avm_error("input not a number in cos", &code[pc]);
+        retval.type=nil_m;
+    }
+    else{
+        avm_memcellclear(&retval);
+        retval.type = number_m;
+        double tmp = avm_getactual(0)->data.numVal;
+        
+        retval.data.numVal = cos((tmp*PI)/180);
+    }    
+}
+
 void execute_newtable(instruction *instr)
 {
     avm_memcell *lv = avm_translate_operand(&instr->result, (avm_memcell *)0);
@@ -1123,6 +1161,8 @@ void avm_initialize(void)
     avm_registerlibfunc("typeof", libfunc_typeof);
     avm_registerlibfunc("totalarguments", library_totalarguments);
     avm_registerlibfunc("sqrt", libfunc_sqrt);
+    avm_registerlibfunc("sin", libfunc_sin);
+    avm_registerlibfunc("cos", libfunc_cos);
     // topsp = AVM_STACKSIZE-1;
     // top   = AVM_STACKSIZE-1-totalglobalv;
     // printf("top:%d\n", top);
