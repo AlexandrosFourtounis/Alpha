@@ -66,14 +66,6 @@ avm_table *avm_tablenew(void)
     return t;
 }
 
-/*copilot did it
-void avm_memcellclear(avm_memcell* m){
-    if(m->type!=undef_m){
-        m->type=undef_m;
-        memset(&(m->data),0,sizeof(m->data));
-    }
-} to sosto dinetai sthn dialexh 15 kai to exoume valei grammh 139
-*/
 
 void avm_tablebucketdestroy(avm_table_bucket **p)
 {
@@ -106,7 +98,6 @@ void avm_tabledestroy(avm_table *t)
 
 char *userfunc_tostring(avm_memcell *mem)
 {
-    //not needed i think
     return userFuncs[mem->data.funcVal].id;
 }
 
@@ -336,11 +327,10 @@ void execute_jgt(instruction *i) {
 void execute_nop(instruction *i) {}
 double consts_getnumber(unsigned index){
     return numberconstslist[index];
-} //needs file parsing to find numbers 
+} 
 char *consts_getstring(unsigned index){
      return stringslist[index];
-} //needs file parsing to find strings
-
+} 
 
 avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
 {
@@ -348,6 +338,7 @@ avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
     if(reg)
         avm_memcellclear(reg);
     
+    //printf("arg type = %d\n", arg->type);
     //printf("arg type = %d\n", arg->type);
     switch(arg->type){
         case global_a:{
@@ -403,8 +394,8 @@ avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
 
 void execute_cycle(void)
 {
-    //printf("in execute_cycle");
-    //printf("Debug: pc = %d, AVM_ENDING_PC = %d\n", pc, AVM_ENDING_PC); //debug
+    // printf("in execute_cycle");
+    // printf("Debug: pc = %d, AVM_ENDING_PC = %d\n", pc, AVM_ENDING_PC); //debug
     if (executionFinished)
     {
         return;
@@ -465,21 +456,19 @@ void avm_memcellclear(avm_memcell *m)
     }
 }
 
-// sth diafaneia gia edo stack[AVM_STACKSIZE-1] leei stack[N-1]. to copilot eipe to 1o
+
 void execute_assign(instruction *instr)
 {
     avm_memcell* lv = NULL;
     lv = avm_translate_operand(&instr->result, NULL);
-    // case for empty return
+
     if(lv == &retval && ((int) instr->arg1.type == -1)){
         avm_memcellclear(lv);
-        //lv->type = nil_m;
         return;
     }
     avm_memcell* rv = avm_translate_operand(&instr->arg1, &ax);
 
-    //assert(lv && (&stack[N-1] >= lv && lv > &stack[top] || lv == &retval));
-    assert(rv); // should do similar assertion tests here
+    assert(rv); 
 
     avm_assign(lv, rv);
 }
@@ -510,6 +499,14 @@ void avm_assign(avm_memcell *lv, avm_memcell *rv)
     }
 }
 
+void execute_jump (instruction* instr) {
+    //printf("Debug: execute_jump\n");
+    assert(instr->result.type == label_a);
+
+    if(!executionFinished)
+        pc = instr->result.val;
+}
+
 void execute_call(instruction *instr)
 {
     //printf("call\n");
@@ -521,7 +518,7 @@ void execute_call(instruction *instr)
 
         case userfunc_m: {
             pc = userFuncs[func->data.funcVal].address;
-            //pc = func->data.funcVal; // sto funcVal apothikeuoume pu prepei na ginei to jump
+            //pc = func->data.funcVal;
             assert(pc < AVM_ENDING_PC);
             //printf("pc = %d\n", pc);
             assert(code[pc].opcode == enterfunc_v);
@@ -538,49 +535,13 @@ void execute_call(instruction *instr)
             break;
         }
 
-        case table_m:{
-            avm_memcell* t = func, *i = malloc(sizeof(avm_memcell));
-            i->type = string_m;
-            i->data.strVal = strdup("()");
-            func = avm_tablegetelem(t->data.tableVal, i); 
-            if(func){
-                switch(func->type) {
-                    case userfunc_m: {
-                        pc = userFuncs[func->data.funcVal].address;
-                        //pc = func->data.funcVal; // sto funcVal apothikeuoume pu prepei na ginei to jump
-                        assert(pc < AVM_ENDING_PC);
-                        //printf("pc = %d\n", pc);
-                        assert(code[pc].opcode == enterfunc_v);
-                        break;
-                    }
-                    case string_m:  {
-                        avm_calllibfunc(func->data.strVal);
-                        break;
-                    }
-                    case libfunc_m: {
-                        avm_calllibfunc(func->data.libfuncVal);
-                        break;
-                    } 
-                    default: {
-                        char* s = avm_tostring(func);
-                        char tmp[1024];
-                        sprintf(tmp, "call: cannot bind '%s' to function!", s);
-                        avm_error(tmp, &code[pc]);
-                        free(s);
-                        executionFinished = 1;
-                        break;
-                    } 
-                }
-            }
-            avm_memcellclear(i);
-            free(i);
+        case table_m:
             break;
-        }
 
         default: {
             char* s = avm_tostring(func);
             char tmp[1024];
-            sprintf(tmp, "call: cannot bind '%s' to function!", s);
+            sprintf(tmp, "'%s' can't be used as a function!", s);
             avm_error(tmp, &code[pc]);
             free(s);
             executionFinished = 1;
@@ -598,11 +559,6 @@ static unsigned int SymTable_hash(const char *pcKey)
 	return uiHash;
 }
 
-unsigned int hasfornum(double x)
-{
-    unsigned long z = abs((int)x);
-    return z % 211;
-}
 
 avm_memcell *avm_tablegetelem(avm_table *table, avm_memcell *index){
     unsigned int ix = 0;
@@ -625,26 +581,8 @@ avm_memcell *avm_tablegetelem(avm_table *table, avm_memcell *index){
         }
         break;
     case number_m:
-        ix = hasfornum(index->data.numVal);
-        curr = table->numIndexed[ix];
-        while (curr)
-        {
-            prev = curr;
-            if ((curr->key).data.numVal == index->data.numVal)
-            {
-                return &(curr->value);
-            }
-            curr = curr->next;
-        }
         break;
     case bool_m:
-        ix = index->data.boolVal;
-        curr = table->boolIndexed[ix];
-        if (curr != NULL)
-        {
-            //avm_tableincrefcounter(curr->value.data.tableVal);
-            return &(curr->value);
-        }
         break;
     case userfunc_m:
         ix = SymTable_hash(userFuncs[index->data.funcVal].id);
@@ -654,10 +592,6 @@ avm_memcell *avm_tablegetelem(avm_table *table, avm_memcell *index){
             prev = curr;
             if (!strcmp(userFuncs[index->data.funcVal].id, userFuncs[curr->key.data.funcVal].id) && userFuncs[index->data.funcVal].address == userFuncs[curr->key.data.funcVal].address) //address needless?
             {
-                /*if (curr->value.type == table_m)
-                {
-                    avm_tableincrefcounter(curr->value.data.tableVal);
-                }*/
                 return &(curr->value);
             }
             curr = curr->next;
@@ -671,32 +605,12 @@ avm_memcell *avm_tablegetelem(avm_table *table, avm_memcell *index){
             prev = curr;
             if (!strcmp(index->data.libfuncVal, (curr->key).data.libfuncVal))
             {
-                /*if (curr->value.type == table_m)
-                {
-                    avm_tableincrefcounter(curr->value.data.tableVal);
-                }*/
                 return &(curr->value);
             }
             curr = curr->next;
         }
         break;
     case table_m:
-        ix = index->data.tableVal->refCounter % 211;
-        curr = table->tableIndexed[ix];
-        while (curr)
-        {
-            prev = curr;
-
-            if (index->data.tableVal == (curr->key).data.tableVal)
-            {
-                /*if (curr->value.type == table_m)
-                {
-                    avm_tableincrefcounter(curr->value.data.tableVal);
-                }*/
-                return &(curr->value);
-            }
-            curr = curr->next;
-        }
         break;
     }
 
@@ -895,33 +809,30 @@ double mod_impl(double x, double y)
 
 void execute_arithmetic(instruction *instr)
 {
-    avm_memcell *lv = avm_translate_operand(&instr->result, (avm_memcell *)0);
-    avm_memcell *mem1 = avm_translate_operand(&instr->arg1, &ax);
-    avm_memcell *mem2 = avm_translate_operand(&instr->arg2, &bx);
+    avm_memcell* lv =  avm_translate_operand(&instr->result, (avm_memcell*) 0);
+    avm_memcell* rv1 = avm_translate_operand(&instr->arg1, &ax);
+    avm_memcell* rv2 = avm_translate_operand(&instr->arg2, &bx);
 
-    assert(lv && (&stack[AVM_STACKSIZE - 1] >= lv && lv > &stack[top] || lv == &retval));
-    assert(mem1 && mem2);
+    assert(rv1 && rv2);
 
-    if (mem1->type != number_m || mem2->type != number_m)
-    {
-        avm_error("not a number in arithmetic!", &code[pc]);
+    if(rv1->type != number_m || rv2->type != number_m) {
+        avm_error("input not number", &code[pc]);
         executionFinished = 1;
     }
-    else
-    {
+    else {
         arithmetic_func_t op = arithmeticFuncs[instr->opcode - add_v];
         avm_memcellclear(lv);
-        lv->type = number_m;
-        lv->data.numVal = (*op)(mem1->data.numVal, mem2->data.numVal);
+        lv->type            = number_m;
+        lv->data.numVal     = (*op)(rv1->data.numVal, rv2->data.numVal);
     }
 }
 
-void execute_add(instruction *instr) { execute_arithmetic(instr); }
-void execute_sub(instruction *instr) { execute_arithmetic(instr); }
-void execute_mul(instruction *instr) { execute_arithmetic(instr); }
-void execute_div(instruction *instr) { execute_arithmetic(instr); }
-void execute_mod(instruction *instr) { execute_arithmetic(instr); }
-void execute_uminus(instruction *instr) { execute_arithmetic(instr); }
+void execute_add(instruction *instr) { execute_arithmetic(instr); return; }
+void execute_sub(instruction *instr) { execute_arithmetic(instr); return; }
+void execute_mul(instruction *instr) { execute_arithmetic(instr); return;}
+void execute_div(instruction *instr) { execute_arithmetic(instr); return;}
+void execute_mod(instruction *instr) { execute_arithmetic(instr); return;}
+void execute_uminus(instruction *instr) { execute_arithmetic(instr); return;}
 
 unsigned char number_tobool(avm_memcell *m)
 {
@@ -969,7 +880,6 @@ unsigned char avm_tobool(avm_memcell *m)
     return (*toboolFuncs[m->type])(m);
 }
 
-// copilot
 void execute_jeq(instruction *instr)
 {
     assert(instr->result.type == label_a);
@@ -1003,9 +913,7 @@ void execute_jeq(instruction *instr)
     }
     else
     {
-        // equality check with  Αρκεί να
-        // κάνετε dispatching ως
-        // προς τον τύπο του mem1
+        // equality check with 
     }
     if (!executionFinished && result)
     {
@@ -1038,7 +946,7 @@ void libfunc_sqrt(void){
         avm_error("input not a number!", &code[pc]);
         retval.type=nil_m;
     }else if(avm_getactual(0)->data.numVal < 0){
-        avm_error("'sqrt' requires a non-negative number as parameter!", &code[pc]);
+        avm_error("negative number", &code[pc]);
         retval.type=nil_m;
     }else{
         avm_memcellclear(&retval);
@@ -1163,8 +1071,6 @@ void avm_initialize(void)
     avm_registerlibfunc("sqrt", libfunc_sqrt);
     avm_registerlibfunc("sin", libfunc_sin);
     avm_registerlibfunc("cos", libfunc_cos);
-    // topsp = AVM_STACKSIZE-1;
-    // top   = AVM_STACKSIZE-1-totalglobalv;
     // printf("top:%d\n", top);
     // pc = 1;
 }
