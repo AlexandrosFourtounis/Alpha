@@ -40,6 +40,7 @@ typedef struct avm_memcell
 } avm_memcell;
 
 avm_memcell stack[AVM_STACKSIZE];
+
 unsigned top, topsp;
 static void avm_initstack(void)
 {
@@ -50,6 +51,7 @@ static void avm_initstack(void)
         stack[i].type = nil_m;
     }
 }
+
 
 #define AVM_TABLE_HASHSIZE 211
 

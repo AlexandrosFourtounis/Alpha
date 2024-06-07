@@ -342,6 +342,7 @@ char *consts_getstring(unsigned index){
 
 avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
 {
+
     assert(arg);
     if(reg)
         avm_memcellclear(reg);
@@ -396,6 +397,7 @@ avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
         }
 
         default: assert(0);
+
     }
 }
 
@@ -1094,6 +1096,15 @@ void avm_registerlibfunc(char *id, library_func_t addr){
     new->address = addr;
     new->next = libfuncslist;
     libfuncslist = new;
+}
+void 
+(void)
+{
+    for (unsigned i = 0; i < AVM_STACKSIZE; ++i)
+    {
+        AVM_WIPEOUT(stack[i]);
+        stack[i].type = nil_m;
+    }
 }
 void avm_initialize(void)
 {
