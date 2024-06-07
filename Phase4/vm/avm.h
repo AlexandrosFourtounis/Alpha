@@ -40,8 +40,10 @@ typedef struct avm_memcell
 } avm_memcell;
 
 avm_memcell stack[AVM_STACKSIZE];
+unsigned top, topsp;
 static void avm_initstack(void)
 {
+    top = AVM_STACKSIZE - 1;
     for (unsigned i = 0; i < AVM_STACKSIZE; ++i)
     {
         AVM_WIPEOUT(stack[i]);
@@ -89,7 +91,7 @@ void avm_tabledestroy(avm_table *t);
 #define AVM_STACKENV_SIZE 4
 avm_memcell ax, bx, cx;
 avm_memcell retval;
-unsigned top, topsp;
+
 
 double consts_getnumber(unsigned index);
 char *consts_getstring(unsigned index);
