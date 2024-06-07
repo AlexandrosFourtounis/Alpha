@@ -343,7 +343,6 @@ char *consts_getstring(unsigned index){
 
 avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
 {
-
     assert(arg);
     if(reg)
         avm_memcellclear(reg);
@@ -398,7 +397,6 @@ avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
         }
 
         default: assert(0);
-
     }
 }
 
@@ -1036,10 +1034,10 @@ void libfunc_sqrt(void){
         avm_error("one argument only", &code[pc]);
         retval.type=nil_m;
     }else if (avm_getactual(0)->type != number_m){
-        avm_error("input not a number in sqrt!", &code[pc]);
+        avm_error("input not a number!", &code[pc]);
         retval.type=nil_m;
     }else if(avm_getactual(0)->data.numVal < 0){
-        avm_error("negative number in sqrt", &code[pc]);
+        avm_error("'sqrt' requires a non-negative number as parameter!", &code[pc]);
         retval.type=nil_m;
     }else{
         avm_memcellclear(&retval);
@@ -1047,68 +1045,6 @@ void libfunc_sqrt(void){
         double tmp = avm_getactual(0)->data.numVal;
         retval.data.numVal = sqrt(tmp);
     }
-}
-
-void libfunc_input(){
-    unsigned n = avm_totalactuals();
-    if(n != 0){
-        char tmp[1024];
-        sprintf(tmp, "%d arguments ignored , no arguments needed in 'input'!", n);
-        avm_warning(tmp, &code[pc]);
-    }
-    char *s = malloc(sizeof(char)*1024);
-    size_t i = 0;
-    while(i!=1024){
-        s[i]=getc(stdin);
-        if(s[i]=='\n'){
-            s[i]='\0';
-            break;
-        }
-        i++;
-    }
-    if(i == 1024){
-        avm_error("input error: string is too long!",&code[pc]);
-        retval.type=nil_m;
-        return;
-    }
-    avm_memcellclear(&retval);
-    if(i == 0){
-        retval.type = string_m;
-        retval.data.strVal = strdup("");
-    }else if(strcmp(s, "true")==0){
-        retval.type = bool_m;
-        retval.data.boolVal = 1;
-    }else if(strcmp(s, "false")==0){
-        retval.type = bool_m;
-        retval.data.boolVal = 0;
-    }else if(strcmp(s,"nil")==0){
-        retval.type = nil_m;
-    }else{
-        int flag = 0;
-        int uminus_flag = 0;
-        for(int j = 0 ; j < strlen(s) ; j++){
-            if(uminus_flag==0 && s[0]=='-'){
-                uminus_flag = 1;
-                continue;
-            }
-            if(s[j]=='.'){
-                flag ++;
-            }else if(!isdigit(s[j])){
-                break;
-            }
-            if(flag>1){
-                break;
-            }
-        }
-        if(strlen(s) > 0 && flag <= 1){
-            retval.type = number_m;
-            retval.data.numVal = atof(s);
-        }else{
-            retval.type = string_m;
-            retval.data.strVal = strdup(s);
-        }
-    }
-    free(s);
 }
 
 void execute_newtable(instruction *instr)
@@ -1179,15 +1115,6 @@ void avm_registerlibfunc(char *id, library_func_t addr){
     new->address = addr;
     new->next = libfuncslist;
     libfuncslist = new;
-}
-void 
-(void)
-{
-    for (unsigned i = 0; i < AVM_STACKSIZE; ++i)
-    {
-        AVM_WIPEOUT(stack[i]);
-        stack[i].type = nil_m;
-    }
 }
 void avm_initialize(void)
 {

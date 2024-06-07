@@ -25,6 +25,7 @@ typedef enum avm_memecell_t
     undef_m
 } avm_memecell_t;
 
+
 typedef struct avm_table avm_table;
 
 typedef struct avm_memcell
