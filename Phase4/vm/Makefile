@@ -2,7 +2,7 @@
 
 avm:
 	@echo "Building AVM..."
-	@gcc -o avm avm.c -g
+	@gcc -o avm avm.c -g -lm
 
 
 clean:

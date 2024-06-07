@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
+
 #define HASH_MULTIPLIER 65599
 
 unsigned int totalActuals = 0;
@@ -459,7 +460,7 @@ void avm_memcellclear(avm_memcell *m)
         memclear_func_t f = memclearFuncs[m->type];
         if (f)
         {
-            (*f)(m);
+            f(m);
         }
         m->type = undef_m;
     }
@@ -513,7 +514,7 @@ void avm_assign(avm_memcell *lv, avm_memcell *rv)
 void execute_call(instruction *instr)
 {
     printf("call\n");
-    avm_memcell* func = avm_translate_operand(&instr->result, &ax);
+    avm_memcell* func = avm_translate_operand(&instr->arg1, &ax);
     assert(func);
     avm_callsaveenvironment(); 
 
@@ -833,16 +834,16 @@ avm_memcell *avm_getactual(unsigned i)
 
 void libfunc_print(void)
 {
-    printf("in print");
+    printf("in print\n");
     unsigned n = avm_totalactuals();
     unsigned i;
     for (i = 0; i < n; ++i)
     {
         char *s = avm_tostring(avm_getactual(i));
-        printf("%s", s);
+        printf("%s\n", s);
         free(s);
     }
-    printf("end print");
+    printf("end print\n");
 }
 
 void avm_push_table_arg(avm_table *t)
@@ -1019,6 +1020,7 @@ void libfunc_typeof(void)
     if (n != 1)
     {
         avm_error("one argument (not %d) expected in 'typeof'!", n);
+        retval.type=nil_m;
     }
     else
     {
@@ -1026,6 +1028,87 @@ void libfunc_typeof(void)
         retval.type = string_m;
         retval.data.strVal = strdup(typeStrings[avm_getactual(0)->type]);
     }
+}
+
+void libfunc_sqrt(void){
+    unsigned n = avm_totalactuals();
+    if(n != 1){
+        avm_error("one argument only", &code[pc]);
+        retval.type=nil_m;
+    }else if (avm_getactual(0)->type != number_m){
+        avm_error("input not a number in sqrt!", &code[pc]);
+        retval.type=nil_m;
+    }else if(avm_getactual(0)->data.numVal < 0){
+        avm_error("negative number in sqrt", &code[pc]);
+        retval.type=nil_m;
+    }else{
+        avm_memcellclear(&retval);
+        retval.type = number_m;
+        double tmp = avm_getactual(0)->data.numVal;
+        retval.data.numVal = sqrt(tmp);
+    }
+}
+
+void libfunc_input(){
+    unsigned n = avm_totalactuals();
+    if(n != 0){
+        char tmp[1024];
+        sprintf(tmp, "%d arguments ignored , no arguments needed in 'input'!", n);
+        avm_warning(tmp, &code[pc]);
+    }
+    char *s = malloc(sizeof(char)*1024);
+    size_t i = 0;
+    while(i!=1024){
+        s[i]=getc(stdin);
+        if(s[i]=='\n'){
+            s[i]='\0';
+            break;
+        }
+        i++;
+    }
+    if(i == 1024){
+        avm_error("input error: string is too long!",&code[pc]);
+        retval.type=nil_m;
+        return;
+    }
+    avm_memcellclear(&retval);
+    if(i == 0){
+        retval.type = string_m;
+        retval.data.strVal = strdup("");
+    }else if(strcmp(s, "true")==0){
+        retval.type = bool_m;
+        retval.data.boolVal = 1;
+    }else if(strcmp(s, "false")==0){
+        retval.type = bool_m;
+        retval.data.boolVal = 0;
+    }else if(strcmp(s,"nil")==0){
+        retval.type = nil_m;
+    }else{
+        int flag = 0;
+        int uminus_flag = 0;
+        for(int j = 0 ; j < strlen(s) ; j++){
+            if(uminus_flag==0 && s[0]=='-'){
+                uminus_flag = 1;
+                continue;
+            }
+            if(s[j]=='.'){
+                flag ++;
+            }else if(!isdigit(s[j])){
+                break;
+            }
+            if(flag>1){
+                break;
+            }
+        }
+        if(strlen(s) > 0 && flag <= 1){
+            retval.type = number_m;
+            retval.data.numVal = atof(s);
+        }else{
+            retval.type = string_m;
+            retval.data.strVal = strdup(s);
+        }
+    }
+    free(s);
 }
 
 void execute_newtable(instruction *instr)
@@ -1112,6 +1195,7 @@ void avm_initialize(void)
     avm_registerlibfunc("print", libfunc_print);
     avm_registerlibfunc("typeof", libfunc_typeof);
     avm_registerlibfunc("totalarguments", library_totalarguments);
+    avm_registerlibfunc("sqrt", libfunc_sqrt);
     // topsp = AVM_STACKSIZE-1;
     // top   = AVM_STACKSIZE-1-totalglobalv;
     // printf("top:%d\n", top);

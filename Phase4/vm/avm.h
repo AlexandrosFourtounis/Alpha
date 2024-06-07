@@ -1,4 +1,6 @@
 #include "../quads.h"
+#include <math.h>
+#include <ctype.h>
 
 #define AVM_NUMACTUALS_OFFSET +4
 #define AVM_SAVEDPC_OFFSET +3
@@ -139,7 +141,7 @@ void execute_nop(instruction *);
 
 execute_func_t executeFuncs[] = {
     execute_assign,
-    execute_nop, //execute_jump should be here
+    execute_nop, //execute_jump should be here t
     execute_add,
     execute_sub,
     execute_mul,
@@ -286,6 +288,7 @@ tobool_func_t toboolFuncs[] = {
     undef_tobool};
 
 unsigned char avm_tobool(avm_memcell *m);
+void libfunc_sqrt(void);
 void libfunc_typeof(void);
 void execute_newtable(instruction *instr);
 
