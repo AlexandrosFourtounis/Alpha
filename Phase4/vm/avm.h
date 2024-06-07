@@ -173,7 +173,7 @@ unsigned currLine = 0;
 unsigned codeSize = 0;
 instruction *code = (instruction *)0;
 
-#define AVM_ENDING_PC codeSize+1
+#define AVM_ENDING_PC codeSize
 
 void execute_cycle(void);
 

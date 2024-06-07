@@ -442,7 +442,7 @@ void execute_cycle(void)
 extern void memclear_string(avm_memcell *m)
 {
     assert(m->data.strVal);
-    free(m->data.strVal);
+    // free(m->data.strVal);
 }
 
 extern void memclear_table(avm_memcell *m)
@@ -464,7 +464,6 @@ void avm_memcellclear(avm_memcell *m)
     }
 }
 
-// sth diafaneia gia edo stack[AVM_STACKSIZE-1] leei stack[N-1]. to copilot eipe to 1o
 void execute_assign(instruction *instr)
 {
     avm_memcell* lv = NULL;
@@ -1224,6 +1223,7 @@ void get_binary(){
     fread(&codeSize, sizeof(unsigned int), 1, bin);
     codeSize -= 1;
     code = malloc(codeSize * sizeof(instruction));
+    fprintf(stderr,"total instructions %u\n", codeSize);
     for(int i = 0; i < codeSize; i++)
     {
         fread(&code[i].opcode, sizeof(vm_opcode), 1, bin);
