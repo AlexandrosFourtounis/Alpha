@@ -348,7 +348,7 @@ avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
     if(reg)
         avm_memcellclear(reg);
     
-    printf("arg type = %d\n", arg->type);
+    //printf("arg type = %d\n", arg->type);
     switch(arg->type){
         case global_a:{
             return &stack[AVM_STACKSIZE - 1 - arg->val];
@@ -403,8 +403,8 @@ avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
 
 void execute_cycle(void)
 {
-    printf("in execute_cycle");
-    printf("Debug: pc = %d, AVM_ENDING_PC = %d\n", pc, AVM_ENDING_PC); //debug
+    //printf("in execute_cycle");
+    //printf("Debug: pc = %d, AVM_ENDING_PC = %d\n", pc, AVM_ENDING_PC); //debug
     if (executionFinished)
     {
         return;
@@ -430,14 +430,14 @@ void execute_cycle(void)
         }
         unsigned oldPC = pc;
         
-        printf("top : %d , topsp : %d\n",top,topsp);
+        //printf("top : %d , topsp : %d\n",top,topsp);
         (*executeFuncs[instr->opcode])(instr);
         if (pc == oldPC)
         {
             ++pc;
         }
     }
-    printf("done withe execution_CYCLE\n");
+    //printf("done withe execution_CYCLE\n");
 }
 
 void memclear_string(avm_memcell *m)
@@ -512,7 +512,7 @@ void avm_assign(avm_memcell *lv, avm_memcell *rv)
 
 void execute_call(instruction *instr)
 {
-    printf("call\n");
+    //printf("call\n");
     avm_memcell* func = avm_translate_operand(&instr->arg1, &ax);
     assert(func);
     avm_callsaveenvironment(); 
@@ -731,7 +731,7 @@ void avm_call_functor(avm_table *t)
 
 void avm_dec_top(void)
 {
-    printf("top : %d\n", top);
+    //printf("top : %d\n", top);
     if (!top)
     {
         avm_error("stack overflow", &code[pc]);
@@ -833,7 +833,7 @@ avm_memcell *avm_getactual(unsigned i)
 
 void libfunc_print(void)
 {
-    printf("in print\n");
+    //printf("in print\n");
     unsigned n = avm_totalactuals();
     unsigned i;
     for (i = 0; i < n; ++i)
@@ -842,7 +842,7 @@ void libfunc_print(void)
         printf("%s\n", s);
         free(s);
     }
-    printf("end print\n");
+    //printf("end print\n");
 }
 
 void avm_push_table_arg(avm_table *t)
@@ -1220,13 +1220,14 @@ void get_binary(){
 
     fread(&totalstringconsts, sizeof(unsigned int), 1, bin);
     fprintf(stderr, "total string %u\n", totalstringconsts);
-    stringslist = malloc(totalstringconsts * sizeof(char));
+    stringslist = malloc(totalstringconsts * sizeof(char *));
     for (int i = 0; i < totalstringconsts; i++)
     {
         size_t len;
         fread(&len, sizeof(size_t), 1, bin);
-        stringslist[i] = malloc(len * sizeof(char));
+        stringslist[i] = malloc((len + 1) * sizeof(char)); // Allocate one extra byte for the null terminator
         fread(stringslist[i], sizeof(char), len, bin);
+        stringslist[i][len] = '\0'; // Add the null terminator
         fprintf(stderr, "string %s\n", stringslist[i]);
     }
 
@@ -1239,28 +1240,29 @@ void get_binary(){
 
     fread(&totallibfuncs, sizeof(unsigned int), 1, bin);
     fprintf(stderr, "total lib funcs %u\n", totallibfuncs);
-    libfuncst = malloc(totallibfuncs * sizeof(char*));
-    for(int i = 0; i < totallibfuncs; i++)
+    libfuncst = malloc(totallibfuncs * sizeof(char *));
+    for (int i = 0; i < totallibfuncs; i++)
     {
         size_t len;
         fread(&len, sizeof(len), 1, bin);
-        libfuncst[i] = malloc(len * sizeof(char));
+        libfuncst[i] = malloc((len + 1) * sizeof(char)); // Allocate one extra byte for the null terminator
         fread(libfuncst[i], sizeof(char), len, bin);
+        libfuncst[i][len] = '\0'; // Add the null terminator
     }
 
     fread(&totaluserfuncs, sizeof(unsigned int), 1, bin);
-    userFuncs = malloc(totaluserfuncs * sizeof(userfunc));
     fprintf(stderr, "total user funcs %u\n", totaluserfuncs);
-    for(int i = 0; i < totaluserfuncs; i++)
+    userFuncs = malloc(totaluserfuncs * sizeof(userfunc));
+    for (int i = 0; i < totaluserfuncs; i++)
     {
         size_t len;
         fread(&len, sizeof(size_t), 1, bin);
-        userFuncs[i].id = malloc(len * sizeof(char));
+        userFuncs[i].id = malloc((len + 1) * sizeof(char)); // Allocate one extra byte for the null terminator
         fread(userFuncs[i].id, sizeof(char), len, bin);
+        userFuncs[i].id[len] = '\0'; // Add the null terminator
         fread(&userFuncs[i].address, sizeof(userFuncs[i].address), 1, bin);
         fread(&userFuncs[i].localSize, sizeof(userFuncs[i].localSize), 1, bin);
     }
-
     fread(&codeSize, sizeof(unsigned int), 1, bin);
     codeSize -= 1;
     code = malloc(codeSize * sizeof(instruction));
@@ -1285,13 +1287,13 @@ void get_binary(){
         {
             push_global_to_stack(&code[i].arg2);
         }
-        fprintf(stderr, "opcode %d\n", code[i].opcode);
-        fprintf(stderr, "result type %d\n", code[i].result.type);
-        fprintf(stderr, "result val %d\n", code[i].result.val);
-        fprintf(stderr, "arg1 type %d\n", code[i].arg1.type);
-        fprintf(stderr, "arg1 val %d\n", code[i].arg1.val);
-        fprintf(stderr, "arg2 type %d\n", code[i].arg2.type);
-        fprintf(stderr, "arg2 val %d\n", code[i].arg2.val);
+        // fprintf(stderr, "opcode %d\n", code[i].opcode);
+        // fprintf(stderr, "result type %d\n", code[i].result.type);
+        // fprintf(stderr, "result val %d\n", code[i].result.val);
+        // fprintf(stderr, "arg1 type %d\n", code[i].arg1.type);
+        // fprintf(stderr, "arg1 val %d\n", code[i].arg1.val);
+        // fprintf(stderr, "arg2 type %d\n", code[i].arg2.type);
+        // fprintf(stderr, "arg2 val %d\n", code[i].arg2.val);
 
     }
     G_code = code;
@@ -1336,5 +1338,26 @@ int main()
     avm_memcellclear(&bx);
     avm_memcellclear(&cx);
     avm_memcellclear(&retval);
+    for (int i = 0; i < totalstringconsts; i++)
+    {
+        free(stringslist[i]);
+    }
+    free(stringslist);
+
+    free(numberconstslist);
+
+    for (int i = 0; i < totallibfuncs; i++)
+    {
+        free(libfuncst[i]);
+    }
+    free(libfuncst);
+
+    for (int i = 0; i < totaluserfuncs; i++)
+    {
+        free(userFuncs[i].id);
+    }
+    free(userFuncs);
+
+    free(code);
     return 0;
 }   
