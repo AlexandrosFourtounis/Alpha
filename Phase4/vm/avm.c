@@ -1097,15 +1097,7 @@ void avm_registerlibfunc(char *id, library_func_t addr){
     new->next = libfuncslist;
     libfuncslist = new;
 }
-void 
-(void)
-{
-    for (unsigned i = 0; i < AVM_STACKSIZE; ++i)
-    {
-        AVM_WIPEOUT(stack[i]);
-        stack[i].type = nil_m;
-    }
-}
+
 void avm_initialize(void)
 {
     avm_initstack();
