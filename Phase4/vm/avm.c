@@ -361,7 +361,7 @@ avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
     case string_a:
     {
         reg->type = string_m;
-        reg->data.strVal = strdup(consts_getstring(arg->val));
+        reg->data.strVal = strdup(stringslist[arg->val]);
         return reg;
     }
     case bool_a:
@@ -1021,6 +1021,14 @@ void avm_registerlibfunc(char *id, library_func_t addr){
     new->address = addr;
     new->next = libfuncslist;
     libfuncslist = new;
+}
+void avm_initstack(void)
+{
+    for (unsigned i = 0; i < AVM_STACKSIZE; ++i)
+    {
+        AVM_WIPEOUT(stack[i]);
+        stack[i].type = nil_m;
+    }
 }
 void avm_initialize(void)
 {
