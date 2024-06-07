@@ -342,52 +342,62 @@ char *consts_getstring(unsigned index){
 
 avm_memcell *avm_translate_operand(vmarg *arg, avm_memcell *reg)
 {
-    switch (arg->type)
-    {
-    case global_a:
-        return &stack[AVM_STACKSIZE - 1 - arg->val];
-    case local_a:
-        return &stack[topsp - arg->val];
-    case formal_a:
-        return &stack[topsp + AVM_STACKENV_SIZE + 1 + arg->val];
-    case retval_a:
-        return &retval;
-    case number_a:
-    {
-        reg->type = number_m;
-        reg->data.numVal = numberconstslist[arg->val];
-        return reg;
-    }
-    case string_a:
-    {
-        reg->type = string_m;
-        reg->data.strVal = strdup(stringslist[arg->val]);
-        return reg;
-    }
-    case bool_a:
-    {
-        reg->type = bool_m;
-        reg->data.boolVal = arg->val;
-        return reg;
-    }
-    case nil_a:
-        reg->type = nil_m;
-        return reg;
-    case userfunc_a:
-    {
-        reg->type = userfunc_m;
-        reg->data.funcVal = arg->val; // h ayto h apo kato
-        //reg->data.funcVal = userfuncs_get(arg->val)->address;
-        return reg;
-    }
-    case libfunc_a:
-    {
-        reg->type = libfunc_m;
-        reg->data.libfuncVal = libfuncs_getused(arg->val);
-        return reg;
-    }
-    default:
-        assert(0);
+
+    assert(arg);
+    if(reg)
+        avm_memcellclear(reg);
+    
+    printf("arg type = %d\n", arg->type);
+    switch(arg->type){
+        case global_a:{
+            return &stack[AVM_STACKSIZE - 1 - arg->val];
+        } 
+        case local_a: {
+            return &stack[topsp - arg->val];   
+        }  
+        case formal_a:{
+            return &stack[topsp + AVM_STACKENV_SIZE + 1 + arg->val];
+        }
+
+        case retval_a:  return &retval;
+
+        case number_a:  {
+            reg->type = number_m;
+            reg->data.numVal = consts_getnumber(arg->val);
+            return reg;
+        }
+
+        case string_a:  {
+            reg->type = string_m;
+            reg->data.strVal = strdup(consts_getstring(arg->val));
+            return reg;
+        }
+
+        case bool_a:    {
+            reg->type = bool_m;
+            reg->data.boolVal = arg->val;
+            return reg;
+        }
+
+        case nil_a:     {
+            reg->type = nil_m;
+            return reg;
+        }
+
+        case userfunc_a:{
+            reg->type = userfunc_m;
+            reg->data.funcVal = arg->val;
+            return reg;
+        }
+
+        case libfunc_a: {
+            reg->type = libfunc_m;
+            reg->data.libfuncVal = libfuncs_getused(arg->val);
+            return reg;
+        }
+
+        default: assert(0);
+
     }
 }
 
@@ -420,6 +430,7 @@ void execute_cycle(void)
         }
         unsigned oldPC = pc;
         
+        printf("top : %d , topsp : %d\n",top,topsp);
         (*executeFuncs[instr->opcode])(instr);
         if (pc == oldPC)
         {
@@ -457,10 +468,19 @@ void avm_memcellclear(avm_memcell *m)
 // sth diafaneia gia edo stack[AVM_STACKSIZE-1] leei stack[N-1]. to copilot eipe to 1o
 void execute_assign(instruction *instr)
 {
-    avm_memcell *lv = avm_translate_operand(&instr->result, (avm_memcell *)0);
-    avm_memcell *rv = avm_translate_operand(&instr->arg1, &ax);
-    assert(lv && (&stack[AVM_STACKSIZE - 1] >= lv && lv > &stack[top] || lv == &retval));
+    avm_memcell* lv = NULL;
+    lv = avm_translate_operand(&instr->result, NULL);
+    // case for empty return
+    if(lv == &retval && ((int) instr->arg1.type == -1)){
+        avm_memcellclear(lv);
+        //lv->type = nil_m;
+        return;
+    }
+    avm_memcell* rv = avm_translate_operand(&instr->arg1, &ax);
+
+    //assert(lv && (&stack[N-1] >= lv && lv > &stack[top] || lv == &retval));
     assert(rv); // should do similar assertion tests here
+
     avm_assign(lv, rv);
 }
 
@@ -492,34 +512,79 @@ void avm_assign(avm_memcell *lv, avm_memcell *rv)
 
 void execute_call(instruction *instr)
 {
-    avm_memcell *func = avm_translate_operand(&instr->result, &ax);
+    printf("call\n");
+    avm_memcell* func = avm_translate_operand(&instr->result, &ax);
     assert(func);
-    switch (func->type)
-    {
-    case userfunc_m:
-    {
-        avm_callsaveenvironment();
-        pc = func->data.funcVal;
-        assert(pc < AVM_ENDING_PC);
-        assert(code[pc].opcode == enterfunc_v);
-        break;
-    }
-    case string_m:
-        avm_calllibfunc(func);
-        break;
-    case libfunc_m:
-        avm_calllibfunc(func);
-        break;
-    case table_m:
-        avm_calltablefunc(func);
-        break;
-    default:
-    {
-        char *s = avm_tostring(func);
-        avm_error("call: cannot bind '%s' to function!", s);
-        free(s);
-        executionFinished = 1;
-    }
+    avm_callsaveenvironment(); 
+
+    switch(func->type){
+
+        case userfunc_m: {
+            pc = userFuncs[func->data.funcVal].address;
+            //pc = func->data.funcVal; // sto funcVal apothikeuoume pu prepei na ginei to jump
+            assert(pc < AVM_ENDING_PC);
+            //printf("pc = %d\n", pc);
+            assert(code[pc].opcode == enterfunc_v);
+            break;
+        }
+
+        case string_m:  {
+            avm_calllibfunc(func->data.strVal);
+            break;
+        }
+
+        case libfunc_m: {
+            avm_calllibfunc(func->data.libfuncVal);
+            break;
+        }
+
+        case table_m:{
+            avm_memcell* t = func, *i = malloc(sizeof(avm_memcell));
+            i->type = string_m;
+            i->data.strVal = strdup("()");
+            func = avm_tablegetelem(t->data.tableVal, i); 
+            if(func){
+                switch(func->type) {
+                    case userfunc_m: {
+                        pc = userFuncs[func->data.funcVal].address;
+                        //pc = func->data.funcVal; // sto funcVal apothikeuoume pu prepei na ginei to jump
+                        assert(pc < AVM_ENDING_PC);
+                        //printf("pc = %d\n", pc);
+                        assert(code[pc].opcode == enterfunc_v);
+                        break;
+                    }
+                    case string_m:  {
+                        avm_calllibfunc(func->data.strVal);
+                        break;
+                    }
+                    case libfunc_m: {
+                        avm_calllibfunc(func->data.libfuncVal);
+                        break;
+                    } 
+                    default: {
+                        char* s = avm_tostring(func);
+                        char tmp[1024];
+                        sprintf(tmp, "call: cannot bind '%s' to function!", s);
+                        avm_error(tmp, &code[pc]);
+                        free(s);
+                        executionFinished = 1;
+                        break;
+                    } 
+                }
+            }
+            avm_memcellclear(i);
+            free(i);
+            break;
+        }
+
+        default: {
+            char* s = avm_tostring(func);
+            char tmp[1024];
+            sprintf(tmp, "call: cannot bind '%s' to function!", s);
+            avm_error(tmp, &code[pc]);
+            free(s);
+            executionFinished = 1;
+        }
     }
 }
 
@@ -666,6 +731,7 @@ void avm_call_functor(avm_table *t)
 
 void avm_dec_top(void)
 {
+    printf("top : %d\n", top);
     if (!top)
     {
         avm_error("stack overflow", &code[pc]);
@@ -687,18 +753,26 @@ void avm_push_envvalue(unsigned val)
 void avm_callsaveenvironment(void)
 {
     avm_push_envvalue(totalActuals);
-    assert(code[pc].opcode == callfunc_v);
+    //assert(code[pc].opcode == callfunc_v);
     avm_push_envvalue(pc + 1);
     avm_push_envvalue(top + totalActuals + 2);
     avm_push_envvalue(topsp);
 }
-userfunc *avm_getfuncinfo(unsigned address){}
+
+userfunc *avm_getfuncinfo(unsigned address){
+    for(int i = 0; i < totaluserfuncs; i++){
+        if(userFuncs[i].address == address){
+            return &userFuncs[i];
+        }
+    }
+    return NULL;
+}
 
 void execute_funcenter(instruction *instr)
 {
     avm_memcell *func = avm_translate_operand(&instr->result, &ax);
     assert(func);
-    assert(pc == func->data.funcVal);
+    assert(userFuncs[func->data.funcVal].address);
     totalActuals = 0;
     userfunc *funcInfo = avm_getfuncinfo(pc);
     topsp = top;
@@ -736,7 +810,6 @@ void avm_calllinfunc(char *id)
     }
     else
     {
-        avm_callsaveenvironment();
         topsp = top;
         totalActuals = 0;
         (*f)();
@@ -760,14 +833,16 @@ avm_memcell *avm_getactual(unsigned i)
 
 void libfunc_print(void)
 {
+    printf("in print");
     unsigned n = avm_totalactuals();
     unsigned i;
     for (i = 0; i < n; ++i)
     {
         char *s = avm_tostring(avm_getactual(i));
-        puts(s);
+        printf("%s", s);
         free(s);
     }
+    printf("end print");
 }
 
 void avm_push_table_arg(avm_table *t)
@@ -1022,7 +1097,8 @@ void avm_registerlibfunc(char *id, library_func_t addr){
     new->next = libfuncslist;
     libfuncslist = new;
 }
-void avm_initstack(void)
+void 
+(void)
 {
     for (unsigned i = 0; i < AVM_STACKSIZE; ++i)
     {
@@ -1035,6 +1111,11 @@ void avm_initialize(void)
     avm_initstack();
     avm_registerlibfunc("print", libfunc_print);
     avm_registerlibfunc("typeof", libfunc_typeof);
+    avm_registerlibfunc("totalarguments", library_totalarguments);
+    // topsp = AVM_STACKSIZE-1;
+    // top   = AVM_STACKSIZE-1-totalglobalv;
+    // printf("top:%d\n", top);
+    // pc = 1;
 }
 
 void library_totalarguments(void)
@@ -1184,7 +1265,7 @@ void get_binary(){
     fprintf(stderr, "total numbers %u\n", totalnumconst);
     for (int i = 0; i < totalnumconst; i++)
     {
-        fprintf(stderr, "%s\n", numberconstslist[i]);
+        fprintf(stderr, "%f\n", numberconstslist[i]);
     }
     fprintf(stderr, "END OF TABLES\n\n");
 }
